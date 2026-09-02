@@ -2,6 +2,8 @@
 
 자연어로 Google Docs, Sheets, Slides, Forms, Drive와 Classroom을 사용하는 교육 특화 Model Context Protocol(MCP) 서버입니다. Apps Script 없이 Google 공식 API를 직접 호출합니다.
 
+[공식 홈페이지](https://edu.jeld.kr/) · [개인정보처리방침](https://edu.jeld.kr/privacy.html) · [이용약관](https://edu.jeld.kr/terms.html)
+
 > 현재 버전은 로컬 stdio MCP 베타입니다. 공용 Google 데스크톱 OAuth 클라이언트가 포함되어 있어 최종 사용자가 Google Cloud 프로젝트를 만들 필요가 없습니다. Google 공개 검증이 끝나기 전까지는 등록된 테스트 사용자만 로그인할 수 있습니다.
 
 ## 할 수 있는 일
@@ -151,7 +153,7 @@ node dist/cli.js login
 
 공개 배포 전에는 Google OAuth 앱 검증과 개인정보처리방침이 필요하며, Google Workspace for Education 관리자가 제3자 앱을 허용해야 할 수 있습니다.
 
-요청 범위의 상세 설명은 [OAuth 범위 문서](docs/OAUTH_SCOPES.md), 데이터 처리 방식은 [개인정보 처리 안내 초안](docs/PRIVACY.md)을 참고하세요.
+요청 범위의 상세 설명은 [OAuth 범위 문서](docs/OAUTH_SCOPES.md), 공개 데이터 처리 방침은 [개인정보처리방침](https://edu.jeld.kr/privacy.html)을 참고하세요.
 
 ## 테스트
 
