@@ -7,7 +7,7 @@ import { resetApprovalsForTests } from "../approvals/service.js";
 
 function services(): WorkspaceServices {
   return {
-    getAuthStatus: async () => ({ authenticated: true, credentialsPath: "/test/credentials.json", tokenPath: "/test/token.json", grantedScopes: [], message: "ok" }),
+    getAuthStatus: async () => ({ authenticated: true, oauthClientConfigured: true, oauthClientSource: "bundled", credentialsPath: "/test/credentials.json", tokenPath: "/test/token.json", grantedScopes: [], message: "ok" }),
     listCourses: async () => [{ id: "course-1", name: "2학년 과학" }],
     searchFiles: async () => [{ id: "file-1", name: "학습지" }],
     createFolder: async (name) => ({ id: "folder-1", name }),

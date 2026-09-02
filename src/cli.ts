@@ -26,11 +26,14 @@ async function main() {
 
   if (command === "setup") {
     await mkdir(APP_DIRECTORY, { recursive: true });
+    const status = await getAuthStatus();
     console.log(`\n설정 폴더: ${APP_DIRECTORY}`);
-    console.log(`OAuth 자격 증명 파일 위치: ${credentialsPath()}`);
+    console.log(`OAuth 클라이언트: ${status.oauthClientConfigured ? `${status.oauthClientSource} 설정 사용` : "아직 구성되지 않음"}`);
     console.log(`\nCodex/ChatGPT Desktop 예시:\n[mcp_servers.edu_workspace]\ncommand = "npx"\nargs = ["-y", "edu-workspace-mcp"]`);
     console.log(`\nClaude Desktop/Cursor 예시:\n{\n  "mcpServers": {\n    "edu-workspace": {\n      "command": "npx",\n      "args": ["-y", "edu-workspace-mcp"]\n    }\n  }\n}`);
-    console.log("\ncredentials.json을 위 위치에 저장한 뒤 `npx edu-workspace-mcp login`을 실행하세요.");
+    console.log(status.oauthClientConfigured
+      ? "\n`npx edu-workspace-mcp login`으로 Google 계정을 연결하세요."
+      : `\n공개 배포 전에는 배포자가 공용 OAuth 앱을 설정해야 합니다. 개발 중에는 ${credentialsPath()}에 credentials.json을 둘 수 있습니다.`);
     return;
   }
 

@@ -4,9 +4,12 @@ import path from "node:path";
 import { google } from "googleapis";
 import type { Credentials } from "google-auth-library";
 import { credentialsPath, GOOGLE_SCOPES, tokenPath } from "../config.js";
+import { BUNDLED_GOOGLE_OAUTH_CLIENT } from "./bundled-oauth-client.js";
 
 export type AuthStatus = {
   authenticated: boolean;
+  oauthClientConfigured: boolean;
+  oauthClientSource: "environment" | "credentials_file" | "bundled" | "missing";
   credentialsPath: string;
   tokenPath: string;
   grantedScopes: string[];
@@ -23,16 +26,42 @@ type OAuthClientConfig = {
   redirect_uris: string[];
 };
 
-async function loadClientConfig(): Promise<OAuthClientConfig> {
-  const credentials = (await readJson(credentialsPath())) as {
-    installed?: OAuthClientConfig;
-    web?: OAuthClientConfig;
-  };
-  const clientConfig = credentials.installed ?? credentials.web;
-  if (!clientConfig) {
-    throw new Error("credentials.json에 Desktop 또는 Web OAuth 클라이언트 정보가 없습니다.");
+async function loadClientConfig(): Promise<{ config: OAuthClientConfig; source: AuthStatus["oauthClientSource"] }> {
+  const environmentClientId = process.env.EDU_WORKSPACE_GOOGLE_CLIENT_ID?.trim();
+  if (environmentClientId) {
+    return {
+      source: "environment",
+      config: {
+        client_id: environmentClientId,
+        client_secret: process.env.EDU_WORKSPACE_GOOGLE_CLIENT_SECRET?.trim() ?? "",
+        redirect_uris: ["http://127.0.0.1"]
+      }
+    };
   }
-  return clientConfig;
+
+  try {
+    const credentials = (await readJson(credentialsPath())) as {
+      installed?: OAuthClientConfig;
+      web?: OAuthClientConfig;
+    };
+    const clientConfig = credentials.installed ?? credentials.web;
+    if (clientConfig) return { config: clientConfig, source: "credentials_file" };
+  } catch {
+    // Continue to the bundled public client.
+  }
+
+  if (BUNDLED_GOOGLE_OAUTH_CLIENT.clientId) {
+    return {
+      source: "bundled",
+      config: {
+        client_id: BUNDLED_GOOGLE_OAUTH_CLIENT.clientId,
+        client_secret: BUNDLED_GOOGLE_OAUTH_CLIENT.clientSecret,
+        redirect_uris: ["http://127.0.0.1"]
+      }
+    };
+  }
+
+  throw new Error("공용 Google OAuth 앱이 아직 구성되지 않았습니다. 개발자는 credentials.json 또는 EDU_WORKSPACE_GOOGLE_CLIENT_ID를 설정하세요.");
 }
 
 function createOAuthClient(config: OAuthClientConfig, redirectUri?: string) {
@@ -47,11 +76,20 @@ export async function getAuthStatus(): Promise<AuthStatus> {
   const credentialFile = credentialsPath();
   const tokenFile = tokenPath();
 
+  let oauthClientSource: AuthStatus["oauthClientSource"] = "missing";
   try {
-    await readFile(credentialFile, "utf8");
+    oauthClientSource = (await loadClientConfig()).source;
+  } catch {
+    // Report missing configuration below.
+  }
+
+  try {
+    if (oauthClientSource === "missing") throw new Error("OAuth client missing");
     const token = (await readJson(tokenFile)) as { scope?: string };
     return {
       authenticated: true,
+      oauthClientConfigured: true,
+      oauthClientSource,
       credentialsPath: credentialFile,
       tokenPath: tokenFile,
       grantedScopes: token.scope?.split(" ").filter(Boolean) ?? [],
@@ -60,10 +98,14 @@ export async function getAuthStatus(): Promise<AuthStatus> {
   } catch {
     return {
       authenticated: false,
+      oauthClientConfigured: oauthClientSource !== "missing",
+      oauthClientSource,
       credentialsPath: credentialFile,
       tokenPath: tokenFile,
       grantedScopes: [],
-      message: `Google 계정이 연결되지 않았습니다. credentials.json을 ${credentialFile}에 둔 뒤 edu-workspace-mcp login을 실행하세요.`
+      message: oauthClientSource === "missing"
+        ? "공용 Google OAuth 앱이 아직 구성되지 않았습니다. 개발용 credentials.json 또는 환경 변수가 필요합니다."
+        : "Google 계정이 연결되지 않았습니다. edu-workspace-mcp login을 실행하세요."
     };
   }
 }
@@ -72,13 +114,7 @@ export async function login(): Promise<AuthStatus> {
   const credentialFile = credentialsPath();
   const tokenFile = tokenPath();
 
-  try {
-    await readFile(credentialFile, "utf8");
-  } catch {
-    throw new Error(`OAuth 클라이언트 파일을 찾을 수 없습니다: ${credentialFile}`);
-  }
-
-  const config = await loadClientConfig();
+  const { config } = await loadClientConfig();
   const callbackServer = createServer();
   const authorizationCode = new Promise<string>((resolve, reject) => {
     callbackServer.once("request", (request, response) => {
@@ -138,10 +174,9 @@ export async function login(): Promise<AuthStatus> {
 }
 
 export async function getAuthorizedClient() {
-  const credentialFile = credentialsPath();
   const tokenFile = tokenPath();
-  await readFile(credentialFile, "utf8");
-  const client = createOAuthClient(await loadClientConfig());
+  const { config } = await loadClientConfig();
+  const client = createOAuthClient(config);
   client.setCredentials((await readJson(tokenFile)) as Credentials);
   return client;
 }

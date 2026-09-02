@@ -2,7 +2,7 @@
 
 자연어로 Google Docs, Sheets, Slides, Forms, Drive와 Classroom을 사용하는 교육 특화 Model Context Protocol(MCP) 서버입니다. Apps Script 없이 Google 공식 API를 직접 호출합니다.
 
-> 현재 버전은 로컬 stdio MCP 베타입니다. Google OAuth 검증을 완료하기 전에는 OAuth 동의 화면에 등록한 테스트 사용자만 로그인할 수 있습니다.
+> 현재 버전은 로컬 stdio MCP 베타입니다. 정식 배포판은 공용 Google OAuth 앱을 포함하므로 최종 사용자가 Google Cloud 프로젝트를 만들 필요가 없습니다. 공용 OAuth 검증 전에는 개발용 자격 증명과 테스트 사용자가 필요합니다.
 
 ## 할 수 있는 일
 
@@ -42,36 +42,19 @@
 - Node.js 20 이상
 - MCP를 지원하는 데스크톱 클라이언트
 - Google 계정
-- 직접 만든 Google Cloud Desktop OAuth 자격 증명
 
-## 1. Google Cloud 준비
+## 빠른 설치 — 최종 사용자
 
-1. [Google Cloud Console](https://console.cloud.google.com/)에서 프로젝트를 만듭니다.
-2. 다음 API를 활성화합니다.
-   - Google Drive API
-   - Google Docs API
-   - Google Sheets API
-   - Google Slides API
-   - Google Forms API
-   - Google Classroom API
-3. OAuth 동의 화면을 구성합니다.
-4. 앱이 테스트 상태라면 사용할 Google 계정을 테스트 사용자로 추가합니다.
-5. OAuth 클라이언트 ID를 만들고 애플리케이션 유형으로 **데스크톱 앱**을 선택합니다.
-6. 내려받은 JSON 파일을 다음 위치에 `credentials.json`으로 저장합니다.
-
-```text
-~/.edu-workspace-mcp/credentials.json
-```
-
-Windows에서도 사용자 홈 폴더 아래의 `.edu-workspace-mcp` 폴더를 사용합니다. 다른 경로를 쓰려면 `EDU_WORKSPACE_CREDENTIALS_PATH` 환경 변수를 설정합니다.
-
-## 2. 설치와 로그인
-
-npm에 공개된 뒤에는 macOS, Windows, Linux에서 같은 명령을 사용합니다.
+정식 npm 배포 후 macOS, Windows, Linux에서 다음 두 단계만 진행합니다. Google Cloud Console 설정은 필요하지 않습니다.
 
 ```bash
 npx -y edu-workspace-mcp setup
 npx -y edu-workspace-mcp login
+```
+
+브라우저에서 Google 로그인과 권한 승인을 마치고 MCP 클라이언트에 연결하면 됩니다. 학교 계정에서 기관 관리자가 제3자 앱을 차단한 경우에는 관리자에게 앱 허용을 요청해야 합니다.
+
+```bash
 npx -y edu-workspace-mcp doctor
 ```
 
@@ -81,7 +64,7 @@ Google 토큰은 `~/.edu-workspace-mcp/token.json`에 사용자 전용 권한으
 npx -y edu-workspace-mcp disconnect
 ```
 
-## 3. MCP 클라이언트 연결
+## MCP 클라이언트 연결
 
 Claude Desktop과 Cursor 계열 JSON 설정:
 
@@ -108,6 +91,8 @@ default_tools_approval_mode = "writes"
 ChatGPT 웹은 사용자 컴퓨터의 stdio 프로세스를 실행하지 않습니다. 웹 지원은 향후 호스팅형 Streamable HTTP 서버로 제공할 계획입니다.
 
 ## 소스에서 실행
+
+현재 공개 저장소에는 아직 프로덕션 OAuth client ID가 들어 있지 않습니다. 기여자와 베타 테스터는 [배포자용 공용 OAuth 설정](docs/BUNDLED_OAUTH_SETUP.md)을 진행하거나, 개인 Desktop OAuth JSON을 `~/.edu-workspace-mcp/credentials.json`에 둡니다. 최종 사용자는 이 작업을 하지 않습니다.
 
 ```bash
 npm install
