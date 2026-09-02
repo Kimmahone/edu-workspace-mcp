@@ -6,3 +6,4 @@ dist/
 credentials.json
 token.json
 .edu-workspace-mcp/
+outputs/
