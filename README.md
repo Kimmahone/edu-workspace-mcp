@@ -2,7 +2,7 @@
 
 자연어로 Google Docs, Sheets, Slides, Forms, Drive와 Classroom을 사용하는 교육 특화 Model Context Protocol(MCP) 서버입니다. Apps Script 없이 Google 공식 API를 직접 호출합니다.
 
-> 현재 버전은 로컬 stdio MCP 베타입니다. 정식 배포판은 공용 Google OAuth 앱을 포함하므로 최종 사용자가 Google Cloud 프로젝트를 만들 필요가 없습니다. 공용 OAuth 검증 전에는 개발용 자격 증명과 테스트 사용자가 필요합니다.
+> 현재 버전은 로컬 stdio MCP 베타입니다. 공용 Google 데스크톱 OAuth 클라이언트가 포함되어 있어 최종 사용자가 Google Cloud 프로젝트를 만들 필요가 없습니다. Google 공개 검증이 끝나기 전까지는 등록된 테스트 사용자만 로그인할 수 있습니다.
 
 ## 할 수 있는 일
 
@@ -125,7 +125,7 @@ ChatGPT 웹은 사용자 컴퓨터의 stdio 프로세스를 실행하지 않습�
 
 ## 소스에서 실행
 
-현재 공개 저장소에는 아직 프로덕션 OAuth client ID가 들어 있지 않습니다. 기여자와 베타 테스터는 [배포자용 공용 OAuth 설정](docs/BUNDLED_OAUTH_SETUP.md)을 진행하거나, 개인 Desktop OAuth JSON을 `~/.edu-workspace-mcp/credentials.json`에 둡니다. 최종 사용자는 이 작업을 하지 않습니다.
+공개 저장소에는 설치형 앱용 공용 OAuth client ID가 포함되어 있습니다. 최종 사용자는 별도 Google Cloud 프로젝트나 `credentials.json` 없이 `login`만 실행합니다. 공개 검증 전의 베타 테스트에서는 배포자가 Google Cloud Console에 테스트 사용자를 등록해야 합니다.
 
 ```bash
 npm install
@@ -141,7 +141,8 @@ node dist/cli.js login
 ## 보안 모델
 
 - 필요한 Google OAuth 범위만 요청합니다.
-- OAuth 자격 증명과 토큰은 Git에 포함되지 않습니다.
+- 사용자의 OAuth 액세스·갱신 토큰은 Git에 포함되지 않고 로컬 사용자 폴더에만 저장됩니다.
+- 설치형 앱은 비밀을 유지할 수 없는 공개 클라이언트이므로 배포용 데스크톱 client ID와 client secret은 앱에 포함됩니다.
 - 검색·조회 도구에는 `readOnlyHint`를 표시합니다.
 - Classroom 게시와 Drive 공유에는 `destructiveHint`를 표시합니다.
 - Classroom 과제는 먼저 `DRAFT`로 만들고 별도 게시 도구에서 일회성 승인을 검증합니다.
@@ -161,7 +162,7 @@ npm run test:mcp    # 실제 stdio 프로세스 연결 테스트
 npm audit --omit=dev
 ```
 
-Google API 실계정 테스트에는 별도 OAuth 자격 증명과 테스트 계정이 필요합니다. CI에서는 외부 계정을 사용하지 않고 Google API 어댑터를 주입한 계약 테스트를 실행합니다.
+Google API 실계정 테스트에는 공개 검증 전까지 등록된 테스트 계정이 필요합니다. CI에서는 외부 계정을 사용하지 않고 Google API 어댑터를 주입한 계약 테스트를 실행합니다.
 
 ## 개발 현황
 
@@ -171,7 +172,7 @@ Google API 실계정 테스트에는 별도 OAuth 자격 증명과 테스트 계
 - [x] Classroom 수업 조회·과제 초안·승인 게시
 - [x] macOS·Windows·Linux 공통 npm 실행 구조
 - [x] 단위·MCP 통합·stdio 스모크 테스트
-- [ ] 실계정 E2E 테스트
+- [x] 실계정 OAuth·Classroom 조회·Sheets 생성 E2E 테스트
 - [ ] Google OAuth 공개 앱 검증
 - [ ] 호스팅형 Streamable HTTP MCP
 - [ ] Calendar·Gmail·Tasks 확장

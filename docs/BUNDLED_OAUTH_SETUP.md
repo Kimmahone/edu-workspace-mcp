@@ -1,6 +1,6 @@
 # 배포자용 공용 Google OAuth 설정
 
-이 작업은 `edu-workspace-mcp` 배포자가 프로덕션 출시 전에 **한 번만** 수행한다. 최종 사용자는 Google Cloud Console을 사용하지 않는다.
+이 작업은 `edu-workspace-mcp` 배포자가 프로덕션 출시 전에 **한 번만** 수행한다. 최종 사용자는 Google Cloud Console을 사용하지 않는다. 현재 배포용 프로젝트 `edu-workspace-mcp`와 데스크톱 OAuth 클라이언트 생성까지 완료되었다.
 
 ## 1. 프로덕션 프로젝트
 
@@ -12,7 +12,7 @@
 
 ## 2. 앱에 공용 client ID 포함
 
-Google의 설치형 앱은 client secret을 비밀로 유지할 수 없는 공개 클라이언트다. 발급된 client ID와 필요 시 client secret을 `src/auth/bundled-oauth-client.ts`에 설정한다.
+Google의 설치형 앱은 client secret을 비밀로 유지할 수 없는 공개 클라이언트다. 발급된 client ID와 client secret은 `src/auth/bundled-oauth-client.ts`에 설정되어 있다. 사용자의 액세스·갱신 토큰과 다운로드한 OAuth JSON은 저장소에 커밋하지 않는다.
 
 ```ts
 export const BUNDLED_GOOGLE_OAUTH_CLIENT = {
