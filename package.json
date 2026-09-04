@@ -27,7 +27,7 @@
   "publishConfig": { "access": "public" },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
-    "google-auth-library": "^10.9.1",
+    "google-auth-library": "^11.0.2",
     "googleapis": "^169.0.0",
     "zod": "^3.24.2"
   },
