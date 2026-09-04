@@ -153,7 +153,7 @@ node dist/cli.js login
 
 공개 배포 전에는 Google OAuth 앱 검증과 개인정보처리방침이 필요하며, Google Workspace for Education 관리자가 제3자 앱을 허용해야 할 수 있습니다.
 
-요청 범위의 상세 설명은 [OAuth 범위 문서](docs/OAUTH_SCOPES.md), 공개 데이터 처리 방침은 [개인정보처리방침](https://edu.jeld.kr/privacy.html)을 참고하세요.
+요청 범위의 상세 설명은 [OAuth 범위 문서](docs/OAUTH_SCOPES.md), 공개 데이터 처리 방침은 [개인정보처리방침](https://edu.jeld.kr/privacy.html)을 참고하세요. 공개 배포를 위한 범위별 사용 사유와 데모 영상 시나리오는 [OAuth 검수 제출 가이드](docs/OAUTH_VERIFICATION_GUIDE.md)에 정리되어 있습니다.
 
 ## 테스트
 
