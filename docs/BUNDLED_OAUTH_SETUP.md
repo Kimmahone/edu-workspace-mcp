@@ -28,7 +28,7 @@ export const BUNDLED_GOOGLE_OAUTH_CLIENT = {
 
 ## 3. OAuth 검증
 
-Classroom과 Workspace 데이터 범위는 공개 앱 검증이 필요할 수 있다. Google에 다음 자료를 제출한다.
+현재 앱은 비민감 `drive.file`, `classroom.courses.readonly`, `classroom.coursework.me` 범위만 요청한다. 브랜딩 검증을 마치고 앱을 프로덕션으로 게시한다. Google 인증 센터에서 추가 데이터 액세스 검증을 요구하는 경우에만 다음 자료를 제출한다.
 
 - 검증된 홈페이지 도메인
 - 개인정보처리방침과 서비스 약관
@@ -36,7 +36,7 @@ Classroom과 Workspace 데이터 범위는 공개 앱 검증이 필요할 수 �
 - OAuth 동작과 기능을 보여 주는 데모 영상
 - 데이터 보관·삭제·보안 설명
 
-검증 전에는 OAuth 동의 화면의 테스트 사용자만 로그인할 수 있다. 프로덕션으로 전환하고 검증이 끝나면 일반 사용자는 앱 설치 후 Google 로그인만 하면 된다.
+테스트 상태에서는 등록된 테스트 사용자만 로그인할 수 있다. 프로덕션으로 전환하고 필요한 검증이 끝나면 일반 사용자는 앱 설치 후 Google 로그인만 하면 된다.
 
 ## 4. 학교 관리자 안내
 

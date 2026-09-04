@@ -148,15 +148,11 @@ MVP에서는 문서 생성과 교사가 자기 수업에 과제를 만드는 데
 
 | 목적 | 권장 범위 예시 |
 | --- | --- |
-| Drive 파일 생성·정리 | `https://www.googleapis.com/auth/drive.file` |
-| Docs | `https://www.googleapis.com/auth/documents` |
-| Sheets | `https://www.googleapis.com/auth/spreadsheets` |
-| Slides | `https://www.googleapis.com/auth/presentations` |
-| Forms 생성·수정 | `https://www.googleapis.com/auth/forms.body` |
+| 앱이 사용하는 Drive 파일 및 Docs·Sheets·Slides·Forms 생성·수정 | `https://www.googleapis.com/auth/drive.file` |
 | 수업 목록 조회 | `https://www.googleapis.com/auth/classroom.courses.readonly` |
 | 교사 과제 생성·수정 | `https://www.googleapis.com/auth/classroom.coursework.me` |
 
-> 실제 필요 범위는 각 API 호출과 계정 역할에 따라 재검증한다. Classroom API의 민감 범위와 교육기관의 제3자 앱 접근 제어 때문에, 학교 계정에서는 관리자 승인이 필요할 수 있다.
+> `drive.file`은 앱이 생성하거나 사용자가 앱으로 연 파일에만 적용되는 비민감 범위다. 제품 전체 범위보다 좁으며 현재 구현의 각 생성·수정 API 호출을 지원한다. 교육기관의 제3자 앱 접근 제어 때문에 학교 계정에서는 관리자 승인이 필요할 수 있다.
 
 ## 6. 프로젝트 구조
 

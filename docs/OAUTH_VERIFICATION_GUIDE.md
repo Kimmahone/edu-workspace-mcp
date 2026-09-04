@@ -15,25 +15,17 @@
 
 Edu Workspace MCP는 교사와 교육자가 Claude, ChatGPT 등 MCP 호환 AI 클라이언트에서 Google Workspace for Education 도구를 사용할 수 있게 하는 오픈소스 로컬 애플리케이션이다. 사용자의 컴퓨터에서 실행되며 Google 공식 API와 직접 통신한다. 운영자가 사용자 문서나 OAuth 토큰을 수집하는 중앙 서버는 없다.
 
-## 민감 범위 사용 사유
+## 현재 최소 권한 구성
 
-### `https://www.googleapis.com/auth/documents`
+현재 앱은 다음 세 범위만 요청한다.
 
-사용자가 AI 클라이언트에 요청한 수업안, 학습지, 평가 안내문 등의 Google Docs 문서를 생성하고 본문을 삽입하기 위해 필요하다. 앱은 사용자가 명시적으로 요청한 문서 생성 작업에만 이 범위를 사용한다.
+- `https://www.googleapis.com/auth/drive.file`
+- `https://www.googleapis.com/auth/classroom.courses.readonly`
+- `https://www.googleapis.com/auth/classroom.coursework.me`
 
-### `https://www.googleapis.com/auth/spreadsheets`
+Google Docs·Sheets·Slides·Forms의 생성 및 수정 API는 `drive.file`을 지원한다. 따라서 앱은 제품 전체 파일에 접근할 수 있는 `documents`, `spreadsheets`, `presentations`, `forms.body` 범위를 요청하지 않는다. Google Cloud 인증 센터에서 이 세 범위를 모두 비민감으로 분류하면 별도의 민감 범위 데이터 액세스 검증과 데모 영상은 일반적으로 필요하지 않다.
 
-과정중심평가표, 학생별 체크표, 수업 대시보드처럼 여러 시트와 셀 값·수식을 포함한 Google Sheets 파일을 생성하기 위해 필요하다. 앱은 사용자가 요청한 스프레드시트 생성과 초기 데이터 입력에만 이 범위를 사용한다.
-
-### `https://www.googleapis.com/auth/presentations`
-
-수업용 슬라이드, 활동 안내 자료 및 교육 프레젠테이션을 생성하고 제목과 본문을 삽입하기 위해 필요하다. 앱은 사용자가 요청한 프레젠테이션에만 내용을 작성한다.
-
-### `https://www.googleapis.com/auth/forms.body`
-
-객관식·단답형·서술형 문항, 정답, 배점과 필수 응답 설정이 포함된 Google Forms 퀴즈를 생성하기 위해 필요하다. 응답 데이터나 응답자의 개인정보를 읽는 범위는 요청하지 않는다.
-
-## 민감하지 않은 범위 사용 사유
+## 범위 사용 사유
 
 ### `https://www.googleapis.com/auth/drive.file`
 
@@ -57,7 +49,7 @@ Edu Workspace MCP는 교사와 교육자가 Claude, ChatGPT 등 MCP 호환 AI �
 
 ## 데모 영상 시나리오
 
-영상은 OAuth 동의 화면에서 앱 이름과 요청 범위를 읽을 수 있게 보여 주고, 각 범위가 실제 기능에 어떻게 연결되는지 한 번의 연속된 흐름으로 시연한다. 테스트 계정의 실제 학생 개인정보는 사용하지 않는다.
+Google 인증 센터가 추가 검증을 요구할 때만 영상을 준비한다. 영상은 OAuth 동의 화면에서 앱 이름과 요청 범위를 읽을 수 있게 보여 주고, 각 범위가 실제 기능에 어떻게 연결되는지 한 번의 연속된 흐름으로 시연한다. 테스트 계정의 실제 학생 개인정보는 사용하지 않는다.
 
 1. 공개 홈페이지, 개인정보처리방침, 이용약관을 차례로 보여 준다.
 2. 터미널에서 설치 명령을 실행하고 MCP 호환 AI 클라이언트에 서버가 등록된 모습을 보여 준다.
@@ -83,7 +75,7 @@ Edu Workspace MCP는 교사와 교육자가 Claude, ChatGPT 등 MCP 호환 AI �
 - [ ] `jeld.kr`의 Search Console 소유권이 프로젝트 소유자 계정으로 확인되어 있다.
 - [ ] Google Cloud 데이터 액세스 화면의 범위와 `src/config.ts`의 범위가 일치한다.
 - [ ] 테스트 계정에 실제 학생 개인정보가 없다.
-- [ ] 데모 영상에 OAuth 동의 화면과 각 민감 범위의 실제 사용 장면이 포함되어 있다.
-- [ ] 데모 영상을 검수 담당자가 접근 가능한 공개 또는 미등록 링크로 업로드했다.
-- [ ] 인증 센터에 범위별 사용 사유와 데모 영상 링크를 입력했다.
+- [ ] 인증 센터가 추가 검증을 요구하는 경우에만 데모 영상을 준비했다.
+- [ ] 필요한 경우 데모 영상에 OAuth 동의 화면과 각 요청 범위의 실제 사용 장면을 포함했다.
+- [ ] 필요한 경우 검수 담당자가 접근 가능한 공개 또는 미등록 링크로 업로드하고 인증 센터에 등록했다.
 - [ ] 최종 제출 내용을 검토하고 사용자의 확인을 받은 뒤 제출했다.

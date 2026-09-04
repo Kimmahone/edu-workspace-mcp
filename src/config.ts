@@ -9,10 +9,6 @@ export const DEFAULT_TOKEN_PATH = path.join(APP_DIRECTORY, "token.json");
 
 export const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/drive.file",
-  "https://www.googleapis.com/auth/documents",
-  "https://www.googleapis.com/auth/spreadsheets",
-  "https://www.googleapis.com/auth/presentations",
-  "https://www.googleapis.com/auth/forms.body",
   "https://www.googleapis.com/auth/classroom.courses.readonly",
   "https://www.googleapis.com/auth/classroom.coursework.me"
 ] as const;

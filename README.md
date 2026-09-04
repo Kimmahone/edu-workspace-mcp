@@ -4,7 +4,7 @@
 
 [공식 홈페이지](https://edu.jeld.kr/) · [개인정보처리방침](https://edu.jeld.kr/privacy.html) · [이용약관](https://edu.jeld.kr/terms.html)
 
-> 현재 버전은 로컬 stdio MCP 베타입니다. 공용 Google 데스크톱 OAuth 클라이언트가 포함되어 있어 최종 사용자가 Google Cloud 프로젝트를 만들 필요가 없습니다. Google 공개 검증이 끝나기 전까지는 등록된 테스트 사용자만 로그인할 수 있습니다.
+> 현재 버전은 로컬 stdio MCP 베타입니다. 공용 Google 데스크톱 OAuth 클라이언트가 포함되어 있어 최종 사용자가 Google Cloud 프로젝트를 만들 필요가 없습니다. 앱은 제품 전체 범위 대신 앱이 사용하는 파일에 한정된 `drive.file` 권한을 요청합니다.
 
 ## 할 수 있는 일
 
@@ -127,7 +127,7 @@ ChatGPT 웹은 사용자 컴퓨터의 stdio 프로세스를 실행하지 않습�
 
 ## 소스에서 실행
 
-공개 저장소에는 설치형 앱용 공용 OAuth client ID가 포함되어 있습니다. 최종 사용자는 별도 Google Cloud 프로젝트나 `credentials.json` 없이 `login`만 실행합니다. 공개 검증 전의 베타 테스트에서는 배포자가 Google Cloud Console에 테스트 사용자를 등록해야 합니다.
+공개 저장소에는 설치형 앱용 공용 OAuth client ID가 포함되어 있습니다. 최종 사용자는 별도 Google Cloud 프로젝트나 `credentials.json` 없이 `login`만 실행합니다.
 
 ```bash
 npm install
@@ -151,7 +151,7 @@ node dist/cli.js login
 - Drive 공유도 준비와 확정 단계를 분리합니다.
 - 실제 학생 데이터가 아닌 별도 테스트 수업에서 먼저 검증하세요.
 
-공개 배포 전에는 Google OAuth 앱 검증과 개인정보처리방침이 필요하며, Google Workspace for Education 관리자가 제3자 앱을 허용해야 할 수 있습니다.
+Google OAuth 브랜딩과 개인정보처리방침을 공개해야 하며, Google Workspace for Education 관리자가 제3자 앱을 허용해야 할 수 있습니다.
 
 요청 범위의 상세 설명은 [OAuth 범위 문서](docs/OAUTH_SCOPES.md), 공개 데이터 처리 방침은 [개인정보처리방침](https://edu.jeld.kr/privacy.html)을 참고하세요. 공개 배포를 위한 범위별 사용 사유와 데모 영상 시나리오는 [OAuth 검수 제출 가이드](docs/OAUTH_VERIFICATION_GUIDE.md)에 정리되어 있습니다.
 
@@ -164,7 +164,7 @@ npm run test:mcp    # 실제 stdio 프로세스 연결 테스트
 npm audit --omit=dev
 ```
 
-Google API 실계정 테스트에는 공개 검증 전까지 등록된 테스트 계정이 필요합니다. CI에서는 외부 계정을 사용하지 않고 Google API 어댑터를 주입한 계약 테스트를 실행합니다.
+Google API 실계정 테스트에는 별도 테스트 계정을 사용하세요. CI에서는 외부 계정을 사용하지 않고 Google API 어댑터를 주입한 계약 테스트를 실행합니다.
 
 ## 개발 현황
 
