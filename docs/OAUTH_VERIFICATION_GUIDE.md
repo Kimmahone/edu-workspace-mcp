@@ -85,11 +85,11 @@ Edu Workspace MCP는 교사와 교육자가 Claude, ChatGPT 등 MCP 호환 AI �
 
 ## 제출 전 체크리스트
 
-- [ ] `https://edu.jeld.kr/`의 인증서가 유효하고 HTTP가 HTTPS로 리디렉션된다.
-- [ ] Google Cloud의 앱 게시 상태가 `프로덕션`이다.
-- [ ] 홈페이지, 개인정보처리방침, 이용약관과 지원 이메일이 OAuth 브랜딩에 저장되어 있다.
-- [ ] `jeld.kr`의 Search Console 소유권이 프로젝트 소유자 계정으로 확인되어 있다.
-- [ ] Google Cloud 데이터 액세스 화면의 범위와 `src/config.ts`의 범위가 일치한다.
+- [x] `https://edu.jeld.kr/`의 인증서가 유효하고 HTTP가 HTTPS로 리디렉션된다.
+- [x] Google Cloud의 앱 게시 상태가 `프로덕션`이다.
+- [x] 홈페이지, 개인정보처리방침, 이용약관과 지원 이메일이 OAuth 브랜딩에 저장되어 있다.
+- [x] `jeld.kr`의 Search Console 소유권이 프로젝트 소유자 계정으로 확인되어 있다.
+- [x] Google Cloud 데이터 액세스 화면의 범위와 `src/config.ts`의 범위가 일치한다.
 - [ ] 테스트 계정에 실제 학생 개인정보가 없다.
 - [ ] 데모 영상에 OAuth 동의 화면과 각 민감 범위의 실제 사용 장면을 포함했다.
 - [ ] 검수 담당자가 접근 가능한 공개 또는 미등록 링크로 업로드하고 인증 센터에 등록했다.
