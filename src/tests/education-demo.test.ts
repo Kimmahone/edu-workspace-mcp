@@ -16,13 +16,18 @@ function demoServices(calls: Call[]): WorkspaceServices {
       credentialsPath: "/demo/credentials.json",
       tokenPath: "/demo/token.json",
       grantedScopes: [],
+      readAccessEnabled: false,
       message: "demo account connected"
     }),
     listCourses: async (query) => {
       calls.push({ tool: "classroom_list_courses", input: { query } });
       return [{ id: "science-5-3", name: "5학년 3반 과학", state: "ACTIVE" }];
     },
+    listCourseWork: async (courseId) => ({ courseId, returnedCourseWork: 0, hasMore: false, courseWork: [] }),
+    listStudents: async (courseId) => ({ courseId, returnedStudents: 0, hasMore: false, students: [] }),
+    listStudentSubmissions: async (courseId, courseWorkId) => ({ courseId, courseWorkId, returnedSubmissions: 0, hasMore: false, submissions: [] }),
     searchFiles: async () => [],
+    getFileMetadata: async () => ({ id: "lesson-folder", name: "수업 자료" }),
     createFolder: async (name, parentId) => {
       calls.push({ tool: "drive_create_folder", input: { name, parentId } });
       return { id: "lesson-folder", name, url: "https://drive.example/lesson-folder" };
@@ -32,14 +37,26 @@ function demoServices(calls: Call[]): WorkspaceServices {
       const slug = title.includes("교사용") ? "teacher-guide" : "student-worksheet";
       return { documentId: slug, title, url: `https://docs.example/${slug}` };
     },
+    readDocument: async () => ({ documentId: "teacher-guide", title: "교사용 수업안", url: "https://docs.example/teacher-guide", totalCharacters: 0, returnedCharacters: 0, truncated: false, tabs: [] }),
     createWorkbook: async (title, sheets, parentFolderId) => {
       calls.push({ tool: "sheets_create_workbook", input: { title, sheets, parentFolderId } });
       return { spreadsheetId: "assessment-sheet", title, url: "https://sheets.example/assessment-sheet" };
     },
+    listSheets: async () => ({
+      spreadsheetId: "assessment-sheet", title: "평가 기록",
+      url: "https://sheets.example/assessment-sheet",
+      sheets: [{ title: "AI 피드백", sheetId: 0, index: 0, rowCount: 100, columnCount: 12, hidden: false }]
+    }),
+    readValues: async (_spreadsheet, options) => ({
+      spreadsheetId: "assessment-sheet", range: options?.range ?? "'AI 피드백'",
+      totalRows: 2, returnedRows: 2, truncated: false,
+      rows: [["이름", "국어"], ["김리안", "95"]]
+    }),
     createPresentation: async (title, slides, parentFolderId) => {
       calls.push({ tool: "slides_create_presentation", input: { title, slides, parentFolderId } });
       return { presentationId: "lesson-slides", title, url: "https://slides.example/lesson-slides" };
     },
+    readPresentation: async () => ({ presentationId: "lesson-slides", title: "수업 자료", url: "https://slides.example/lesson-slides", totalSlides: 0, returnedSlides: 0, truncated: false, slides: [] }),
     createQuiz: async (title, description, questions, parentFolderId) => {
       calls.push({ tool: "forms_create_quiz", input: { title, description, questions, parentFolderId } });
       return {
@@ -49,6 +66,8 @@ function demoServices(calls: Call[]): WorkspaceServices {
         editUrl: "https://forms.example/formative-quiz/edit"
       };
     },
+    readForm: async () => ({ formId: "formative-quiz", title: "형성평가", documentTitle: "형성평가", description: "", isQuiz: true, responderUrl: "", editUrl: "", linkedSheetId: undefined, totalItems: 0, returnedItems: 0, truncated: false, items: [] }),
+    listFormResponses: async () => ({ formId: "formative-quiz", returnedResponses: 0, hasMore: false, responses: [] }),
     createAssignmentDraft: async (input) => {
       calls.push({ tool: "classroom_create_assignment_draft", input });
       return {
@@ -80,7 +99,7 @@ test("education demo creates a lesson package and safely publishes its Classroom
   resetApprovalsForTests();
   const calls: Call[] = [];
   const server = createServer(demoServices(calls));
-  const client = new Client({ name: "education-demo", version: "0.1.0" });
+  const client = new Client({ name: "education-demo", version: "1.0.0" });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
 

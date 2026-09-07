@@ -1,4 +1,6 @@
-# edu-workspace-mcp 구현 계획
+# edu-workspace-mcp 초기 구현 계획
+
+> 이 문서는 `0.1.0` 개발 당시의 범위와 의사결정을 보존한 기록입니다. 현재 정식판의 출시·운영 기준은 [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md)를 참고하세요.
 
 ## 1. 목표와 첫 번째 성공 기준
 

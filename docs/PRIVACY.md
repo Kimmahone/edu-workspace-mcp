@@ -12,12 +12,12 @@
 ## 저장 위치와 삭제
 
 - 기본 설정 폴더: `~/.edu-workspace-mcp`
-- OAuth 토큰 삭제: `npx edu-workspace-mcp disconnect`
+- OAuth 권한 철회 및 토큰 삭제: `npx -y edu-workspace-mcp@1.0.0 disconnect`
 - Google 계정의 제3자 앱 액세스 화면에서도 권한을 철회할 수 있습니다.
 
 ## 처리하는 데이터
 
-사용자가 호출한 도구에 따라 파일 이름·내용, Drive 파일 ID, Classroom 수업·과제 정보가 Google API 요청에 포함될 수 있습니다. 현재 버전은 학생 제출물, 성적, 보호자 정보나 Gmail을 요청하지 않습니다.
+사용자가 호출한 도구에 따라 파일 이름·내용, Drive 파일 ID, Classroom 수업·과제 정보가 Google API 요청에 포함될 수 있습니다. 읽기 확장 모드를 선택하면 기존 Docs·Sheets·Slides·Forms 내용, Forms 응답, 담당 수업의 학생 이름·이메일·제출 상태·점수도 처리할 수 있습니다. 앱은 보호자 정보, Gmail 또는 전체 Drive 범위를 요청하지 않습니다.
 
 ## 원격 버전
 

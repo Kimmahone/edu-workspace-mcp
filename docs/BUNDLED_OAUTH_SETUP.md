@@ -28,7 +28,7 @@ export const BUNDLED_GOOGLE_OAUTH_CLIENT = {
 
 ## 3. OAuth 검증
 
-현재 앱은 비민감 `drive.file`, `classroom.courses.readonly`, `classroom.coursework.me` 범위만 요청한다. 브랜딩 검증을 마치고 앱을 프로덕션으로 게시한다. Google 인증 센터에서 추가 데이터 액세스 검증을 요구하는 경우에만 다음 자료를 제출한다.
+현재 앱은 `drive.file`, `classroom.courses.readonly`, `classroom.coursework.students`를 기본으로 요청한다. `--read` 사용자는 [OAUTH_SCOPES.md](OAUTH_SCOPES.md)의 서비스별 읽기 전용 범위도 요청한다. 브랜딩 검증을 마치고 앱을 프로덕션으로 게시하며, 민감 범위 데이터 액세스 검증에 다음 자료를 제출한다.
 
 - 검증된 홈페이지 도메인
 - 개인정보처리방침과 서비스 약관
