@@ -145,6 +145,22 @@ export async function listStudentSubmissions(
   const limit = Math.max(1, Math.min(options.maxResults ?? 200, 1_000));
   const auth = await getAuthorizedClient();
   const classroom = google.classroom({ version: "v1", auth });
+  const courseWorkResponse = await withGoogleRetry(() => classroom.courses.courseWork.get({
+    courseId,
+    id: courseWorkId
+  }));
+  const unavailableReason = studentSubmissionsUnavailableReason(courseWorkResponse.data.state);
+  if (unavailableReason) {
+    return {
+      courseId,
+      courseWorkId,
+      returnedSubmissions: 0,
+      hasMore: false,
+      unavailableReason,
+      submissions: []
+    };
+  }
+
   const submissions: classroom_v1.Schema$StudentSubmission[] = [];
   let pageToken: string | undefined;
   do {
@@ -179,6 +195,12 @@ export async function listStudentSubmissions(
       attachments: (submission.assignmentSubmission?.attachments ?? []).map(summarizeAttachment)
     }))
   };
+}
+
+export function studentSubmissionsUnavailableReason(state?: string | null) {
+  return state === "DRAFT"
+    ? "과제가 아직 DRAFT 상태라 학생 제출물이 생성되지 않았습니다. 과제를 게시한 뒤 다시 조회하세요."
+    : undefined;
 }
 
 export type AssignmentDraftInput = {

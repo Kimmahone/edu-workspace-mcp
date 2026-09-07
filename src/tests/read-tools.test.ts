@@ -4,6 +4,7 @@ import { extractDocumentText } from "../google/docs.js";
 import { summarizeFormItems } from "../google/forms.js";
 import { extractGoogleFileId } from "../google/references.js";
 import { extractPageElementText } from "../google/slides.js";
+import { studentSubmissionsUnavailableReason } from "../google/classroom.js";
 
 test("Google file references accept IDs and service URLs", () => {
   assert.equal(
@@ -57,4 +58,9 @@ test("Forms reader returns concise question metadata", () => {
   assert.equal(items[0].type, "RADIO");
   assert.deepEqual(items[0].questions[0].choices, ["가", "나"]);
   assert.deepEqual(items[0].questions[0].correctAnswers, ["가"]);
+});
+
+test("Classroom draft submissions return an actionable empty-state reason", () => {
+  assert.match(studentSubmissionsUnavailableReason("DRAFT") ?? "", /게시한 뒤/);
+  assert.equal(studentSubmissionsUnavailableReason("PUBLISHED"), undefined);
 });
