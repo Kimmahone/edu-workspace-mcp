@@ -1,11 +1,26 @@
 {
   "name": "edu-workspace-mcp",
-  "version": "0.1.0",
-  "description": "Google Workspace for Education MCP server",
+  "version": "1.0.0",
+  "description": "교육자를 위한 Google Docs, Sheets, Slides, Forms, Drive 및 Classroom MCP 서버",
   "license": "MIT",
   "type": "module",
   "bin": {
     "edu-workspace-mcp": "dist/cli.js"
+  },
+  "keywords": [
+    "mcp",
+    "google-workspace",
+    "google-classroom",
+    "education",
+    "teacher"
+  ],
+  "homepage": "https://edu.jeld.kr/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kimmahone/edu-workspace-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Kimmahone/edu-workspace-mcp/issues"
   },
   "files": [
     "dist",
@@ -22,18 +37,23 @@
     "check": "tsc --noEmit -p tsconfig.json",
     "test": "npm run build && node scripts/run-tests.mjs",
     "test:mcp": "npm run build && tsx src/tests/mcp-smoke.ts",
-    "prepack": "npm run check && npm test"
+    "test:e2e": "npm run build && node scripts/e2e-google.mjs",
+    "version:check": "node scripts/check-version.mjs",
+    "release:check": "npm run version:check && npm run check && npm test && npm run test:mcp && npm audit --omit=dev && npm pack --dry-run",
+    "prepack": "npm run version:check && npm run check && npm test"
   },
-  "publishConfig": { "access": "public" },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.26.0",
-    "google-auth-library": "^10.9.1",
-    "googleapis": "^169.0.0",
-    "zod": "^3.24.2"
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "google-auth-library": "10.9.1",
+    "googleapis": "178.0.0",
+    "zod": "3.25.76"
   },
   "devDependencies": {
-    "@types/node": "^22.15.3",
-    "tsx": "^4.19.3",
-    "typescript": "^5.8.3"
+    "@types/node": "22.20.1",
+    "tsx": "4.20.5",
+    "typescript": "5.9.3"
   }
 }

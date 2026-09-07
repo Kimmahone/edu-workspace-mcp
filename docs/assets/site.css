@@ -62,6 +62,8 @@ h2 { margin: 0; font-size: clamp(35px, 5vw, 58px); line-height: 1.12; letter-spa
 h3 { margin: 42px 0 10px; font-size: 23px; letter-spacing: -.025em; }
 .feature-grid p { margin: 0; color: var(--muted); }
 .process { display: grid; grid-template-columns: .9fr 1.1fr; gap: 70px; }
+.install-copy pre { margin: 0; padding: 24px; overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; color: #e7f2ed; background: var(--green-dark); font: 14px/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.install-copy p { margin: 18px 0 0; }
 .steps { margin: 0; padding: 0; list-style: none; counter-reset: step; }
 .steps li { display: grid; grid-template-columns: 130px 1fr; gap: 24px; padding: 20px 0; border-top: 1px solid var(--line); }
 .steps li:last-child { border-bottom: 1px solid var(--line); }
