@@ -31,7 +31,7 @@ ChatGPT 웹은 로컬 stdio 서버를 실행하지 못하므로 현재 정식 �
 - [x] Google Cloud에 읽기 확장 범위와 범위 근거 저장
 - [ ] 실제 학생 개인정보가 없는 데모 영상 촬영 및 YouTube 미등록 업로드
 - [ ] Google 데이터 액세스 검수 제출 및 승인
-- [ ] npm Trusted Publisher에 `publish.yml` 연결
+- [x] npm Trusted Publisher에 `publish.yml` 연결
 - [ ] GitHub Release `v1.0.0` 게시 및 npm `latest` 1.0.0 확인
 
 `v1.0.0` GitHub Release를 게시하면 `.github/workflows/publish.yml`이 전체 출시 검사를 다시 실행하고 npm Trusted Publishing으로 동일 버전을 게시한다. 릴리스 태그와 `package.json` 버전이 다르면 게시를 중단한다.
