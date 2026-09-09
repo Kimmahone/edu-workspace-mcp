@@ -14,7 +14,7 @@ ChatGPT 웹은 로컬 stdio 서버를 실행하지 못하므로 현재 정식 �
 정식 버전은 다음 조건을 모두 통과한 경우에만 npm `latest`로 게시한다.
 
 1. TypeScript 정적 검사와 전체 단위·통합 테스트 통과
-2. 실제 stdio MCP 연결 및 전체 도구 검색 성공 (현재 22개)
+2. 실제 stdio MCP 연결 및 전체 도구 검색 성공 (현재 25개)
 3. macOS, Windows, Linux와 Node.js 20·22·24 CI 통과
 4. 운영 의존성 보안 감사에서 알려진 취약점 0건
 5. `npm pack --dry-run`과 설치 후 실행 스모크 테스트 통과
@@ -22,10 +22,10 @@ ChatGPT 웹은 로컬 stdio 서버를 실행하지 못하므로 현재 정식 �
 7. 실제 Google 테스트 계정에서 로그인, 콘텐츠 조회, 생성, 초안 흐름 검증
 8. 읽기 확장 범위에 대한 Google OAuth 민감 범위 검수 상태 확인
 
-## 현재 출시 진행 상태 (2026-09-07)
+## 현재 출시 진행 상태 (2026-09-09)
 
 - [x] `main` 소스와 공개 문서를 1.0.0으로 갱신
-- [x] 전체 22개 MCP 도구 및 실제 Google 계정 E2E 검증
+- [x] 전체 25개 MCP 도구 및 실제 Google 계정 E2E 검증
 - [x] macOS, Windows, Linux와 Node.js 20·22·24 CI 통과
 - [x] OAuth 브랜딩, 외부 사용자용 프로덕션 상태, 공개 URL 확인
 - [x] Google Cloud에 읽기 확장 범위와 범위 근거 저장
