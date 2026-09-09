@@ -15,11 +15,15 @@
 - `classroom_list_coursework`, `classroom_list_students`, `classroom_list_student_submissions` — 과제·명단·제출 현황 읽기
 - `install ... --read`, `login --read` — 기존 Workspace 자료 읽기 범위를 명시적으로 선택
 - Claude Code 사용자 범위 전역 설치 지원 (`install claude`)
+- `sheets_inspect_workbook` — 셀 값과 수식 본문을 반환하지 않는 탭·함수·의존성·수식 오류·시트 기능 구조 진단
+- `education_create_assessment_tracker` — 평가계획·기록·제출·관찰·학생별현황·대시보드가 연결된 9개 탭 교육 템플릿
+- `education_create_classroom_submission_tracker` — Classroom 명단·제출 현황을 개인정보 최소화 대시보드 시트로 생성
 
 ### 변경
 
 - 교사용 과제 생성에 맞게 Classroom 범위를 `classroom.coursework.me`에서 공식 필수 범위인 `classroom.coursework.students`로 수정
 - 기존 `EDU_WORKSPACE_SHEETS_READ`는 호환하고 새 통합 설정 `EDU_WORKSPACE_READ_ACCESS`를 사용
+- Classroom 제출 현황 시트는 학생 매칭에만 사용자 ID를 사용하고 결과 파일에는 저장하지 않도록 최소화
 
 ### 배경
 

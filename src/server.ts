@@ -6,7 +6,9 @@ import { createAssignmentDraft, listCourses, listCourseWork, listStudents, listS
 import { createDocument, readDocument } from "./google/docs.js";
 import { createFolder, getFileMetadata, searchFiles, shareFile } from "./google/drive.js";
 import { createQuiz, listFormResponses, readForm } from "./google/forms.js";
+import { createAssessmentTracker, createSubmissionTracker } from "./google/education-sheets.js";
 import { createWorkbook, listSheets, readValues } from "./google/sheets.js";
+import { inspectWorkbook } from "./google/sheets-inspection.js";
 import { createPresentation, readPresentation } from "./google/slides.js";
 import { APP_VERSION } from "./version.js";
 
@@ -36,6 +38,9 @@ export type WorkspaceServices = {
   createWorkbook: typeof createWorkbook;
   listSheets: typeof listSheets;
   readValues: typeof readValues;
+  inspectWorkbook: typeof inspectWorkbook;
+  createAssessmentTracker: typeof createAssessmentTracker;
+  createSubmissionTracker: typeof createSubmissionTracker;
   createPresentation: typeof createPresentation;
   readPresentation: typeof readPresentation;
   createQuiz: typeof createQuiz;
@@ -49,6 +54,7 @@ export type WorkspaceServices = {
 const defaultServices: WorkspaceServices = {
   getAuthStatus, listCourses, listCourseWork, listStudents, listStudentSubmissions,
   searchFiles, getFileMetadata, createFolder, createDocument, readDocument, createWorkbook, listSheets, readValues,
+  inspectWorkbook, createAssessmentTracker, createSubmissionTracker,
   createPresentation, readPresentation, createQuiz, readForm, listFormResponses,
   createAssignmentDraft, publishAssignment, shareFile
 };
@@ -57,7 +63,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
   const services = { ...defaultServices, ...overrides };
   const server = new McpServer(
     { name: "edu-workspace-mcp", version: APP_VERSION },
-    { instructions: "Google Workspace for Education MCP입니다. 검색·조회 도구로 대상을 먼저 확인하세요. 생성 도구는 요청한 콘텐츠만 만듭니다. 생성 도구는 비멱등이므로 실패 또는 시간 초과 후 자동으로 중복 호출하지 마세요. Classroom 게시와 Drive 공유는 대상·마감·첨부·권한을 사용자에게 보여 주고 명시적으로 확인받은 경우에만 확정 도구를 호출하세요." }
+    { instructions: "Google Workspace for Education MCP입니다. 검색·조회 도구로 대상을 먼저 확인하세요. 학생 개인정보가 포함된 자료는 필요한 최소 범위만 읽고 응답에 불필요하게 반복하지 마세요. 생성 도구는 요청한 콘텐츠만 만들며 비멱등이므로 실패 또는 시간 초과 후 자동으로 중복 호출하지 마세요. Classroom 게시와 Drive 공유는 대상·마감·첨부·권한을 사용자에게 보여 주고 명시적으로 확인받은 경우에만 확정 도구를 호출하세요." }
   );
 
   async function requireAuth() {
@@ -226,6 +232,96 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     const authError = await requireAuth(); if (authError) return authError;
     try { return jsonResult(await services.readValues(spreadsheet, { range, maxRows, raw }) as unknown as Record<string, unknown>); }
     catch (error) { return errorResult("SPREADSHEET_READ_FAILED", error); }
+  });
+
+  server.registerTool("sheets_inspect_workbook", {
+    title: "Google Sheets 구조·수식 진단",
+    description: "셀 값과 수식 본문을 노출하지 않고 탭 구조, 수식 함수, 시트 간 의존성, 수식 오류, 드롭다운·체크박스, 조건부 서식, 차트와 보호 범위를 진단합니다.",
+    inputSchema: {
+      spreadsheet: spreadsheetRefSchema,
+      sheetNames: z.array(sheetTitleSchema).max(50).optional().describe("진단할 탭 이름. 생략하면 셀 제한 안에서 모든 탭을 확인합니다."),
+      includeHidden: z.boolean().optional().describe("숨김 탭 포함 여부. 기본 true"),
+      maxCells: z.number().int().min(1_000).max(2_000_000).optional().describe("분석할 최대 셀 수. 기본 1,000,000"),
+      maxRowsPerSheet: z.number().int().min(1).max(10_000).optional().describe("탭별 최대 행 수. 기본 2,000"),
+      maxErrorLocations: z.number().int().min(1).max(100).optional().describe("탭별 반환할 오류 셀 위치 수. 기본 20")
+    },
+    annotations: readOnly
+  }, async ({ spreadsheet, sheetNames, includeHidden, maxCells, maxRowsPerSheet, maxErrorLocations }) => {
+    const authError = await requireAuth(); if (authError) return authError;
+    try {
+      return jsonResult(await services.inspectWorkbook(spreadsheet, {
+        sheetNames, includeHidden, maxCells, maxRowsPerSheet, maxErrorLocations
+      }) as unknown as Record<string, unknown>);
+    } catch (error) { return errorResult("SPREADSHEET_INSPECTION_FAILED", error); }
+  });
+
+  const educationStudentSchema = z.object({
+    number: z.number().int().min(1).max(10_000),
+    name: z.string().trim().min(1).max(100)
+  });
+  const educationStudentsSchema = z.array(educationStudentSchema).max(200).default([]).superRefine((students, context) => {
+    const numbers = students.map((student) => student.number);
+    if (new Set(numbers).size !== numbers.length) context.addIssue({ code: z.ZodIssueCode.custom, message: "학생 번호는 중복될 수 없습니다." });
+  });
+
+  server.registerTool("education_create_assessment_tracker", {
+    title: "교육용 과정중심평가 시스템 생성",
+    description: "학생명단·평가계획·평가기록·학생별현황·제출현황·관찰기록·대시보드가 연결된 교육용 Google Sheets를 만듭니다. 드롭다운, 체크박스, 조건부 서식, 차트와 보호 경고를 포함합니다.",
+    inputSchema: {
+      title: z.string().trim().min(1).max(200),
+      className: z.string().trim().min(1).max(100),
+      schoolYear: z.number().int().min(2000).max(2100),
+      semester: z.enum(["1학기", "2학기", "연간"]),
+      students: educationStudentsSchema,
+      subjects: z.array(z.string().trim().min(1).max(50)).min(1).max(20).default(["국어", "사회", "수학", "과학", "영어"]),
+      assessmentScale: z.array(z.string().trim().min(1).max(50)).min(2).max(10).default(["매우잘함", "잘함", "보통", "노력요함"]),
+      parentFolderId: z.string().max(200).optional()
+    },
+    annotations: createAction
+  }, async (input) => {
+    const authError = await requireAuth(); if (authError) return authError;
+    try { return jsonResult({ spreadsheet: await services.createAssessmentTracker(input) }); }
+    catch (error) { return errorResult("EDUCATION_ASSESSMENT_TRACKER_CREATE_FAILED", error); }
+  });
+
+  server.registerTool("education_create_classroom_submission_tracker", {
+    title: "Classroom 제출 현황 시트 생성",
+    description: "Classroom 학생 명단과 특정 과제의 제출·지각·점수를 읽어 제출현황과 대시보드가 있는 개인정보 보호형 스냅샷 시트를 만듭니다. 읽기 확장 로그인(--read)이 필요합니다.",
+    inputSchema: {
+      courseId: z.string().trim().min(1).max(200),
+      courseWorkId: z.string().trim().min(1).max(200),
+      assignmentTitle: z.string().trim().min(1).max(300),
+      title: z.string().trim().min(1).max(200).optional(),
+      parentFolderId: z.string().max(200).optional()
+    },
+    annotations: createAction
+  }, async ({ courseId, courseWorkId, assignmentTitle, title, parentFolderId }) => {
+    const authError = await requireAuth(); if (authError) return authError;
+    try {
+      const [studentsResult, submissionsResult] = await Promise.all([
+        services.listStudents(courseId, 1_000),
+        services.listStudentSubmissions(courseId, courseWorkId, { maxResults: 1_000 })
+      ]);
+      if (submissionsResult.unavailableReason) throw new Error(submissionsResult.unavailableReason);
+      const students = studentsResult.students.map((student, index) => ({
+        number: index + 1,
+        name: student.fullName,
+        userId: student.userId
+      }));
+      const spreadsheet = await services.createSubmissionTracker({
+        title: title ?? `${assignmentTitle} 제출 현황`,
+        courseId,
+        courseWorkId,
+        assignmentTitle,
+        students,
+        submissions: submissionsResult.submissions,
+        parentFolderId
+      });
+      return jsonResult({ spreadsheet });
+    } catch (error) {
+      const message = error instanceof Error ? `${error.message} 학생 명단 권한 오류라면 disconnect 후 login --read로 다시 연결하세요.` : error;
+      return errorResult("EDUCATION_CLASSROOM_TRACKER_CREATE_FAILED", message);
+    }
   });
 
   server.registerTool("slides_create_presentation", {

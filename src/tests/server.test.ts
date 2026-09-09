@@ -31,6 +31,9 @@ function services(): WorkspaceServices {
     createWorkbook: async (title) => ({ spreadsheetId: "sheet-1", title, url: "https://docs.google.com/spreadsheets/d/sheet-1/edit" }),
     listSheets: async (spreadsheet) => ({ spreadsheetId: "sheet-1", title: "학급 기록", url: "https://docs.google.com/spreadsheets/d/sheet-1/edit", sheets: [{ title: "AI 피드백", sheetId: 0, index: 0, rowCount: 100, columnCount: 12, hidden: false }] }),
     readValues: async (spreadsheet, options) => ({ spreadsheetId: "sheet-1", range: options?.range ?? "'AI 피드백'", totalRows: 2, returnedRows: 2, truncated: false, rows: [["이름", "국어"], ["김리안", "95"]] }),
+    inspectWorkbook: (async () => ({ spreadsheetId: "sheet-1", title: "학급 기록", sheetCount: 1, formulaCount: 3, formulaErrorCount: 0, privacy: "no cell values" })) as unknown as WorkspaceServices["inspectWorkbook"],
+    createAssessmentTracker: (async (input: { title: string; students: unknown[] }) => ({ spreadsheetId: "assessment-1", title: input.title, url: "https://docs.google.com/spreadsheets/d/assessment-1/edit", template: "ASSESSMENT_TRACKER", studentCount: input.students.length, subjectCount: 5, sheets: [], privacy: "no names returned" })) as WorkspaceServices["createAssessmentTracker"],
+    createSubmissionTracker: (async (input: { title: string; students: unknown[]; submissions: unknown[] }) => ({ spreadsheetId: "submission-1", title: input.title, url: "https://docs.google.com/spreadsheets/d/submission-1/edit", template: "CLASSROOM_SUBMISSION_TRACKER", studentCount: input.students.length, submissionCount: input.submissions.length, submittedCount: 1, missingCount: 0, lateCount: 0, sheets: [], privacy: "no names returned" })) as WorkspaceServices["createSubmissionTracker"],
     createPresentation: async (title) => ({ presentationId: "slides-1", title, url: "https://docs.google.com/presentation/d/slides-1/edit" }),
     readPresentation: async () => ({ presentationId: "slides-1", title: "수업 자료", url: "https://docs.google.com/presentation/d/slides-1/edit", totalSlides: 1, returnedSlides: 1, truncated: false, slides: [{ index: 1, objectId: "slide-1", text: "내용", notes: "", elementCount: 1, truncated: false }] }),
     createQuiz: async (title) => ({ formId: "form-1", title, responderUrl: "https://forms.example/respond", editUrl: "https://forms.example/edit" }),
@@ -57,7 +60,8 @@ test("server exposes the complete MVP tool set", async () => {
     "classroom_create_assignment_draft", "classroom_list_courses", "classroom_publish_assignment",
     "classroom_list_coursework", "classroom_list_students", "classroom_list_student_submissions",
     "docs_create_document", "docs_read_document", "drive_create_folder", "drive_get_file_metadata", "drive_prepare_share", "drive_search_files", "drive_share_file",
-    "forms_create_quiz", "forms_read_form", "forms_list_responses", "sheets_create_workbook", "sheets_list_sheets", "sheets_read_values",
+    "education_create_assessment_tracker", "education_create_classroom_submission_tracker",
+    "forms_create_quiz", "forms_read_form", "forms_list_responses", "sheets_create_workbook", "sheets_inspect_workbook", "sheets_list_sheets", "sheets_read_values",
     "slides_create_presentation", "slides_read_presentation", "workspace_get_auth_status"
   ].sort());
   assert.equal(result.tools.find((tool) => tool.name === "drive_search_files")?.annotations?.readOnlyHint, true);
@@ -132,12 +136,51 @@ test("sheets_read_values passes the requested range through", async () => {
   await client.close(); await server.close();
 });
 
+test("sheets_inspect_workbook returns a privacy-safe structural report", async () => {
+  const { client, server } = await connectedClient();
+  const result = await client.callTool({ name: "sheets_inspect_workbook", arguments: { spreadsheet: "sheet-1234567890" } });
+  assert.notEqual(result.isError, true);
+  const value = result.structuredContent as { title: string; privacy: string };
+  assert.equal(value.title, "학급 기록");
+  assert.match(value.privacy, /cell values/i);
+  await client.close(); await server.close();
+});
+
+test("education assessment tracker returns counts without echoing student names", async () => {
+  const { client, server } = await connectedClient();
+  const result = await client.callTool({
+    name: "education_create_assessment_tracker",
+    arguments: {
+      title: "과정중심평가", className: "5학년 3반", schoolYear: 2026, semester: "2학기",
+      students: [{ number: 1, name: "학생01" }]
+    }
+  });
+  assert.notEqual(result.isError, true);
+  const serialized = JSON.stringify(result.structuredContent);
+  assert.equal(serialized.includes("학생01"), false);
+  assert.equal((result.structuredContent as { spreadsheet: { studentCount: number } }).spreadsheet.studentCount, 1);
+  await client.close(); await server.close();
+});
+
+test("education Classroom submission tracker combines roster and submission data without echoing names", async () => {
+  const { client, server } = await connectedClient();
+  const result = await client.callTool({
+    name: "education_create_classroom_submission_tracker",
+    arguments: { courseId: "course-1", courseWorkId: "work-1", assignmentTitle: "형성평가" }
+  });
+  assert.notEqual(result.isError, true);
+  const serialized = JSON.stringify(result.structuredContent);
+  assert.equal(serialized.includes("김학생"), false);
+  assert.equal((result.structuredContent as { spreadsheet: { submittedCount: number } }).spreadsheet.submittedCount, 1);
+  await client.close(); await server.close();
+});
+
 test("all content reading tools are marked read-only", async () => {
   const { client, server } = await connectedClient();
   const result = await client.listTools();
   for (const name of [
     "classroom_list_courses", "classroom_list_coursework", "classroom_list_students", "classroom_list_student_submissions",
-    "drive_search_files", "drive_get_file_metadata", "docs_read_document", "sheets_list_sheets", "sheets_read_values",
+    "drive_search_files", "drive_get_file_metadata", "docs_read_document", "sheets_list_sheets", "sheets_read_values", "sheets_inspect_workbook",
     "slides_read_presentation", "forms_read_form", "forms_list_responses"
   ]) {
     const tool = result.tools.find((candidate) => candidate.name === name);

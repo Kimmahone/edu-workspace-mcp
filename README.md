@@ -9,7 +9,9 @@
 ## 할 수 있는 일
 
 - 수업 자료용 Google Docs 문서 생성
-- 학생 명단·루브릭·성적표 형태의 Google Sheets 생성
+- 학생 명단·평가계획·평가기록·제출현황·관찰기록·대시보드가 연결된 Google Sheets 생성
+- 셀 값과 수식 본문을 노출하지 않는 기존 Sheets 구조·수식 오류 진단
+- Classroom 명단·제출 상태를 개인정보 최소화 시트로 변환
 - 차시별 Google Slides 프레젠테이션 생성
 - 정답·배점이 포함된 Google Forms 퀴즈 생성
 - 기존 Docs·Sheets·Slides·Forms 내용과 Forms 응답 읽기
@@ -42,7 +44,9 @@
 | 교육 업무 | 만들어지는 결과 | 사용하는 도구 |
 | --- | --- | --- |
 | 한 차시 수업 패키지 | 수업안, 학습지, 슬라이드, 퀴즈, Classroom 초안 | Drive + Docs + Slides + Forms + Classroom |
-| 과정중심평가 관리 | 평가입력·학생별현황·항목별현황 시트 | Sheets |
+| 과정중심평가 관리 | 9개 연결 탭, 드롭다운, 체크박스, 조건부 서식, 차트 | Sheets |
+| Classroom 제출 관리 | 명단·제출 상태·점수·대시보드 스냅샷 | Classroom + Sheets |
+| 복잡한 업무 시트 점검 | 탭·수식 함수·의존성·오류·차트 구조 진단 | Sheets |
 | 수행평가 설계 | 4수준 루브릭 문서와 학생 자기평가지 | Docs + Forms |
 | 형성평가 배포 | 정답·배점이 있는 퀴즈와 과제 초안 | Forms + Classroom |
 | 학기 자료 정리 | 검색 결과와 교과·단원별 Drive 폴더 | Drive |
@@ -52,7 +56,7 @@
 - [예제 모음과 추천 첫 데모](examples/README.md)
 - [실제로 실행되는 수업 패키지 통합 테스트](src/tests/education-demo.test.ts)
 
-> 읽기 확장 모드에서는 기존 자료를 조회·분석할 수 있습니다. 기존 문서의 부분 편집, Sheets 차트·드롭다운·조건부 서식 생성은 아직 지원하지 않습니다. 자세한 지원 범위는 [활용 예시 문서](docs/EDUCATOR_USE_CASES.md#현재-버전에서-가능한-범위)를 확인하세요.
+> 읽기 확장 모드에서는 기존 자료를 조회·분석할 수 있습니다. 교육용 평가·제출 템플릿에는 차트·드롭다운·조건부 서식이 포함됩니다. 기존 문서나 임의 범위의 범용 부분 편집은 아직 지원하지 않습니다. 자세한 지원 범위는 [활용 예시 문서](docs/EDUCATOR_USE_CASES.md#현재-버전에서-가능한-범위)를 확인하세요.
 
 ## MCP 도구
 
@@ -71,6 +75,9 @@
 | `sheets_create_workbook` | 여러 탭과 초기 데이터가 있는 Sheets 생성 | 생성 |
 | `sheets_list_sheets` | 스프레드시트의 탭 목록과 크기 확인 | 읽기 |
 | `sheets_read_values` | 스프레드시트 값 읽기 (범위 지정, 행 수 제한) | 읽기 |
+| `sheets_inspect_workbook` | 셀 값을 반환하지 않고 구조·수식·오류·의존성 진단 | 읽기 |
+| `education_create_assessment_tracker` | 9개 탭이 연결된 과정중심평가 시스템 생성 | 생성 |
+| `education_create_classroom_submission_tracker` | Classroom 과제 제출 현황 대시보드 시트 생성 | 생성 |
 | `slides_create_presentation` | 제목·본문 슬라이드 생성 | 생성 |
 | `slides_read_presentation` | 슬라이드별 텍스트·표·발표자 노트 읽기 | 읽기 |
 | `forms_create_quiz` | 문항·정답·배점이 있는 퀴즈 생성 | 생성 |
@@ -117,6 +124,8 @@ MCP 클라이언트 설정에 넣을 때는 `env` 에 적습니다.
 ```
 sheets_list_sheets  { "spreadsheet": "https://docs.google.com/spreadsheets/d/<ID>/edit" }
 sheets_read_values  { "spreadsheet": "<ID>", "range": "'AI 피드백'!A1:J40", "maxRows": 40 }
+sheets_inspect_workbook { "spreadsheet": "<ID>", "includeHidden": true }
+education_create_assessment_tracker { "title": "5학년 평가 관리", "className": "5학년 3반", "schoolYear": 2026, "semester": "2학기", "students": [{ "number": 1, "name": "학생01" }] }
 docs_read_document  { "document": "https://docs.google.com/document/d/<ID>/edit" }
 forms_list_responses { "form": "https://docs.google.com/forms/d/<ID>/edit", "maxResponses": 100 }
 ```
@@ -125,6 +134,7 @@ forms_list_responses { "form": "https://docs.google.com/forms/d/<ID>/edit", "max
 - `range` 를 비우면 첫 시트를 읽습니다.
 - 값은 화면에 보이는 대로 읽으므로 수식과 `IMPORTRANGE` 결과도 그대로 들어옵니다. 원본 값이 필요하면 `raw: true`.
 - 기본 200행까지만 돌려주고(`maxRows` 로 최대 2,000), 잘렸으면 `truncated: true` 로 알려 줍니다.
+- 개인정보가 있는 복잡한 시트의 설계만 점검할 때는 `sheets_inspect_workbook`을 사용하세요. 셀 값과 수식 본문은 반환하지 않고 함수명 통계·시트 의존성·오류 위치만 알려 줍니다.
 
 ## 요구 사항
 
@@ -238,6 +248,8 @@ Google API 실계정 테스트에는 별도 테스트 계정을 사용하세요.
 - [x] OAuth 로그인·토큰 저장·연결 해제
 - [x] Drive 검색·폴더 생성·승인 공유
 - [x] Docs·Sheets·Slides·Forms 생성 및 내용 읽기
+- [x] 과정중심평가·Classroom 제출 대시보드 교육 템플릿
+- [x] 개인정보 비노출 Sheets 구조·수식 오류 진단
 - [x] Classroom 수업 조회·과제 초안·승인 게시
 - [x] macOS·Windows·Linux 공통 npm 실행 구조
 - [x] 단위·MCP 통합·stdio 스모크 테스트

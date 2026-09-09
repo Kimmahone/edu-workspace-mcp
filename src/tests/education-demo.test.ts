@@ -52,6 +52,9 @@ function demoServices(calls: Call[]): WorkspaceServices {
       totalRows: 2, returnedRows: 2, truncated: false,
       rows: [["이름", "국어"], ["김리안", "95"]]
     }),
+    inspectWorkbook: (async () => ({ spreadsheetId: "assessment-sheet", title: "평가 기록", sheetCount: 1, formulaCount: 0, formulaErrorCount: 0, privacy: "no cell values" })) as unknown as WorkspaceServices["inspectWorkbook"],
+    createAssessmentTracker: (async (input: { title: string; students: unknown[] }) => ({ spreadsheetId: "assessment-sheet", title: input.title, url: "https://sheets.example/assessment-sheet", template: "ASSESSMENT_TRACKER", studentCount: input.students.length, subjectCount: 5, sheets: [], privacy: "no names returned" })) as WorkspaceServices["createAssessmentTracker"],
+    createSubmissionTracker: (async (input: { title: string; students: unknown[]; submissions: unknown[] }) => ({ spreadsheetId: "submission-sheet", title: input.title, url: "https://sheets.example/submission-sheet", template: "CLASSROOM_SUBMISSION_TRACKER", studentCount: input.students.length, submissionCount: input.submissions.length, submittedCount: 0, missingCount: input.students.length, lateCount: 0, sheets: [], privacy: "no names returned" })) as WorkspaceServices["createSubmissionTracker"],
     createPresentation: async (title, slides, parentFolderId) => {
       calls.push({ tool: "slides_create_presentation", input: { title, slides, parentFolderId } });
       return { presentationId: "lesson-slides", title, url: "https://slides.example/lesson-slides" };
