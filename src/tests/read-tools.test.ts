@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { extractDocumentText } from "../google/docs.js";
+import { buildDocumentContent, extractDocumentText } from "../google/docs.js";
 import { summarizeFormItems } from "../google/forms.js";
 import { extractGoogleFileId } from "../google/references.js";
 import { extractPageElementText } from "../google/slides.js";
 import { studentSubmissionsUnavailableReason } from "../google/classroom.js";
+import { buildWorkbookFormattingRequests } from "../google/sheets.js";
 
 test("Google file references accept IDs and service URLs", () => {
   assert.equal(
@@ -28,6 +29,31 @@ test("Docs reader preserves paragraph and table cell boundaries", () => {
     ] }] } }
   ]);
   assert.equal(text, "학습 목표\n이름\t점수\n");
+});
+
+test("Docs creation content keeps title and heading ranges aligned", () => {
+  const content = buildDocumentContent("소화와 순환", [
+    { heading: "학습 목표", text: "우리 몸의 소화 과정을 설명한다." },
+    { heading: "활동", text: "기관 카드를 순서대로 놓는다." }
+  ]);
+  assert.match(content.text, /^소화와 순환\n\n학습 목표\n/);
+  assert.equal(content.text.slice(content.titleRange.startIndex - 1, content.titleRange.endIndex - 1), "소화와 순환");
+  assert.deepEqual(
+    content.headingRanges.map((range) => content.text.slice(range.startIndex - 1, range.endIndex - 1)),
+    ["학습 목표", "활동"]
+  );
+});
+
+test("generic workbook formatting creates readable rows, columns, and headers", () => {
+  const requests = buildWorkbookFormattingRequests([{
+    title: "독서기록",
+    rows: [["학생이름", "한 줄 감상"], ["학생01", "주인공의 선택이 인상 깊었다."]]
+  }], [42]);
+  assert.ok(requests.some((request) => request.updateDimensionProperties?.range?.dimension === "ROWS"
+    && request.updateDimensionProperties.properties?.pixelSize === 32));
+  assert.ok(requests.some((request) => request.updateDimensionProperties?.range?.dimension === "COLUMNS"
+    && (request.updateDimensionProperties.properties?.pixelSize ?? 0) >= 96));
+  assert.ok(requests.some((request) => request.repeatCell?.cell?.userEnteredFormat?.textFormat?.bold));
 });
 
 test("Slides reader extracts text from shapes, groups, and tables", () => {

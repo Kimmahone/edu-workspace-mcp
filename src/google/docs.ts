@@ -9,6 +9,30 @@ export type DocumentBlock = {
   text: string;
 };
 
+type TextRange = { startIndex: number; endIndex: number };
+
+export function buildDocumentContent(title: string, blocks: DocumentBlock[]) {
+  let text = `${title}\n\n`;
+  let cursor = 1 + text.length;
+  const headingRanges: TextRange[] = [];
+  for (const block of blocks) {
+    if (block.heading) {
+      const headingText = `${block.heading}\n`;
+      headingRanges.push({ startIndex: cursor, endIndex: cursor + block.heading.length });
+      text += headingText;
+      cursor += headingText.length;
+    }
+    const bodyText = `${block.text}\n\n`;
+    text += bodyText;
+    cursor += bodyText.length;
+  }
+  return {
+    text,
+    titleRange: { startIndex: 1, endIndex: 1 + title.length },
+    headingRanges
+  };
+}
+
 export async function createDocument(title: string, blocks: DocumentBlock[], parentFolderId?: string) {
   const auth = await getAuthorizedClient();
   const docs = google.docs({ version: "v1", auth });
@@ -19,15 +43,95 @@ export async function createDocument(title: string, blocks: DocumentBlock[], par
     throw new Error("Google Docs 문서 ID를 받지 못했습니다.");
   }
 
-  const text = blocks
-    .map((block) => `${block.heading ? `${block.heading}\n` : ""}${block.text}\n\n`)
-    .join("");
+  const content = buildDocumentContent(title, blocks);
 
-  if (text) {
+  if (content.text) {
     await withGoogleRetry(() => docs.documents.batchUpdate({
       documentId,
       requestBody: {
-        requests: [{ insertText: { location: { index: 1 }, text } }]
+        requests: [
+          { insertText: { location: { index: 1 }, text: content.text } },
+          {
+            updateDocumentStyle: {
+              documentStyle: {
+                marginTop: { magnitude: 54, unit: "PT" },
+                marginBottom: { magnitude: 54, unit: "PT" },
+                marginLeft: { magnitude: 58, unit: "PT" },
+                marginRight: { magnitude: 58, unit: "PT" },
+                background: { color: { color: { rgbColor: { red: 1, green: 1, blue: 1 } } } }
+              },
+              fields: "marginTop,marginBottom,marginLeft,marginRight,background"
+            }
+          },
+          {
+            updateTextStyle: {
+              range: { startIndex: 1, endIndex: 1 + content.text.length },
+              textStyle: {
+                weightedFontFamily: { fontFamily: "Arial" },
+                fontSize: { magnitude: 11, unit: "PT" },
+                foregroundColor: { color: { rgbColor: { red: 0.12, green: 0.18, blue: 0.24 } } }
+              },
+              fields: "weightedFontFamily,fontSize,foregroundColor"
+            }
+          },
+          {
+            updateParagraphStyle: {
+              range: { startIndex: 1, endIndex: 1 + content.text.length },
+              paragraphStyle: {
+                lineSpacing: 135,
+                spaceBelow: { magnitude: 8, unit: "PT" }
+              },
+              fields: "lineSpacing,spaceBelow"
+            }
+          },
+          {
+            updateParagraphStyle: {
+              range: content.titleRange,
+              paragraphStyle: {
+                namedStyleType: "TITLE",
+                spaceBelow: { magnitude: 18, unit: "PT" },
+                keepWithNext: true
+              },
+              fields: "namedStyleType,spaceBelow,keepWithNext"
+            }
+          },
+          {
+            updateTextStyle: {
+              range: content.titleRange,
+              textStyle: {
+                bold: true,
+                fontSize: { magnitude: 24, unit: "PT" },
+                foregroundColor: { color: { rgbColor: { red: 0.105, green: 0.235, blue: 0.38 } } }
+              },
+              fields: "bold,fontSize,foregroundColor"
+            }
+          },
+          ...content.headingRanges.flatMap((range) => [
+            {
+              updateParagraphStyle: {
+                range,
+                paragraphStyle: {
+                  namedStyleType: "HEADING_1",
+                  spaceAbove: { magnitude: 18, unit: "PT" },
+                  spaceBelow: { magnitude: 8, unit: "PT" },
+                  keepWithNext: true
+                },
+                fields: "namedStyleType,spaceAbove,spaceBelow,keepWithNext"
+              }
+            },
+            {
+              updateTextStyle: {
+                range,
+                textStyle: {
+                  bold: true,
+                  fontSize: { magnitude: 15, unit: "PT" },
+                  foregroundColor: { color: { rgbColor: { red: 0.09, green: 0.42, blue: 0.32 } } }
+                },
+                fields: "bold,fontSize,foregroundColor"
+              }
+            }
+          ])
+        ]
       }
     }), { idempotent: false });
   }

@@ -2,7 +2,7 @@
 
 자연어로 Google Docs, Sheets, Slides, Forms, Drive와 Classroom을 사용하는 교육 특화 Model Context Protocol(MCP) 서버입니다. Apps Script 없이 Google 공식 API를 직접 호출합니다.
 
-[공식 홈페이지](https://edu.jeld.kr/) · [개인정보처리방침](https://edu.jeld.kr/privacy.html) · [이용약관](https://edu.jeld.kr/terms.html)
+[공식 홈페이지](https://edu.jeld.kr/) · [복사 가능한 예시 프롬프트](https://edu.jeld.kr/#prompts) · [개인정보처리방침](https://edu.jeld.kr/privacy.html) · [이용약관](https://edu.jeld.kr/terms.html)
 
 > `1.0.0`은 로컬 stdio MCP 정식 안정 버전입니다. 공용 Google 데스크톱 OAuth 클라이언트가 포함되어 있어 최종 사용자가 Google Cloud 프로젝트를 만들 필요가 없습니다. 기본 모드는 앱이 다루는 파일에 한정된 `drive.file`을 사용하며, 기존 자료 읽기는 사용자가 `--read`로 선택합니다.
 
@@ -39,7 +39,7 @@
 
 대표 데모 프롬프트:
 
-> 5학년 과학 ‘소화와 순환’ 수업 패키지를 만들어줘. Drive에 전용 폴더를 만들고, 교사용 수업안과 학생용 학습지는 Docs로, 6장 수업 자료는 Slides로, 5문항 형성평가는 Forms 퀴즈로 만들어줘. ‘5학년 3반 과학’ Classroom에는 과제 초안까지만 만들고 게시 전에 나에게 확인받아줘.
+> 5학년 과학 ‘소화와 순환’ 40분 수업 패키지를 만들어줘. Drive에 전용 폴더를 만들고, 교사용 수업안과 학생용 학습지는 제목·소제목·본문의 위계와 충분한 답안 공간이 보이게 Docs로 만들어줘. Slides는 한 장에 핵심 메시지 하나씩 7장으로, Forms는 정답·배점을 포함한 5문항으로 구성해줘. 모든 자료에서 학습 목표와 용어를 동일하게 쓰고 정보량을 점검해줘. ‘5학년 3반 과학’ Classroom에는 학생용 자료만 과제 초안으로 연결하고 수업·마감·배점·첨부를 보여준 뒤 게시 전에 확인받아줘.
 
 | 교육 업무 | 만들어지는 결과 | 사용하는 도구 |
 | --- | --- | --- |
@@ -52,7 +52,8 @@
 | 학기 자료 정리 | 검색 결과와 교과·단원별 Drive 폴더 | Drive |
 | 동료 교사 협업 | 확인 절차를 거친 댓글·읽기·편집 권한 | Drive 공유 |
 
-- [교육자를 위한 실제 활용 예시와 복사 가능한 프롬프트](docs/EDUCATOR_USE_CASES.md)
+- [서비스별로 복사 가능한 예시 프롬프트](https://edu.jeld.kr/#prompts)
+- [교육자를 위한 실제 활용 예시와 도구 흐름](docs/EDUCATOR_USE_CASES.md)
 - [예제 모음과 추천 첫 데모](examples/README.md)
 - [실제로 실행되는 수업 패키지 통합 테스트](src/tests/education-demo.test.ts)
 

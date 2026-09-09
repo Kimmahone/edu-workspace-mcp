@@ -18,16 +18,50 @@ export async function createPresentation(title: string, slides: SlideDefinition[
     const pageId = `slide_${index + 1}`;
     const titleId = `title_${index + 1}`;
     const bodyId = `body_${index + 1}`;
+    const accentId = `accent_${index + 1}`;
+    const numberId = `number_${index + 1}`;
     requests.push(
       { createSlide: { objectId: pageId, slideLayoutReference: { predefinedLayout: "BLANK" } } },
+      {
+        updatePageProperties: {
+          objectId: pageId,
+          pageProperties: {
+            pageBackgroundFill: {
+              solidFill: { color: { rgbColor: { red: 0.973, green: 0.98, blue: 0.965 } } }
+            }
+          },
+          fields: "pageBackgroundFill.solidFill.color"
+        }
+      },
+      {
+        createShape: {
+          objectId: accentId,
+          shapeType: "RECTANGLE",
+          elementProperties: {
+            pageObjectId: pageId,
+            size: { width: { magnitude: 72, unit: "PT" }, height: { magnitude: 6, unit: "PT" } },
+            transform: { scaleX: 1, scaleY: 1, translateX: 44, translateY: 28, unit: "PT" }
+          }
+        }
+      },
+      {
+        updateShapeProperties: {
+          objectId: accentId,
+          shapeProperties: {
+            shapeBackgroundFill: { solidFill: { color: { rgbColor: { red: 0.09, green: 0.42, blue: 0.32 } } } },
+            outline: { propertyState: "NOT_RENDERED" }
+          },
+          fields: "shapeBackgroundFill.solidFill.color,outline.propertyState"
+        }
+      },
       {
         createShape: {
           objectId: titleId,
           shapeType: "TEXT_BOX",
           elementProperties: {
             pageObjectId: pageId,
-            size: { width: { magnitude: 640, unit: "PT" }, height: { magnitude: 60, unit: "PT" } },
-            transform: { scaleX: 1, scaleY: 1, translateX: 40, translateY: 30, unit: "PT" }
+            size: { width: { magnitude: 600, unit: "PT" }, height: { magnitude: 72, unit: "PT" } },
+            transform: { scaleX: 1, scaleY: 1, translateX: 44, translateY: 48, unit: "PT" }
           }
         }
       },
@@ -35,9 +69,39 @@ export async function createPresentation(title: string, slides: SlideDefinition[
       {
         updateTextStyle: {
           objectId: titleId,
-          style: { fontSize: { magnitude: 28, unit: "PT" }, bold: true },
+          style: {
+            fontFamily: "Arial",
+            fontSize: { magnitude: index === 0 ? 32 : 28, unit: "PT" },
+            bold: true,
+            foregroundColor: { opaqueColor: { rgbColor: { red: 0.105, green: 0.235, blue: 0.38 } } }
+          },
           textRange: { type: "ALL" },
-          fields: "fontSize,bold"
+          fields: "fontFamily,fontSize,bold,foregroundColor"
+        }
+      },
+      {
+        createShape: {
+          objectId: numberId,
+          shapeType: "TEXT_BOX",
+          elementProperties: {
+            pageObjectId: pageId,
+            size: { width: { magnitude: 36, unit: "PT" }, height: { magnitude: 20, unit: "PT" } },
+            transform: { scaleX: 1, scaleY: 1, translateX: 644, translateY: 28, unit: "PT" }
+          }
+        }
+      },
+      { insertText: { objectId: numberId, text: String(index + 1).padStart(2, "0") } },
+      {
+        updateTextStyle: {
+          objectId: numberId,
+          style: {
+            fontFamily: "Arial",
+            fontSize: { magnitude: 10, unit: "PT" },
+            bold: true,
+            foregroundColor: { opaqueColor: { rgbColor: { red: 0.37, green: 0.43, blue: 0.47 } } }
+          },
+          textRange: { type: "ALL" },
+          fields: "fontFamily,fontSize,bold,foregroundColor"
         }
       }
     );
@@ -49,8 +113,8 @@ export async function createPresentation(title: string, slides: SlideDefinition[
             shapeType: "TEXT_BOX",
             elementProperties: {
               pageObjectId: pageId,
-              size: { width: { magnitude: 640, unit: "PT" }, height: { magnitude: 360, unit: "PT" } },
-              transform: { scaleX: 1, scaleY: 1, translateX: 40, translateY: 110, unit: "PT" }
+              size: { width: { magnitude: 612, unit: "PT" }, height: { magnitude: 232, unit: "PT" } },
+              transform: { scaleX: 1, scaleY: 1, translateX: 44, translateY: 132, unit: "PT" }
             }
           }
         },
@@ -58,9 +122,13 @@ export async function createPresentation(title: string, slides: SlideDefinition[
         {
           updateTextStyle: {
             objectId: bodyId,
-            style: { fontSize: { magnitude: 18, unit: "PT" } },
+            style: {
+              fontFamily: "Arial",
+              fontSize: { magnitude: 18, unit: "PT" },
+              foregroundColor: { opaqueColor: { rgbColor: { red: 0.18, green: 0.25, blue: 0.3 } } }
+            },
             textRange: { type: "ALL" },
-            fields: "fontSize"
+            fields: "fontFamily,fontSize,foregroundColor"
           }
         }
       );

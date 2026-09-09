@@ -16,6 +16,8 @@ type PlannedSheet = {
   frozenColumns?: number;
   hidden?: boolean;
   headerRows?: number[];
+  columnWidths?: number[];
+  bodyRowHeight?: number;
 };
 
 type WorkbookPlan = {
@@ -67,6 +69,9 @@ export type SubmissionTrackerInput = {
 const COLORS = {
   navy: { red: 0.105, green: 0.235, blue: 0.38 },
   blue: { red: 0.18, green: 0.45, blue: 0.72 },
+  ink: { red: 0.12, green: 0.18, blue: 0.24 },
+  muted: { red: 0.37, green: 0.43, blue: 0.47 },
+  line: { red: 0.84, green: 0.87, blue: 0.89 },
   paleBlue: { red: 0.86, green: 0.93, blue: 0.98 },
   paleGreen: { red: 0.84, green: 0.93, blue: 0.82 },
   paleRed: { red: 0.96, green: 0.80, blue: 0.80 },
@@ -138,6 +143,79 @@ function titleRequest(sheetId: number, columnCount: number): sheets_v4.Schema$Re
 
 function autoResizeRequest(sheetId: number, columnCount: number): sheets_v4.Schema$Request {
   return { autoResizeDimensions: { dimensions: { sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: columnCount } } };
+}
+
+function dimensionSizeRequest(
+  sheetId: number,
+  dimension: "ROWS" | "COLUMNS",
+  startIndex: number,
+  endIndex: number,
+  pixelSize: number
+): sheets_v4.Schema$Request {
+  return {
+    updateDimensionProperties: {
+      range: { sheetId, dimension, startIndex, endIndex },
+      properties: { pixelSize },
+      fields: "pixelSize"
+    }
+  };
+}
+
+function bodyRequest(sheet: PlannedSheet): sheets_v4.Schema$Request {
+  return {
+    repeatCell: {
+      range: gridRange(sheet.sheetId, 0, sheet.rowCount, 0, sheet.columnCount),
+      cell: {
+        userEnteredFormat: {
+          textFormat: { foregroundColor: COLORS.ink, fontSize: 10 },
+          verticalAlignment: "MIDDLE",
+          wrapStrategy: "WRAP",
+          borders: { bottom: { style: "SOLID", color: COLORS.line } }
+        }
+      },
+      fields: "userEnteredFormat(textFormat,verticalAlignment,wrapStrategy,borders.bottom)"
+    }
+  };
+}
+
+function sectionLabelRequest(sheetId: number, row: number, columnCount: number): sheets_v4.Schema$Request {
+  return {
+    repeatCell: {
+      range: gridRange(sheetId, row, row + 1, 0, columnCount),
+      cell: {
+        userEnteredFormat: {
+          backgroundColor: COLORS.paleBlue,
+          textFormat: { foregroundColor: COLORS.navy, bold: true, fontSize: 11 },
+          verticalAlignment: "MIDDLE"
+        }
+      },
+      fields: "userEnteredFormat(backgroundColor,textFormat,verticalAlignment)"
+    }
+  };
+}
+
+function keyValueRequest(sheetId: number, startRow: number, endRow: number): sheets_v4.Schema$Request[] {
+  return [
+    {
+      repeatCell: {
+        range: gridRange(sheetId, startRow, endRow, 0, 1),
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: COLORS.paleBlue,
+            textFormat: { foregroundColor: COLORS.navy, bold: true }
+          }
+        },
+        fields: "userEnteredFormat(backgroundColor,textFormat)"
+      }
+    },
+    {
+      repeatCell: {
+        range: gridRange(sheetId, startRow, endRow, 1, 2),
+        cell: { userEnteredFormat: { textFormat: { foregroundColor: COLORS.ink, bold: true, fontSize: 12 } } },
+        fields: "userEnteredFormat.textFormat"
+      }
+    }
+  ];
 }
 
 function oneOfRangeValidation(sheetId: number, range: sheets_v4.Schema$GridRange, source: string): sheets_v4.Schema$Request {
@@ -225,10 +303,21 @@ function customConditionalFormat(
 }
 
 function basicWorkbookRequests(sheets: PlannedSheet[]): sheets_v4.Schema$Request[] {
-  return sheets.flatMap((sheet) => [
-    ...(sheet.headerRows ?? [0]).map((row) => headerRequest(sheet.sheetId, row, sheet.columnCount)),
-    autoResizeRequest(sheet.sheetId, sheet.columnCount)
-  ]);
+  return sheets.flatMap((sheet) => {
+    const columnRequests = sheet.columnWidths?.length
+      ? sheet.columnWidths.slice(0, sheet.columnCount).map((width, index) =>
+        dimensionSizeRequest(sheet.sheetId, "COLUMNS", index, index + 1, width))
+      : [autoResizeRequest(sheet.sheetId, sheet.columnCount)];
+    return [
+      bodyRequest(sheet),
+      dimensionSizeRequest(sheet.sheetId, "ROWS", 0, sheet.rowCount, sheet.bodyRowHeight ?? 32),
+      ...(sheet.headerRows ?? [0]).flatMap((row) => [
+        headerRequest(sheet.sheetId, row, sheet.columnCount),
+        dimensionSizeRequest(sheet.sheetId, "ROWS", row, row + 1, row === 0 ? 44 : 38)
+      ]),
+      ...columnRequests
+    ];
+  });
 }
 
 async function createPlannedWorkbook(plan: WorkbookPlan, parentFolderId?: string) {
@@ -330,7 +419,8 @@ export function buildAssessmentTrackerPlan(input: AssessmentTrackerInput): Workb
 
   const sheets: PlannedSheet[] = [
     {
-      sheetId: ids.guide, title: "안내", rowCount: 40, columnCount: 6, frozenRows: 1, headerRows: [0], rows: [
+      sheetId: ids.guide, title: "안내", rowCount: 40, columnCount: 6, frozenRows: 1, headerRows: [0],
+      columnWidths: [132, 520, 112, 112, 112, 112], rows: [
         ["교육용 평가 관리 시스템"],
         ["학급", input.className],
         ["학년도", input.schoolYear],
@@ -340,30 +430,48 @@ export function buildAssessmentTrackerPlan(input: AssessmentTrackerInput): Workb
         ["안전", "설정 탭과 수식 영역을 수정하기 전 사본을 만드세요."]
       ]
     },
-    { sheetId: ids.students, title: "학생명단", rowCount: Math.max(210, students.length + 10), columnCount: 5, frozenRows: 1, frozenColumns: 2, rows: studentRows },
-    { sheetId: ids.plans, title: "평가계획", rowCount: 300, columnCount: 9, frozenRows: 1, rows: [["평가 ID", "교과", "영역", "성취기준", "평가명", "평가유형", "평가일", "만점", "비고"]] },
     {
-      sheetId: ids.records, title: "평가기록", rowCount: 2000, columnCount: 10, frozenRows: 1, frozenColumns: 3, rows: [
+      sheetId: ids.students, title: "학생명단", rowCount: Math.max(210, students.length + 10), columnCount: 5,
+      frozenRows: 1, frozenColumns: 2, columnWidths: [76, 150, 110, 100, 100], rows: studentRows
+    },
+    {
+      sheetId: ids.plans, title: "평가계획", rowCount: 300, columnCount: 9, frozenRows: 1,
+      columnWidths: [108, 96, 120, 320, 190, 128, 112, 84, 240],
+      rows: [["평가 ID", "교과", "영역", "성취기준", "평가명", "평가유형", "평가일", "만점", "비고"]]
+    },
+    {
+      sheetId: ids.records, title: "평가기록", rowCount: 2000, columnCount: 10, frozenRows: 1, frozenColumns: 3,
+      columnWidths: [112, 88, 136, 96, 180, 128, 84, 112, 320, 320], rows: [
         ["평가일", "학생번호", "학생이름", "교과", "평가명", "평가유형", "점수", "수준", "관찰기록", "피드백"],
         [null, null, formula("=ARRAYFORMULA(IF(B2:B=\"\",\"\",IFNA(VLOOKUP(B2:B,'학생명단'!A:B,2,FALSE),\"\")))")]
       ]
     },
-    { sheetId: ids.overview, title: "학생별현황", rowCount: Math.max(210, students.length + 10), columnCount: 8, frozenRows: 1, frozenColumns: 2, rows: overviewRows },
     {
-      sheetId: ids.submissions, title: "제출현황", rowCount: 2000, columnCount: 10, frozenRows: 1, frozenColumns: 4, rows: [
+      sheetId: ids.overview, title: "학생별현황", rowCount: Math.max(210, students.length + 10), columnCount: 8,
+      frozenRows: 1, frozenColumns: 2, columnWidths: [76, 140, 112, 108, 92, 104, 104, 84], rows: overviewRows
+    },
+    {
+      sheetId: ids.submissions, title: "제출현황", rowCount: 2000, columnCount: 10, frozenRows: 1, frozenColumns: 4,
+      columnWidths: [112, 190, 88, 136, 112, 76, 112, 84, 76, 240], rows: [
         ["과제 ID", "과제명", "학생번호", "학생이름", "상태", "지각", "제출일", "점수", "확인", "메모"],
         [null, null, null, formula("=ARRAYFORMULA(IF(C2:C=\"\",\"\",IFNA(VLOOKUP(C2:C,'학생명단'!A:B,2,FALSE),\"\")))")]
       ]
     },
     {
-      sheetId: ids.observations, title: "관찰기록", rowCount: 2000, columnCount: 8, frozenRows: 1, frozenColumns: 3, rows: [
+      sheetId: ids.observations, title: "관찰기록", rowCount: 2000, columnCount: 8, frozenRows: 1, frozenColumns: 3,
+      columnWidths: [112, 88, 136, 108, 360, 280, 156, 76], bodyRowHeight: 38, rows: [
         ["날짜", "학생번호", "학생이름", "영역", "관찰 내용", "후속 조치", "공개 범위", "확인"],
         [null, null, formula("=ARRAYFORMULA(IF(B2:B=\"\",\"\",IFNA(VLOOKUP(B2:B,'학생명단'!A:B,2,FALSE),\"\")))")]
       ]
     },
-    { sheetId: ids.dashboard, title: "대시보드", rowCount: 100, columnCount: 12, frozenRows: 1, headerRows: [0, 8, 10 + subjects.length], rows: dashboardRows },
     {
-      sheetId: ids.settings, title: "설정", rowCount: 100, columnCount: 6, frozenRows: 1, hidden: true, rows: [
+      sheetId: ids.dashboard, title: "대시보드", rowCount: 100, columnCount: 12, frozenRows: 1,
+      headerRows: [0, 8, 10 + subjects.length], columnWidths: [164, 120, 104, 36, 108, 108, 108, 108, 108, 108, 108, 108],
+      rows: dashboardRows
+    },
+    {
+      sheetId: ids.settings, title: "설정", rowCount: 100, columnCount: 6, frozenRows: 1, hidden: true,
+      columnWidths: [120, 128, 132, 120, 120, 96], rows: [
         ["교과", "평가수준", "평가유형", "제출상태", "관찰영역", "학기"],
         ...Array.from({ length: Math.max(subjects.length, scale.length, assessmentTypes.length, submissionStates.length, observationAreas.length, 3) }, (_, index) => [
           subjects[index] ?? null,
@@ -384,6 +492,13 @@ export function buildAssessmentTrackerPlan(input: AssessmentTrackerInput): Workb
     ...basicWorkbookRequests(sheets),
     titleRequest(ids.guide, 6),
     titleRequest(ids.dashboard, 12),
+    dimensionSizeRequest(ids.guide, "ROWS", 0, 1, 58),
+    dimensionSizeRequest(ids.dashboard, "ROWS", 0, 1, 58),
+    { mergeCells: { range: gridRange(ids.guide, 0, 1, 0, 6), mergeType: "MERGE_ALL" } },
+    { mergeCells: { range: gridRange(ids.dashboard, 0, 1, 0, 12), mergeType: "MERGE_ALL" } },
+    ...keyValueRequest(ids.guide, 1, 7),
+    ...keyValueRequest(ids.dashboard, 1, 6),
+    sectionLabelRequest(ids.dashboard, 7, 3),
     checkboxValidation(ids.students, gridRange(ids.students, 1, studentEnd, 2, 3)),
     oneOfRangeValidation(ids.plans, gridRange(ids.plans, 1, 300, 1, 2), `='설정'!$A$2:$A$${subjectEnd}`),
     oneOfRangeValidation(ids.plans, gridRange(ids.plans, 1, 300, 5, 6), "='설정'!$C$2:$C$6"),
@@ -500,7 +615,8 @@ export function buildSubmissionTrackerPlan(input: SubmissionTrackerInput): Workb
   ];
   const sheets: PlannedSheet[] = [
     {
-      sheetId: ids.guide, title: "안내", rowCount: 30, columnCount: 6, frozenRows: 1, rows: [
+      sheetId: ids.guide, title: "안내", rowCount: 30, columnCount: 6, frozenRows: 1,
+      columnWidths: [132, 520, 112, 112, 112, 112], rows: [
         ["Classroom 제출 현황"],
         ["과제", input.assignmentTitle],
         ["수업 ID", input.courseId],
@@ -509,16 +625,34 @@ export function buildSubmissionTrackerPlan(input: SubmissionTrackerInput): Workb
         ["갱신", "이 파일은 생성 시점의 스냅샷입니다. 최신 현황은 MCP로 다시 생성하거나 갱신 기능을 사용하세요."]
       ]
     },
-    { sheetId: ids.students, title: "학생명단", rowCount: Math.max(210, students.length + 10), columnCount: 2, frozenRows: 1, frozenColumns: 1, rows: [["번호", "학생이름"], ...students.map((student) => [student.number, student.name])] },
-    { sheetId: ids.submissions, title: "제출현황", rowCount: Math.max(500, students.length + 20), columnCount: 9, frozenRows: 1, frozenColumns: 2, rows },
-    { sheetId: ids.dashboard, title: "대시보드", rowCount: 80, columnCount: 10, frozenRows: 1, headerRows: [0, 7], rows: dashboardRows },
-    { sheetId: ids.settings, title: "설정", rowCount: 30, columnCount: 3, frozenRows: 1, hidden: true, rows: [["제출상태"], ...states.map((state) => [state])] }
+    {
+      sheetId: ids.students, title: "학생명단", rowCount: Math.max(210, students.length + 10), columnCount: 2,
+      frozenRows: 1, frozenColumns: 1, columnWidths: [76, 156], rows: [["번호", "학생이름"], ...students.map((student) => [student.number, student.name])]
+    },
+    {
+      sheetId: ids.submissions, title: "제출현황", rowCount: Math.max(500, students.length + 20), columnCount: 9,
+      frozenRows: 1, frozenColumns: 2, columnWidths: [76, 156, 112, 76, 96, 96, 156, 260, 76], rows
+    },
+    {
+      sheetId: ids.dashboard, title: "대시보드", rowCount: 80, columnCount: 10, frozenRows: 1,
+      headerRows: [0, 7], columnWidths: [164, 120, 36, 108, 108, 108, 108, 108, 108, 108], rows: dashboardRows
+    },
+    {
+      sheetId: ids.settings, title: "설정", rowCount: 30, columnCount: 3, frozenRows: 1, hidden: true,
+      columnWidths: [120, 100, 100], rows: [["제출상태"], ...states.map((state) => [state])]
+    }
   ];
   const dataEnd = Math.max(2, students.length + 1);
   const requests = [
     ...basicWorkbookRequests(sheets),
     titleRequest(ids.guide, 6),
     titleRequest(ids.dashboard, 10),
+    dimensionSizeRequest(ids.guide, "ROWS", 0, 1, 58),
+    dimensionSizeRequest(ids.dashboard, "ROWS", 0, 1, 58),
+    { mergeCells: { range: gridRange(ids.guide, 0, 1, 0, 6), mergeType: "MERGE_ALL" } },
+    { mergeCells: { range: gridRange(ids.dashboard, 0, 1, 0, 10), mergeType: "MERGE_ALL" } },
+    ...keyValueRequest(ids.guide, 1, 6),
+    ...keyValueRequest(ids.dashboard, 1, 6),
     oneOfRangeValidation(ids.submissions, gridRange(ids.submissions, 1, dataEnd, 2, 3), "='설정'!$A$2:$A$6"),
     checkboxValidation(ids.submissions, gridRange(ids.submissions, 1, dataEnd, 3, 4)),
     checkboxValidation(ids.submissions, gridRange(ids.submissions, 1, dataEnd, 8, 9)),

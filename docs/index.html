@@ -18,6 +18,7 @@
     <meta name="twitter:image" content="https://edu.jeld.kr/assets/og.png">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="assets/site.css">
+    <script src="assets/site.js" defer></script>
   </head>
   <body>
     <header class="site-header">
@@ -27,6 +28,7 @@
       </a>
       <nav aria-label="주요 메뉴">
         <a href="#features">기능</a>
+        <a href="#prompts">예시 프롬프트</a>
         <a href="#install">설치</a>
         <a href="#privacy">데이터 보호</a>
         <a href="privacy.html">개인정보처리방침</a>
@@ -44,7 +46,7 @@
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#install">1.0.0 설치하기</a>
-          <a class="button secondary" href="#how-it-works">작동 방식 보기</a>
+          <a class="button secondary" href="#prompts">프롬프트 복사하기</a>
         </div>
         <ul class="trust-list">
           <li>사용자 컴퓨터에서 실행</li>
@@ -81,6 +83,134 @@ npx -y edu-workspace-mcp@1.0.0 login --read</code></pre>
           <article><span>05</span><h3>안전한 시트 진단</h3><p>셀 내용을 노출하지 않고 탭 구조·수식 의존성·오류·차트와 검증 규칙을 점검합니다.</p></article>
           <article><span>06</span><h3>제출 대시보드</h3><p>Classroom의 제출·지각·점수를 읽어 개인정보를 최소화한 Sheets 스냅샷을 만듭니다.</p></article>
         </div>
+      </section>
+
+      <section class="section prompt-library" id="prompts">
+        <div class="section-heading prompt-heading">
+          <div>
+            <p class="eyebrow">복사해서 바로 쓰는 프롬프트</p>
+            <h2>“예쁘게” 대신 결과의 기준을 말해 주세요.</h2>
+          </div>
+          <p>좋은 결과는 대상, 용도, 정보 구조, 읽기 밀도와 완료 조건이 분명합니다. 아래 예시는 실제 지원 기능에 맞춰 구성했으며, <strong>[대괄호]</strong>만 내 수업에 맞게 바꾸면 됩니다.</p>
+        </div>
+
+        <div class="prompt-principle" aria-label="좋은 프롬프트의 다섯 요소">
+          <span><b>01</b> 대상</span>
+          <span><b>02</b> 목적</span>
+          <span><b>03</b> 구성</span>
+          <span><b>04</b> 읽기 방식</span>
+          <span><b>05</b> 완료 점검</span>
+        </div>
+
+        <div class="prompt-grid">
+          <details class="prompt-card prompt-card-featured" open>
+            <summary><span class="service-mark sheets" aria-hidden="true">S</span><span><small>Google Sheets</small>과정중심평가 시스템</span><span class="prompt-arrow" aria-hidden="true">+</span></summary>
+            <div class="prompt-body">
+              <div class="prompt-meta"><span>추천 첫 실행</span><span>9개 연결 탭</span><span>24명 예시</span></div>
+              <pre><code id="prompt-assessment">2026학년도 [5학년 3반] [2학기] 과정중심평가 시스템을 Google Sheets로 만들어줘. 학생은 학생01부터 학생24까지, 교과는 국어·사회·수학·과학·영어로 구성하고 평가 수준은 매우잘함·잘함·보통·노력요함으로 해줘.
+
+반드시 전용 과정중심평가 템플릿을 사용해서 학생명단, 평가계획, 평가기록, 학생별현황, 제출현황, 관찰기록, 대시보드, 안내, 설정 탭이 서로 연결되게 만들어줘. 입력 칸은 행 높이를 넉넉하게 하고, 긴 성취기준·관찰기록·피드백 열은 충분히 넓혀 줄바꿈해줘. 표 머리글은 고정하고 제목·입력 영역·자동 계산 영역이 한눈에 구분되게 해줘. 드롭다운, 체크박스, 조건부 서식과 교과별 평균 차트도 포함해줘.
+
+완료하기 전에 학생 24명과 교과 5개가 모두 들어갔는지, 수식·드롭다운·차트가 연결됐는지 확인하고 결과 링크와 탭별 사용 순서를 짧게 알려줘.</code></pre>
+              <button class="copy-button" type="button" data-copy-target="prompt-assessment"><span>프롬프트 복사</span><span aria-hidden="true">↗</span></button>
+            </div>
+          </details>
+
+          <details class="prompt-card prompt-card-featured" open>
+            <summary><span class="service-mark docs" aria-hidden="true">D</span><span><small>Google Docs</small>학생용 활동지</span><span class="prompt-arrow" aria-hidden="true">+</span></summary>
+            <div class="prompt-body">
+              <div class="prompt-meta"><span>A4 2~3쪽</span><span>학생용</span><span>인쇄 친화</span></div>
+              <pre><code id="prompt-docs">초등학교 [5학년] [과학] ‘[소화와 순환]’ 학생용 활동지를 Google Docs로 만들어줘. 40분 수업에서 바로 인쇄해 쓸 수 있는 A4 2~3쪽 분량으로 작성해줘.
+
+문서 순서는 제목 → 오늘의 학습 목표 2개 → 핵심 개념 4개 → 생활 속 사례 → 활동 1(개별 생각) → 활동 2(모둠 토의) → 정리 문제 4개 → 자기 점검 순서로 구성해줘. 각 활동에는 번호, 예상 시간, 학생이 해야 할 행동, 충분한 답안 공간을 넣고 문장은 5학년이 한 번에 이해할 수 있게 짧게 써줘. 소제목은 명확하게 나누고 본문은 한 문단이 너무 길어지지 않게 해줘.
+
+완료하기 전에 제목·소제목·본문의 위계, 문단 간격, 페이지당 정보량, 인쇄했을 때 답을 쓸 공간이 충분한지 점검하고 문서 링크를 알려줘.</code></pre>
+              <button class="copy-button" type="button" data-copy-target="prompt-docs"><span>프롬프트 복사</span><span aria-hidden="true">↗</span></button>
+            </div>
+          </details>
+
+          <details class="prompt-card">
+            <summary><span class="service-mark sheets" aria-hidden="true">S</span><span><small>Google Sheets</small>학급 독서 기록장</span><span class="prompt-arrow" aria-hidden="true">+</span></summary>
+            <div class="prompt-body">
+              <pre><code id="prompt-sheets">[5학년 3반] 학생 24명이 사용할 2학기 독서 기록장을 Google Sheets로 만들어줘. ‘사용안내’, ‘독서기록’, ‘학생별현황’, ‘월별현황’ 탭을 만들고, 독서기록에는 날짜·번호·학생이름·책 제목·저자·읽은 쪽수·한 줄 감상 열을 넣어줘. 학생 이름은 학생01부터 학생24까지 사용해줘.
+
+첫 행은 고정하고 모든 입력 행은 읽고 클릭하기 편한 높이로, 책 제목과 한 줄 감상 열은 넓게 만들어 줄바꿈해줘. 머리글과 본문을 색과 굵기로 구분하고 번갈아 보이는 행 배경을 적용해줘. 학생별 누적 권수와 읽은 쪽수, 월별 독서량은 수식으로 자동 집계되게 해줘. 빈 탭이나 의미 없는 열은 만들지 말아줘.
+
+완료 후 탭 이름, 학생 수, 핵심 수식이 올바른지 확인하고 링크와 입력 시작 위치를 알려줘.</code></pre>
+              <button class="copy-button" type="button" data-copy-target="prompt-sheets"><span>프롬프트 복사</span><span aria-hidden="true">↗</span></button>
+            </div>
+          </details>
+
+          <details class="prompt-card">
+            <summary><span class="service-mark slides" aria-hidden="true">P</span><span><small>Google Slides</small>수업 발표 자료</span><span class="prompt-arrow" aria-hidden="true">+</span></summary>
+            <div class="prompt-body">
+              <pre><code id="prompt-slides">[4학년 사회] ‘[우리 지역의 문화유산]’ 도입 수업 자료를 Google Slides 7장으로 만들어줘. 순서는 표지 → 호기심을 여는 질문 → 학습 목표 → 핵심 개념 → 사례 비교 → 모둠 활동 안내 → 정리 질문으로 해줘.
+
+한 슬라이드에는 핵심 메시지 하나만 두고 제목은 짧게, 본문은 최대 4개 항목으로 제한해줘. 교실 뒤에서도 읽을 수 있도록 긴 문장을 줄이고, 활동 안내는 ‘무엇을·어떻게·몇 분 동안’ 하는지 보이게 써줘. 모든 슬라이드는 같은 어조와 구조를 유지하고 마지막 장은 학생이 바로 대답할 수 있는 질문으로 끝내줘.
+
+완료 전에 슬라이드 수, 글자량, 내용 중복과 수업 흐름을 점검하고 발표 자료 링크와 장별 요약을 알려줘.</code></pre>
+              <button class="copy-button" type="button" data-copy-target="prompt-slides"><span>프롬프트 복사</span><span aria-hidden="true">↗</span></button>
+            </div>
+          </details>
+
+          <details class="prompt-card">
+            <summary><span class="service-mark forms" aria-hidden="true">F</span><span><small>Google Forms</small>형성평가 퀴즈</span><span class="prompt-arrow" aria-hidden="true">+</span></summary>
+            <div class="prompt-body">
+              <pre><code id="prompt-forms">[5학년 수학] ‘[분수의 곱셈]’ 형성평가를 Google Forms 퀴즈로 만들어줘. 객관식 5문항과 단답형 2문항, 서술형 1문항으로 구성하고 총점은 20점으로 해줘.
+
+앞 문항은 개념 확인, 뒤 문항은 적용과 설명 순서가 되게 난이도를 배치해줘. 객관식 선택지는 길이와 표현 방식을 비슷하게 맞추고 흔한 오개념을 오답에 반영해줘. 각 문항에 정답과 배점을 넣고, 첫 화면 설명에는 평가 목적·예상 시간 10분·제출 전 확인 사항을 짧게 써줘. 개인정보를 묻는 새 문항은 추가하지 말아줘.
+
+완료 전에 문항 수, 총점, 객관식 정답이 선택지에 포함됐는지 확인하고 교사용 편집 링크와 학생용 응답 링크를 구분해서 알려줘.</code></pre>
+              <button class="copy-button" type="button" data-copy-target="prompt-forms"><span>프롬프트 복사</span><span aria-hidden="true">↗</span></button>
+            </div>
+          </details>
+
+          <details class="prompt-card">
+            <summary><span class="service-mark drive" aria-hidden="true">D</span><span><small>Google Drive</small>학기 자료 정리</span><span class="prompt-arrow" aria-hidden="true">+</span></summary>
+            <div class="prompt-body">
+              <pre><code id="prompt-drive">Drive에서 이름에 ‘[2학기 수행평가]’가 들어간 파일을 찾아 문서·시트·슬라이드·설문으로 나누어 보여줘. 같은 이름의 파일은 수정 시각과 위치를 함께 표시해 구분해줘.
+
+그다음 내 Drive에 ‘[2026/5학년/2학기 수행평가]’ 폴더 구조를 만들어줘. 기존 파일은 이동하거나 공유하지 말고, 검색 결과와 새로 만든 폴더 링크만 알려줘. 실제 학생 이름이나 점수는 응답에 반복하지 말아줘.</code></pre>
+              <button class="copy-button" type="button" data-copy-target="prompt-drive"><span>프롬프트 복사</span><span aria-hidden="true">↗</span></button>
+            </div>
+          </details>
+
+          <details class="prompt-card">
+            <summary><span class="service-mark classroom" aria-hidden="true">C</span><span><small>Google Classroom</small>과제 초안 만들기</span><span class="prompt-arrow" aria-hidden="true">+</span></summary>
+            <div class="prompt-body">
+              <pre><code id="prompt-classroom">내가 담당하는 활성 Classroom 수업에서 ‘[5학년 3반 과학]’을 먼저 찾아줘. ‘[우리 몸의 기관 조사]’ 과제를 학생에게 아직 보이지 않는 초안으로 만들어줘. 만점은 20점, 마감은 [2026년 9월 11일 오후 6시]로 해줘.
+
+과제 설명은 ‘학습 목표 → 해야 할 일 3단계 → 제출 형식 → 평가 기준 4개 → 제출 전 점검’ 순서로, 학생이 혼자 읽고 수행할 수 있게 써줘. 내가 지정한 자료만 첨부하고 게시하지는 마. 초안 생성 후 수업명·제목·마감·배점·첨부 링크를 한 번에 보여주고 내 확인을 기다려줘.</code></pre>
+              <button class="copy-button" type="button" data-copy-target="prompt-classroom"><span>프롬프트 복사</span><span aria-hidden="true">↗</span></button>
+            </div>
+          </details>
+
+          <details class="prompt-card">
+            <summary><span class="service-mark inspect" aria-hidden="true">↗</span><span><small>기존 자료 읽기</small>수업 자료 점검</span><span class="prompt-arrow" aria-hidden="true">+</span></summary>
+            <div class="prompt-body">
+              <pre><code id="prompt-review">이 Google Docs 수업안과 Google Slides 발표 자료를 읽고 학습 목표, 활동 순서, 준비물, 평가 방법을 표로 비교해줘. 서로 다르게 적힌 내용과 수업 중 학생이 혼동할 지점을 먼저 알려줘.
+
+이어서 수정 우선순위를 ‘수업 전 반드시 수정·수정 권장·그대로 사용 가능’으로 나누고 근거를 한 문장씩 써줘. 원본 파일은 변경하지 말고 분석만 해줘. 학생 이름이나 개인 기록이 나오면 결과에 포함하지 말아줘.</code></pre>
+              <button class="copy-button" type="button" data-copy-target="prompt-review"><span>프롬프트 복사</span><span aria-hidden="true">↗</span></button>
+            </div>
+          </details>
+
+          <details class="prompt-card prompt-card-wide">
+            <summary><span class="service-mark package" aria-hidden="true">+</span><span><small>여러 도구 함께 쓰기</small>한 차시 수업 패키지</span><span class="prompt-arrow" aria-hidden="true">+</span></summary>
+            <div class="prompt-body">
+              <pre><code id="prompt-package">[5학년 과학] ‘[소화와 순환]’ 40분 수업 패키지를 만들어줘. 먼저 Drive에 ‘[5학년 과학/소화와 순환]’ 폴더를 만들고 아래 자료를 모두 그 안에 넣어줘.
+
+1. Google Docs 교사용 수업안: 학습 목표, 준비물, 도입 5분·활동 25분·정리 10분, 발문, 예상 오개념, 관찰 포인트
+2. Google Docs 학생용 학습지: 핵심 개념, 활동 2개, 답안 공간, 자기 점검
+3. Google Slides 7장: 표지, 질문, 목표, 개념, 사례, 활동 안내, 정리
+4. Google Forms 형성평가: 객관식 4문항과 단답형 1문항, 정답과 배점 포함
+
+모든 자료에서 학습 목표와 용어를 동일하게 사용하고, 학생용 문장은 5학년 수준으로 짧게 써줘. 각 파일의 정보량과 읽기 흐름을 점검해줘. 마지막에는 ‘[5학년 3반 과학]’ Classroom 과제 초안에 학생용 학습지와 퀴즈만 첨부하고, 게시 전 수업·마감·배점·첨부를 내가 확인할 수 있게 보여줘. 승인하기 전에는 게시하지 마.</code></pre>
+              <button class="copy-button" type="button" data-copy-target="prompt-package"><span>프롬프트 복사</span><span aria-hidden="true">↗</span></button>
+            </div>
+          </details>
+        </div>
+        <p class="prompt-note"><strong>기존 자료를 읽는 예시</strong>는 <code>--read</code> 로그인이 필요합니다. Classroom 게시와 Drive 공유는 결과를 확인한 뒤 별도로 승인합니다.</p>
       </section>
 
       <section class="section process" id="how-it-works">

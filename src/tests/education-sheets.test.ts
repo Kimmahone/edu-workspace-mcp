@@ -24,6 +24,10 @@ test("assessment tracker plan contains connected education tabs and native sheet
   assert.ok(plan.requests.some((request) => request.setDataValidation?.rule?.condition?.type === "BOOLEAN"));
   assert.ok(plan.requests.some((request) => request.addConditionalFormatRule));
   assert.ok(plan.requests.some((request) => request.addProtectedRange?.protectedRange?.warningOnly));
+  assert.ok(plan.requests.some((request) => request.mergeCells?.range?.sheetId === 2108));
+  assert.ok(plan.requests.some((request) => request.updateDimensionProperties?.range?.dimension === "ROWS"
+    && request.updateDimensionProperties.properties?.pixelSize === 32));
+  assert.ok((records?.columnWidths?.[8] ?? 0) >= 300, "관찰기록 열은 긴 문장을 읽기 좋게 넓어야 합니다");
   assert.ok(plan.sheets.every((sheet) => (sheet.frozenColumns ?? 0) < sheet.columnCount));
 });
 
@@ -45,5 +49,6 @@ test("Classroom submission plan matches students without persisting Classroom id
   assert.equal(sheet?.rows[1][3], true);
   assert.equal(JSON.stringify(plan).includes("user-1"), false, "Classroom 사용자 ID는 결과 시트에 저장하지 않아야 합니다");
   assert.ok(plan.requests.some((request) => request.addChart?.chart?.spec?.pieChart));
+  assert.ok((sheet?.columnWidths?.[7] ?? 0) >= 240, "제출물 링크 열은 읽기 좋은 너비여야 합니다");
   assert.ok(plan.sheets.every((candidate) => (candidate.frozenColumns ?? 0) < candidate.columnCount));
 });

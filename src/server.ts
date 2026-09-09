@@ -163,7 +163,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     if (characters > 500_000) context.addIssue({ code: z.ZodIssueCode.custom, message: "문서 전체 텍스트는 500,000자를 넘을 수 없습니다." });
   });
   server.registerTool("docs_create_document", {
-    title: "Google Docs 문서 생성", description: "제목과 본문 블록으로 Google Docs 문서를 생성합니다.",
+    title: "Google Docs 문서 생성", description: "제목과 본문 블록으로 Google Docs 문서를 생성하고 읽기 좋은 제목·소제목·본문 서식을 적용합니다.",
     inputSchema: { title: z.string().trim().min(1).max(200), blocks: blocksSchema, parentFolderId: z.string().max(200).optional() }, annotations: createAction
   }, async ({ title, blocks, parentFolderId }) => {
     const authError = await requireAuth(); if (authError) return authError;
@@ -192,7 +192,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     if (cells > 200_000) context.addIssue({ code: z.ZodIssueCode.custom, message: "통합 문서는 200,000개 셀을 넘을 수 없습니다." });
   });
   server.registerTool("sheets_create_workbook", {
-    title: "Google Sheets 생성", description: "여러 시트와 초기 행 데이터를 포함한 Google Sheets 파일을 생성합니다. 문자열 수식도 지원합니다.",
+    title: "Google Sheets 생성", description: "여러 시트와 초기 행 데이터를 포함한 Google Sheets 파일을 생성합니다. 문자열 수식, 고정 머리글, 넉넉한 행 높이와 내용에 맞춘 열 너비를 지원합니다.",
     inputSchema: {
       title: z.string().trim().min(1).max(200),
       sheets: sheetsSchema,
@@ -266,7 +266,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
 
   server.registerTool("education_create_assessment_tracker", {
     title: "교육용 과정중심평가 시스템 생성",
-    description: "학생명단·평가계획·평가기록·학생별현황·제출현황·관찰기록·대시보드가 연결된 교육용 Google Sheets를 만듭니다. 드롭다운, 체크박스, 조건부 서식, 차트와 보호 경고를 포함합니다.",
+    description: "학생명단·평가계획·평가기록·학생별현황·제출현황·관찰기록·대시보드가 연결된 교육용 Google Sheets를 만듭니다. 넉넉한 입력 칸, 용도별 열 너비, 드롭다운, 체크박스, 조건부 서식, 차트와 보호 경고를 포함합니다.",
     inputSchema: {
       title: z.string().trim().min(1).max(200),
       className: z.string().trim().min(1).max(100),
@@ -325,7 +325,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
   });
 
   server.registerTool("slides_create_presentation", {
-    title: "Google Slides 생성", description: "제목과 본문으로 구성된 Google Slides 프레젠테이션을 생성합니다.",
+    title: "Google Slides 생성", description: "제목과 본문으로 구성된 Google Slides 프레젠테이션을 생성하고 수업용 기본 테마와 읽기 좋은 여백을 적용합니다.",
     inputSchema: { title: z.string().trim().min(1).max(200), slides: z.array(z.object({ title: z.string().max(500), body: z.string().max(20_000).optional() })).min(1).max(50).superRefine((slides, context) => {
       const characters = slides.reduce((total, slide) => total + slide.title.length + (slide.body?.length ?? 0), 0);
       if (characters > 500_000) context.addIssue({ code: z.ZodIssueCode.custom, message: "프레젠테이션 전체 텍스트는 500,000자를 넘을 수 없습니다." });

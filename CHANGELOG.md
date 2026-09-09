@@ -4,43 +4,35 @@
 
 ## Unreleased
 
-### 추가
-
-- `sheets_list_sheets` — 스프레드시트의 탭 목록과 행·열 크기, 숨김 여부 확인
-- `sheets_read_values` — 지정한 범위의 값 읽기. ID와 전체 URL을 모두 받고, 기본 200행까지 돌려주며 잘린 경우 `truncated`로 알림
-- `docs_read_document` — Google Docs 본문·표·중첩 문서 탭 읽기
-- `slides_read_presentation` — Slides 텍스트·표·발표자 노트 읽기
-- `forms_read_form`, `forms_list_responses` — Forms 문항 구조와 응답·점수 읽기
-- `drive_get_file_metadata` — 앱이 접근 가능한 Drive 파일 정보 읽기
-- `classroom_list_coursework`, `classroom_list_students`, `classroom_list_student_submissions` — 과제·명단·제출 현황 읽기
-- `install ... --read`, `login --read` — 기존 Workspace 자료 읽기 범위를 명시적으로 선택
-- Claude Code 사용자 범위 전역 설치 지원 (`install claude`)
-- `sheets_inspect_workbook` — 셀 값과 수식 본문을 반환하지 않는 탭·함수·의존성·수식 오류·시트 기능 구조 진단
-- `education_create_assessment_tracker` — 평가계획·기록·제출·관찰·학생별현황·대시보드가 연결된 9개 탭 교육 템플릿
-- `education_create_classroom_submission_tracker` — Classroom 명단·제출 현황을 개인정보 최소화 대시보드 시트로 생성
-
-### 변경
-
-- 교사용 과제 생성에 맞게 Classroom 범위를 `classroom.coursework.me`에서 공식 필수 범위인 `classroom.coursework.students`로 수정
-- 기존 `EDU_WORKSPACE_SHEETS_READ`는 호환하고 새 통합 설정 `EDU_WORKSPACE_READ_ACCESS`를 사용
-- Classroom 제출 현황 시트는 학생 매칭에만 사용자 ID를 사용하고 결과 파일에는 저장하지 않도록 최소화
-
-### 배경
-
-기본 범위 `drive.file`은 이 앱이 만들었거나 사용자가 이 앱으로 연 파일만 다룰 수 있어,
-교사가 이미 쓰고 있던 학급 기록 스프레드시트를 읽을 수 없었습니다.
-서비스별 읽기 전용 범위를 선택 항목으로 두어, 필요한 사용자만 켜서 쓸 수 있게 했습니다. 제한 범위인 전체 Drive 읽기는 요청하지 않습니다.
-
-## 1.0.0 - 2026-09-05
+## 1.0.0 - 2026-09-09
 
 첫 번째 정식 안정 버전입니다.
 
 ### 주요 기능
 
-- Google Docs, Sheets, Slides, Forms, Drive, Classroom을 위한 12개 MCP 도구
+- Google Docs, Sheets, Slides, Forms, Drive, Classroom을 위한 25개 MCP 도구
 - 공용 데스크톱 OAuth 앱을 통한 사용자별 간편 로그인
 - Codex, Claude Desktop, Cursor 전체 프로젝트용 자동 설치 명령
 - Classroom 과제 게시와 Drive 공유의 일회성 사용자 승인
+- 기존 Docs·Sheets·Slides·Forms와 Classroom 수업·과제·학생·제출 현황 읽기
+- 셀 값과 수식 본문을 반환하지 않는 Sheets 구조·수식·오류 진단
+- 평가계획·기록·제출·관찰·학생별현황·대시보드가 연결된 9개 탭 과정중심평가 템플릿
+- Classroom 제출 현황을 개인정보 최소화 대시보드 시트로 생성
+
+### 사용성
+
+- 일반 Sheets에 고정 머리글, 32px 이상 행 높이, 내용 기반 열 너비와 교차 음영 적용
+- 교육용 Sheets에 용도별 열 너비, 넉넉한 기록 칸, 큰 제목과 구분된 요약 영역 적용
+- Docs에 제목·소제목·본문 위계와 인쇄용 여백 적용
+- Slides에 수업용 색상, 안전한 본문 영역, 슬라이드 번호와 일관된 타이포그래피 적용
+- 공식 홈페이지에 Docs·Sheets·Slides·Forms·Drive·Classroom 등 복사 가능한 예시 프롬프트 9종 추가
+
+### 권한과 개인정보
+
+- 기존 Workspace 자료 읽기는 `install ... --read`, `login --read`로 명시적으로 선택
+- 기존 `EDU_WORKSPACE_SHEETS_READ`는 호환하고 새 통합 설정 `EDU_WORKSPACE_READ_ACCESS` 사용
+- Classroom 제출 현황 시트는 학생 매칭에만 사용자 ID를 사용하고 결과 파일에는 저장하지 않도록 최소화
+- 교사용 과제 생성에 필요한 공식 Classroom 범위 사용
 
 ### 보안 및 안정성
 
