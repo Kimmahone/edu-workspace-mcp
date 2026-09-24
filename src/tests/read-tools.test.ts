@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildDocumentContent, extractDocumentText } from "../google/docs.js";
+import { extractDocumentText } from "../google/docs.js";
 import { summarizeFormItems } from "../google/forms.js";
 import { extractGoogleFileId } from "../google/references.js";
 import { extractPageElementText } from "../google/slides.js";
@@ -29,19 +29,6 @@ test("Docs reader preserves paragraph and table cell boundaries", () => {
     ] }] } }
   ]);
   assert.equal(text, "학습 목표\n이름\t점수\n");
-});
-
-test("Docs creation content keeps title and heading ranges aligned", () => {
-  const content = buildDocumentContent("소화와 순환", [
-    { heading: "학습 목표", text: "우리 몸의 소화 과정을 설명한다." },
-    { heading: "활동", text: "기관 카드를 순서대로 놓는다." }
-  ]);
-  assert.match(content.text, /^소화와 순환\n\n학습 목표\n/);
-  assert.equal(content.text.slice(content.titleRange.startIndex - 1, content.titleRange.endIndex - 1), "소화와 순환");
-  assert.deepEqual(
-    content.headingRanges.map((range) => content.text.slice(range.startIndex - 1, range.endIndex - 1)),
-    ["학습 목표", "활동"]
-  );
 });
 
 test("generic workbook formatting creates readable rows, columns, and headers", () => {

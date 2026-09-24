@@ -76,12 +76,13 @@ npx -y edu-workspace-mcp@1.0.0 login --read</code></pre>
           <p>한 번의 요청으로 여러 Google 교육도구를 연결해 일관된 수업 패키지를 만들 수 있습니다.</p>
         </div>
         <div class="feature-grid">
-          <article><span>01</span><h3>수업 자료 제작</h3><p>수업안과 학습지를 Docs로, 차시별 발표 자료를 Slides로 생성합니다.</p></article>
+          <article><span>01</span><h3>수업 자료 제작</h3><p>학교 서식 같은 교수·학습 과정안과 이름 칸·답 칸이 있는 학습지를 A4 Docs로, 차시별 발표 자료를 Slides로 생성합니다.</p></article>
           <article><span>02</span><h3>평가 관리</h3><p>평가·제출·관찰 기록과 대시보드가 연결된 Sheets를 만들고, Forms 퀴즈를 생성합니다.</p></article>
           <article><span>03</span><h3>Classroom 연계</h3><p>담당 수업을 확인하고 과제 초안을 만든 뒤, 교사의 명시적 승인 후 게시합니다.</p></article>
           <article><span>04</span><h3>Drive 정리와 협업</h3><p>교과·단원별 폴더와 파일을 만들고, 공유는 대상과 권한을 확인한 뒤 적용합니다.</p></article>
           <article><span>05</span><h3>안전한 시트 진단</h3><p>셀 내용을 노출하지 않고 탭 구조·수식 의존성·오류·차트와 검증 규칙을 점검합니다.</p></article>
           <article><span>06</span><h3>제출 대시보드</h3><p>Classroom의 제출·지각·점수를 읽어 개인정보를 최소화한 Sheets 스냅샷을 만듭니다.</p></article>
+          <article><span>07</span><h3>초등 성취기준</h3><p>2022 개정 교육과정 성취기준 620개를 로그인 없이 찾고, 과정안·평가계획·퀴즈에 정리된 원문과 출처를 넣습니다.</p></article>
         </div>
       </section>
 
@@ -117,15 +118,38 @@ npx -y edu-workspace-mcp@1.0.0 login --read</code></pre>
           </details>
 
           <details class="prompt-card prompt-card-featured" open>
-            <summary><span class="service-mark docs" aria-hidden="true">D</span><span><small>Google Docs</small>학생용 활동지</span><span class="prompt-arrow" aria-hidden="true">+</span></summary>
+            <summary><span class="service-mark docs" aria-hidden="true">D</span><span><small>Google Docs</small>교수·학습 과정안</span><span class="prompt-arrow" aria-hidden="true">+</span></summary>
             <div class="prompt-body">
-              <div class="prompt-meta"><span>A4 2~3쪽</span><span>학생용</span><span>인쇄 친화</span></div>
-              <pre><code id="prompt-docs">초등학교 [5학년] [과학] ‘[소화와 순환]’ 학생용 활동지를 Google Docs로 만들어줘. 40분 수업에서 바로 인쇄해 쓸 수 있는 A4 2~3쪽 분량으로 작성해줘.
+              <div class="prompt-meta"><span>학교 서식</span><span>성취기준 원문</span><span>차시마다 한 쪽</span></div>
+              <pre><code id="prompt-lesson-plan">[5학년 국어] ‘[4. 의견을 조정해요 — 1. 의견을 조정하며 토의하기]’ 교수·학습 과정안을 만들어줘. 교과서는 [182~193쪽], [4차시]야.
 
-문서 순서는 제목 → 오늘의 학습 목표 2개 → 핵심 개념 4개 → 생활 속 사례 → 활동 1(개별 생각) → 활동 2(모둠 토의) → 정리 문제 4개 → 자기 점검 순서로 구성해줘. 각 활동에는 번호, 예상 시간, 학생이 해야 할 행동, 충분한 답안 공간을 넣고 문장은 5학년이 한 번에 이해할 수 있게 짧게 써줘. 소제목은 명확하게 나누고 본문은 한 문단이 너무 길어지지 않게 해줘.
+먼저 초등 성취기준에서 ‘[토의]’와 관련된 코드를 찾아 보여주고 내가 고르면, 그 코드로만 성취기준을 넣어줘(원문을 직접 쓰지 마). 과정안 양식으로 기본 정보표, 핵심 용어, 차시별 흐름표, 차시마다 학습 문제와 도입·전개·정리 과정표(학습 과정·교수·학습 활동·시간·자료 ▣·유의점 ※), 상·중·하 평가 계획, 지도상 유의점을 채워줘.
 
-완료하기 전에 제목·소제목·본문의 위계, 문단 간격, 페이지당 정보량, 인쇄했을 때 답을 쓸 공간이 충분한지 점검하고 문서 링크를 알려줘.</code></pre>
+완료 전에 차시별 시간 합이 40분인지, 활동이 교과서 쪽수와 맞는지 확인하고 문서 링크를 알려줘.</code></pre>
+              <button class="copy-button" type="button" data-copy-target="prompt-lesson-plan"><span>프롬프트 복사</span><span aria-hidden="true">↗</span></button>
+            </div>
+          </details>
+
+          <details class="prompt-card prompt-card-featured" open>
+            <summary><span class="service-mark docs" aria-hidden="true">D</span><span><small>Google Docs</small>학생용 학습지</span><span class="prompt-arrow" aria-hidden="true">+</span></summary>
+            <div class="prompt-body">
+              <div class="prompt-meta"><span>A4 1~2쪽</span><span>이름·답 칸</span><span>자기 점검표</span></div>
+              <pre><code id="prompt-docs">[5학년 국어] ‘[의견을 조정하며 토의하기]’ 학생용 학습지를 학습지 양식으로 만들어줘. 학년·반·번호·이름 칸과 학생 눈높이의 학습 목표 한 문장을 넣어줘.
+
+활동은 순서대로 ① 토의 주제 정하기: 상황별 문제를 쓰는 표 ② 의견 마련하기: ‘의견’·‘그 이유’ 이름표가 붙은 줄 칸 ③ 친구 의견의 장점·단점 표 ④ 검토 기준 × 의견 평가표(◎○△) ⑤ ‘수정한 의견’ 칸 ⑥ ○로 표시하는 자기 점검표와 ‘노력할 점’ 칸으로 해줘. 물음은 짧게 쓰고, 어려운 물음 아래에는 도움말을 한 줄 붙여줘.
+
+완료 전에 답을 쓸 공간이 충분한지, 인쇄했을 때 2쪽을 넘지 않는지 확인하고 문서 링크를 알려줘.</code></pre>
               <button class="copy-button" type="button" data-copy-target="prompt-docs"><span>프롬프트 복사</span><span aria-hidden="true">↗</span></button>
+            </div>
+          </details>
+
+          <details class="prompt-card">
+            <summary><span class="service-mark curriculum" aria-hidden="true">성</span><span><small>교육과정 · 로그인 불필요</small>성취기준 찾기와 평가계획</span><span class="prompt-arrow" aria-hidden="true">+</span></summary>
+            <div class="prompt-body">
+              <pre><code id="prompt-standards">초등 [5~6학년] [사회] 성취기준 중 ‘[유적]’, ‘[유물]’과 관련된 것을 찾아 코드와 원문을 표로 보여줘. 원문 확인이 필요한 항목이 있으면 따로 표시해줘.
+
+내가 코드를 고르면, 그 성취기준으로 [5학년 3반] [2학기] 과정중심평가 시트의 평가계획 탭을 미리 채워서 만들어줘. 학생은 학생01부터 학생24까지로 해줘. 성취기준 원문은 직접 쓰지 말고 코드로만 넘겨줘.</code></pre>
+              <button class="copy-button" type="button" data-copy-target="prompt-standards"><span>프롬프트 복사</span><span aria-hidden="true">↗</span></button>
             </div>
           </details>
 
@@ -200,8 +224,8 @@ npx -y edu-workspace-mcp@1.0.0 login --read</code></pre>
             <div class="prompt-body">
               <pre><code id="prompt-package">[5학년 과학] ‘[소화와 순환]’ 40분 수업 패키지를 만들어줘. 먼저 Drive에 ‘[5학년 과학/소화와 순환]’ 폴더를 만들고 아래 자료를 모두 그 안에 넣어줘.
 
-1. Google Docs 교사용 수업안: 학습 목표, 준비물, 도입 5분·활동 25분·정리 10분, 발문, 예상 오개념, 관찰 포인트
-2. Google Docs 학생용 학습지: 핵심 개념, 활동 2개, 답안 공간, 자기 점검
+1. 교수·학습 과정안: 초등 성취기준을 먼저 찾아 내가 고른 코드로 넣고, 도입 5분·활동 25분·정리 10분 과정표에 발문, 예상 오개념, 관찰 포인트
+2. 학생용 학습지(학습지 양식): 이름 칸, 학습 목표, 활동 2개와 이름표 달린 답 칸, 자기 점검표
 3. Google Slides 7장: 표지, 질문, 목표, 개념, 사례, 활동 안내, 정리
 4. Google Forms 형성평가: 객관식 4문항과 단답형 1문항, 정답과 배점 포함
 

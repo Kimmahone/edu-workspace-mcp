@@ -35,7 +35,15 @@ function demoServices(calls: Call[]): WorkspaceServices {
     createDocument: async (title, blocks, parentFolderId) => {
       calls.push({ tool: "docs_create_document", input: { title, blocks, parentFolderId } });
       const slug = title.includes("교사용") ? "teacher-guide" : "student-worksheet";
-      return { documentId: slug, title, url: `https://docs.example/${slug}` };
+      return { documentId: slug, title, url: `https://docs.example/${slug}`, pageSize: "A4" as const };
+    },
+    createWorksheet: async (input, parentFolderId) => {
+      calls.push({ tool: "docs_create_worksheet", input: { ...input, parentFolderId } });
+      return { documentId: "worksheet", title: input.title, url: "https://docs.example/worksheet", pageSize: "A4" as const, sectionCount: input.sections.length };
+    },
+    createLessonPlan: async (input, parentFolderId) => {
+      calls.push({ tool: "docs_create_lesson_plan", input: { ...input, parentFolderId } });
+      return { documentId: "lesson-plan", title: "과정안", url: "https://docs.example/lesson-plan", pageSize: "A4" as const, sessionCount: input.sessions.length, standardCount: input.standards?.length ?? 0 };
     },
     readDocument: async () => ({ documentId: "teacher-guide", title: "교사용 수업안", url: "https://docs.example/teacher-guide", totalCharacters: 0, returnedCharacters: 0, truncated: false, tabs: [] }),
     createWorkbook: async (title, sheets, parentFolderId) => {
@@ -53,7 +61,7 @@ function demoServices(calls: Call[]): WorkspaceServices {
       rows: [["이름", "국어"], ["김리안", "95"]]
     }),
     inspectWorkbook: (async () => ({ spreadsheetId: "assessment-sheet", title: "평가 기록", sheetCount: 1, formulaCount: 0, formulaErrorCount: 0, privacy: "no cell values" })) as unknown as WorkspaceServices["inspectWorkbook"],
-    createAssessmentTracker: (async (input: { title: string; students: unknown[] }) => ({ spreadsheetId: "assessment-sheet", title: input.title, url: "https://sheets.example/assessment-sheet", template: "ASSESSMENT_TRACKER", studentCount: input.students.length, subjectCount: 5, sheets: [], privacy: "no names returned" })) as WorkspaceServices["createAssessmentTracker"],
+    createAssessmentTracker: (async (input: { title: string; students: unknown[]; plannedStandards?: unknown[] }) => ({ spreadsheetId: "assessment-sheet", title: input.title, url: "https://sheets.example/assessment-sheet", template: "ASSESSMENT_TRACKER", studentCount: input.students.length, subjectCount: 5, plannedStandardCount: input.plannedStandards?.length ?? 0, sheets: [], privacy: "no names returned" })) as WorkspaceServices["createAssessmentTracker"],
     createSubmissionTracker: (async (input: { title: string; students: unknown[]; submissions: unknown[] }) => ({ spreadsheetId: "submission-sheet", title: input.title, url: "https://sheets.example/submission-sheet", template: "CLASSROOM_SUBMISSION_TRACKER", studentCount: input.students.length, submissionCount: input.submissions.length, submittedCount: 0, missingCount: input.students.length, lateCount: 0, sheets: [], privacy: "no names returned" })) as WorkspaceServices["createSubmissionTracker"],
     createPresentation: async (title, slides, parentFolderId) => {
       calls.push({ tool: "slides_create_presentation", input: { title, slides, parentFolderId } });

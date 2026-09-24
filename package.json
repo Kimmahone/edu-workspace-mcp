@@ -24,7 +24,9 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "data/curriculum",
+    "README.md",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "engines": {
     "node": ">=20"
@@ -35,6 +37,7 @@
     "start": "node dist/index.js",
     "cli": "tsx src/cli.ts",
     "check": "tsc --noEmit -p tsconfig.json",
+    "curriculum:build": "node scripts/build-curriculum-data.mjs",
     "test": "npm run build && node scripts/run-tests.mjs",
     "test:mcp": "npm run build && tsx src/tests/mcp-smoke.ts",
     "test:e2e": "npm run build && node scripts/e2e-google.mjs",
@@ -53,6 +56,7 @@
   },
   "devDependencies": {
     "@types/node": "22.20.1",
+    "korean-elementary-learning-map-mcp": "0.5.1",
     "tsx": "4.20.5",
     "typescript": "5.9.3"
   }
