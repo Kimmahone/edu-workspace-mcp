@@ -31,6 +31,15 @@ export type EducationStudent = {
   name: string;
 };
 
+/** 평가계획 탭에 미리 채울 성취기준. text 가 null 이면 원문 확인이 필요한 항목이다. */
+export type PlannedStandard = {
+  code: string;
+  subject: string;
+  domain: string;
+  text: string | null;
+  summary: string;
+};
+
 export type AssessmentTrackerInput = {
   title: string;
   className: string;
@@ -39,6 +48,7 @@ export type AssessmentTrackerInput = {
   students: EducationStudent[];
   subjects: string[];
   assessmentScale: string[];
+  plannedStandards?: PlannedStandard[];
   parentFolderId?: string;
 };
 
@@ -369,7 +379,12 @@ export function buildAssessmentTrackerPlan(input: AssessmentTrackerInput): Workb
     settings: 2109
   };
   const students = [...input.students].sort((a, b) => a.number - b.number);
-  const subjects = input.subjects.length ? input.subjects : ["국어", "사회", "수학", "과학", "영어"];
+  const plannedStandards = input.plannedStandards ?? [];
+  // 성취기준의 교과가 교과 목록에 없으면 평가계획 드롭다운 검증에 걸리므로 뒤에 더한다.
+  const subjects = [...new Set([
+    ...(input.subjects.length ? input.subjects : ["국어", "사회", "수학", "과학", "영어"]),
+    ...plannedStandards.map((standard) => standard.subject)
+  ])];
   const scale = input.assessmentScale.length ? input.assessmentScale : ["매우잘함", "잘함", "보통", "노력요함"];
   const assessmentTypes = ["과정중심평가", "단원평가", "수행평가", "형성평가", "관찰평가"];
   const submissionStates = ["미제출", "작성중", "제출완료", "반환", "회수"];
@@ -437,7 +452,17 @@ export function buildAssessmentTrackerPlan(input: AssessmentTrackerInput): Workb
     {
       sheetId: ids.plans, title: "평가계획", rowCount: 300, columnCount: 9, frozenRows: 1,
       columnWidths: [108, 96, 120, 320, 190, 128, 112, 84, 240],
-      rows: [["평가 ID", "교과", "영역", "성취기준", "평가명", "평가유형", "평가일", "만점", "비고"]]
+      rows: [
+        ["평가 ID", "교과", "영역", "성취기준", "평가명", "평가유형", "평가일", "만점", "비고"],
+        ...plannedStandards.map((standard, index): CellValue[] => [
+          `P${String(index + 1).padStart(2, "0")}`,
+          standard.subject,
+          standard.domain,
+          standard.text ? `${standard.code} ${standard.text}` : `${standard.code} (원문 확인 필요) ${standard.summary}`,
+          null, null, null, null,
+          standard.text ? null : "원문 자동 추출이 깨져 요지만 넣었습니다. NCIC 원문과 대조하세요."
+        ])
+      ]
     },
     {
       sheetId: ids.records, title: "평가기록", rowCount: 2000, columnCount: 10, frozenRows: 1, frozenColumns: 3,
@@ -566,7 +591,8 @@ export async function createAssessmentTracker(input: AssessmentTrackerInput) {
     ...workbook,
     template: "ASSESSMENT_TRACKER",
     studentCount: input.students.length,
-    subjectCount: input.subjects.length,
+    subjectCount: new Set([...input.subjects, ...(input.plannedStandards ?? []).map((standard) => standard.subject)]).size,
+    plannedStandardCount: input.plannedStandards?.length ?? 0,
     sheets: ["안내", "학생명단", "평가계획", "평가기록", "학생별현황", "제출현황", "관찰기록", "대시보드", "설정"],
     privacy: "학생 이름은 생성된 스프레드시트에만 기록되며 MCP 응답에는 포함하지 않습니다."
   };

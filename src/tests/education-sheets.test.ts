@@ -52,3 +52,26 @@ test("Classroom submission plan matches students without persisting Classroom id
   assert.ok((sheet?.columnWidths?.[7] ?? 0) >= 240, "제출물 링크 열은 읽기 좋은 너비여야 합니다");
   assert.ok(plan.sheets.every((candidate) => (candidate.frozenColumns ?? 0) < candidate.columnCount));
 });
+
+test("assessment plan is prefilled with standards and adds their subjects to the dropdowns", () => {
+  const plan = buildAssessmentTrackerPlan({
+    title: "2학기 평가",
+    className: "5학년 3반",
+    schoolYear: 2026,
+    semester: "2학기",
+    students: [],
+    subjects: ["국어", "사회"],
+    assessmentScale: ["잘함", "보통", "노력요함"],
+    plannedStandards: [
+      { code: "[6사04-01]", subject: "사회", domain: "역사", text: "선사 시대와 고조선의 유적과 유물을 활용하여 당시 사람들의 생활을 추론한다.", summary: "요지" },
+      { code: "[6실03-04]", subject: "실과", domain: "기술 시스템", text: null, summary: "수송 수단의 요지" }
+    ]
+  });
+  const plans = plan.sheets.find((sheet) => sheet.title === "평가계획");
+  assert.deepEqual(plans?.rows[1].slice(0, 4), ["P01", "사회", "역사", "[6사04-01] 선사 시대와 고조선의 유적과 유물을 활용하여 당시 사람들의 생활을 추론한다."]);
+  assert.equal(plans?.rows[1][8], null);
+  assert.match(String(plans?.rows[2][3]), /^\[6실03-04\] \(원문 확인 필요\) 수송 수단의 요지$/);
+  assert.match(String(plans?.rows[2][8]), /NCIC/);
+  const settings = plan.sheets.find((sheet) => sheet.title === "설정");
+  assert.deepEqual(settings?.rows.slice(1, 4).map((row) => row[0]), ["국어", "사회", "실과"], "실과가 교과 드롭다운에 더해져야 합니다");
+});

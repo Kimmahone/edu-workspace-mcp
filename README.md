@@ -8,7 +8,7 @@
 
 ## 할 수 있는 일
 
-- 수업 자료용 Google Docs 문서 생성
+- 학교 서식 같은 교수·학습 과정안(기본 정보표·단계별 과정표·평가 계획표)과 표·글머리·참고 상자가 있는 A4 Google Docs 문서 생성
 - 학생 명단·평가계획·평가기록·제출현황·관찰기록·대시보드가 연결된 Google Sheets 생성
 - 셀 값과 수식 본문을 노출하지 않는 기존 Sheets 구조·수식 오류 진단
 - Classroom 명단·제출 상태를 개인정보 최소화 시트로 변환
@@ -18,6 +18,7 @@
 - Google Drive 파일 검색, 폴더 생성, 승인 후 공유
 - 교사가 담당하는 Classroom 수업·과제·학생 명단·제출 현황 조회
 - Classroom 과제 초안 생성, 사용자 승인 후 게시
+- 초등 2022 개정 교육과정 성취기준 620개 찾기(인터넷·Google 로그인 불필요), 수업안·퀴즈·과제·평가계획에 원문과 출처 넣기
 
 예시 요청:
 
@@ -59,11 +60,69 @@
 
 > 읽기 확장 모드에서는 기존 자료를 조회·분석할 수 있습니다. 교육용 평가·제출 템플릿에는 차트·드롭다운·조건부 서식이 포함됩니다. 기존 문서나 임의 범위의 범용 부분 편집은 아직 지원하지 않습니다. 자세한 지원 범위는 [활용 예시 문서](docs/EDUCATOR_USE_CASES.md#현재-버전에서-가능한-범위)를 확인하세요.
 
+## 보기 좋은 문서 양식
+
+글자만 이어 붙인 문서가 아니라, 학교에서 쓰는 한글 문서처럼 표와 서식이 잡힌 A4 문서를 만듭니다.
+
+- **교수·학습 과정안** (`docs_create_lesson_plan`): 제목 상자 → 기본 정보표(교과·단원·차시·교과서·성취기준·학습 목표·학습 자료) → 핵심 용어 → 차시별 흐름표 → 차시마다 학습 문제와 단계별 과정표(단계·학습 과정·교수·학습 활동·시간·자료·유의점) → 평가 계획표(상·중·하) → 지도상 유의점. 같은 단계(도입·전개·정리)는 한 칸으로 합치고 시간을 더해 적습니다. 차시가 여럿이면 차시마다 새 쪽에서 시작합니다.
+- **일반 문서** (`docs_create_document`): 제목 상자와 절 제목에, 본문(`text`)에서 간단한 서식을 씁니다.
+
+  | 쓰는 법 | 결과 |
+  | --- | --- |
+  | `## 도입(5분)` | 소제목 |
+  | `- 항목`, 두 칸 들여쓴 `- 하위 항목` | 진짜 글머리 목록(둘째 줄도 들여쓰기) |
+  | `1. 항목` | 번호 목록 |
+  | `\| 칸 \| 칸 \|` 다음 줄 `\|---\|---\|` | 머리행이 있는 표 |
+  | `> 내용` | 회색 참고 상자 |
+  | `**굵게**` | 굵은 글씨 |
+
+- **인쇄 설정:** A4·여백, 한글 글꼴(Noto Sans KR, 굵게가 한글에도 적용), 표 머리행은 쪽마다 반복, 표의 한 행이 두 쪽으로 쪼개지지 않게, 제목은 다음 내용과 같은 쪽에.
+- **만드는 방법:** 서식을 HTML로 그린 뒤 Drive가 Google Docs로 변환하고, 변환이 살리지 못하는 글꼴·쪽 나눔·머리행 반복은 만든 문서에 Docs API로 한 번 더 입힙니다. 새 OAuth 범위는 필요 없습니다(`drive.file`, 이 앱이 만든 파일만). 인쇄 설정만 실패하면 문서는 그대로 두고 경고를 돌려줘 같은 문서가 두 번 만들어지지 않게 합니다.
+
+## 초등 교육과정 성취기준 연결
+
+AI가 성취기준을 기억으로 적으면 코드와 문장이 조금씩 틀리기 쉽습니다. 이 서버는 성취기준을 **코드로만 받고**, 원문과 출처는 서버가 붙입니다.
+
+```text
+curriculum_search_standards  →  교사가 성취기준 고르기  →  생성 도구에 standardCodes 전달
+                                                          ├ docs_create_lesson_plan               과정안 기본 정보표의 성취기준 칸
+                                                          ├ docs_create_document                  제목 아래 성취기준 표
+                                                          ├ education_create_assessment_tracker   평가계획 탭에 교과·영역·원문
+                                                          ├ forms_create_quiz                     퀴즈 설명 끝에 관련 성취기준
+                                                          └ classroom_create_assignment_draft     과제 설명 끝에 관련 성취기준
+```
+
+- **한 번에 시작하기:** MCP 프롬프트 `lesson_package_with_standards`(학년·교과·주제 입력)를 고르면 성취기준 선택 → 폴더 → 교사용 수업안 → 학생용 학습지 → 슬라이드 → 형성평가 → Classroom 초안 순서로 진행합니다. 게시는 교사 확인 뒤에만 합니다.
+- **모르는 코드는 만들기 전에 멈춥니다.** 비슷한 코드를 제안하고 Google 파일은 만들지 않습니다.
+- **데이터:** [korean-elementary-learning-map-mcp](https://github.com/taehyeonglim/korean-elementary-learning-map-mcp) 0.5.1(MIT)의 11개 교과 성취기준 620개. 원문은 NCIC 공개 PDF에서 자동 추출된 것이라 이 저장소에서 한 번 더 정리했습니다.
+
+  | 상태 | 수 | 뜻 |
+  | --- | ---: | --- |
+  | `extracted` | 494 | 추출된 문장을 그대로 씀 |
+  | `cleaned` | 113 | 뒤에 붙은 다음 단원 제목·쪽 번호·탐구 활동을 자르거나, 줄바꿈으로 깨진 띄어쓰기 36곳을 고침 |
+  | `unavailable` | 13 | 표 내용이 섞였거나 해설 문단이 들어가 싣지 않음. 문서에는 「원문 확인 필요」와 요지만 들어갑니다 |
+
+  자동 추출 문장이므로 공식 문서로 쓰기 전에는 NCIC 원문과 대조하세요. 정리 규칙은 [scripts/build-curriculum-data.mjs](scripts/build-curriculum-data.mjs), 원천 라이선스는 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)에 있습니다.
+- **선수관계·세부 학습 주제까지 보려면** 원본 교육과정 MCP를 함께 등록하세요. 두 서버는 도구 이름이 겹치지 않습니다.
+
+  ```bash
+  claude mcp add curriculum-kr -- npx -y korean-elementary-learning-map-mcp
+  ```
+
+```
+curriculum_search_standards { "subject": "사회", "grade": 5, "query": "유적 유물" }
+docs_create_lesson_plan { "subject": "사회", "grade": 5, "unit": "…", "standardCodes": ["[6사04-01]"], "objectives": ["…"], "sessions": [{ "title": "…", "steps": [{ "stage": "도입", "process": "…", "activities": ["…"], "minutes": 5 }] }] }
+docs_create_document { "title": "고조선 사람들의 생활", "standardCodes": ["[6사04-01]"], "blocks": [{ "heading": "학습 목표", "text": "- …" }] }
+education_create_assessment_tracker { "title": "2학기 평가", "className": "5학년 3반", "schoolYear": 2026, "semester": "2학기", "standardCodes": ["[6사04-01]", "[6사04-02]", "[6실03-04]"] }
+```
+
 ## MCP 도구
 
 | 도구 | 동작 | 성격 |
 | --- | --- | --- |
 | `workspace_get_auth_status` | Google 연결 상태와 범위 확인 | 읽기 |
+| `curriculum_search_standards` | 초등 성취기준을 교과·학년·낱말로 찾기 (로그인·인터넷 불필요) | 읽기 (로컬) |
+| `curriculum_get_standards` | 성취기준 코드로 원문·영역·출처·정리 내역 확인 | 읽기 (로컬) |
 | `classroom_list_courses` | 교사가 담당하는 활성 수업 조회 | 읽기 |
 | `classroom_list_coursework` | 수업의 과제·자료·마감·배점 조회 | 읽기 |
 | `classroom_list_students` | 수업 학생 명단 조회 | 읽기 |
@@ -71,7 +130,8 @@
 | `drive_search_files` | 앱이 접근 가능한 파일을 이름·유형·폴더로 검색 | 읽기 |
 | `drive_get_file_metadata` | Drive 파일 정보와 권한 상태 조회 | 읽기 |
 | `drive_create_folder` | Drive 폴더 생성 | 생성 |
-| `docs_create_document` | Docs 문서 생성 | 생성 |
+| `docs_create_document` | 제목 상자·절 제목·글머리·표·참고 상자가 있는 A4 Docs 문서 생성 | 생성 |
+| `docs_create_lesson_plan` | 교수·학습 과정안(기본 정보표·차시별 흐름·단계별 과정표·평가 계획표) 생성 | 생성 |
 | `docs_read_document` | Docs 본문·표·모든 문서 탭 읽기 | 읽기 |
 | `sheets_create_workbook` | 여러 탭과 초기 데이터가 있는 Sheets 생성 | 생성 |
 | `sheets_list_sheets` | 스프레드시트의 탭 목록과 크기 확인 | 읽기 |
@@ -223,6 +283,7 @@ node dist/cli.js login
 - 설치형 앱은 비밀을 유지할 수 없는 공개 클라이언트이므로 배포용 데스크톱 client ID와 client secret은 앱에 포함됩니다.
 - 기존 자료 읽기 범위는 기본으로 요청하지 않고 `--read` 또는 `EDU_WORKSPACE_READ_ACCESS=1`로 켠 사람에게만 추가합니다.
 - 검색·조회 도구에는 `readOnlyHint`를 표시합니다.
+- 교육과정 도구는 패키지에 들어 있는 정리본만 읽고 네트워크를 쓰지 않습니다(`openWorldHint: false`).
 - Classroom 게시와 Drive 공유에는 `destructiveHint`를 표시합니다.
 - Classroom 과제는 먼저 `DRAFT`로 만들고 별도 게시 도구에서 일회성 승인을 검증합니다.
 - Drive 공유도 준비와 확정 단계를 분리합니다.
@@ -258,6 +319,7 @@ Google API 실계정 테스트에는 별도 테스트 계정을 사용하세요.
 - [x] Google OAuth 브랜딩 검증·프로덕션 게시·비민감 범위 판정
 - [x] PKCE·state·토큰 파일 보호·할당량 재시도 정책
 - [x] Codex·Claude Code·Claude Desktop·Cursor 전역 자동 설치
+- [x] 초등 2022 개정 교육과정 성취기준 연결(정리본·`standardCodes`·수업 패키지 프롬프트)
 - [ ] 호스팅형 Streamable HTTP MCP
 - [ ] Calendar·Gmail·Tasks 확장
 
@@ -266,4 +328,4 @@ Google API 실계정 테스트에는 별도 테스트 계정을 사용하세요.
 
 ## 라이선스
 
-[MIT](LICENSE)
+[MIT](LICENSE). 포함된 교육과정 데이터의 원천과 라이선스는 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)를 참고하세요.
