@@ -57,7 +57,7 @@
   "devDependencies": {
     "@types/node": "22.20.1",
     "korean-elementary-learning-map-mcp": "0.5.1",
-    "tsx": "4.20.5",
+    "tsx": "4.23.15",
     "typescript": "5.9.3"
   }
 }
