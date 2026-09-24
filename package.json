@@ -58,6 +58,6 @@
     "@types/node": "22.20.1",
     "korean-elementary-learning-map-mcp": "0.5.1",
     "tsx": "4.20.5",
-    "typescript": "5.9.3"
+    "typescript": "7.0.2"
   }
 }
