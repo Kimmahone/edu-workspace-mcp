@@ -116,6 +116,7 @@ h3 { margin: 42px 0 10px; font-size: 23px; letter-spacing: -.025em; }
 .service-mark.classroom { background: #168b64; }
 .service-mark.inspect { background: #4f6975; }
 .service-mark.package { color: var(--green-dark); background: var(--lime); }
+.service-mark.curriculum { background: #1b3c61; }
 .prompt-arrow { color: var(--muted); font-size: 24px; font-weight: 400; transition: transform .2s ease; }
 .prompt-card[open] .prompt-arrow { transform: rotate(45deg); }
 .prompt-body { padding: 0 20px 20px; }

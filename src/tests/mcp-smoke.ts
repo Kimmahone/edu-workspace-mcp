@@ -11,7 +11,7 @@ const transport = new StdioClientTransport({
 const client = new Client({ name: "stdio-smoke-test", version: "1.0.0" });
 await client.connect(transport);
 const tools = await client.listTools();
-assert.equal(tools.tools.length, 28);
+assert.equal(tools.tools.length, 29);
 assert.ok(tools.tools.some((tool) => tool.name === "forms_create_quiz"));
 assert.ok(tools.tools.some((tool) => tool.name === "sheets_read_values"));
 assert.ok(tools.tools.some((tool) => tool.name === "sheets_list_sheets"));
@@ -20,6 +20,7 @@ assert.ok(tools.tools.some((tool) => tool.name === "education_create_assessment_
 assert.ok(tools.tools.some((tool) => tool.name === "education_create_classroom_submission_tracker"));
 assert.ok(tools.tools.some((tool) => tool.name === "docs_read_document"));
 assert.ok(tools.tools.some((tool) => tool.name === "docs_create_lesson_plan"));
+assert.ok(tools.tools.some((tool) => tool.name === "docs_create_worksheet"));
 assert.ok(tools.tools.some((tool) => tool.name === "slides_read_presentation"));
 assert.ok(tools.tools.some((tool) => tool.name === "forms_list_responses"));
 assert.ok(tools.tools.some((tool) => tool.name === "classroom_list_student_submissions"));

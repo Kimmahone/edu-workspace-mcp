@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { docs_v1 } from "googleapis";
-import { markdownToHtml, renderDocumentHtml, renderLessonPlanHtml, type LessonPlanInput } from "../google/document-html.js";
+import { markdownToHtml, renderDocumentHtml, renderLessonPlanHtml, renderWorksheetHtml, type LessonPlanInput } from "../google/document-html.js";
 import { SESSION_HEADING, printLayoutRequests } from "../google/docs.js";
 
 const textOf = (html: string) => html.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ");
@@ -125,4 +125,34 @@ test("인쇄 설정: A4, 한글 글꼴 뒤 굵게 복원, 머리행 반복, 행 
   assert.equal(requests.filter((request) => request.updateTableRowStyle?.tableRowStyle?.preventOverflow).length, 2);
   const headingStyles = requests.filter((request) => request.updateParagraphStyle).map((request) => request.updateParagraphStyle?.paragraphStyle);
   assert.deepEqual(headingStyles, [{ keepWithNext: true, pageBreakBefore: true }, { keepWithNext: true }]);
+});
+
+test("학습지: 이름 칸, 학습 목표, 이름표 달린 줄 칸, 행 이름 있는 빈 표, ○ 점검표, 도움말", () => {
+  const html = renderWorksheetHtml({
+    title: "의견을 조정하며 토의하기 활동지", grade: 5, subject: "국어", unit: "4. 의견을 조정해요", lesson: "3차시",
+    objective: "의견을 조정할 수 있다.",
+    sections: [
+      { kind: "write", tag: "의견 마련하기", prompt: "의견과 그 이유를 써 봅시다.", boxes: [{ label: "의견", lines: 2 }, { label: "그 이유", lines: 3 }], hint: "이유를 구체적으로" },
+      { kind: "table", prompt: "평가해 봅시다.", columns: ["검토 기준", "내 의견", "친구 의견"], rows: ["실천할 수 있는가?", "효과적인가?"], lines: 1 },
+      { kind: "table", columns: ["이름", "장점", "단점"], blankRows: 3 },
+      { kind: "checklist", prompt: "점검해 봅시다.", items: ["주제를 정했나요?", "존중하며 참여했나요?"] },
+      { kind: "box", prompt: "마인드맵을 그려 봅시다.", lines: 6 }
+    ]
+  });
+  const text = textOf(html);
+  assert.match(text, /5학년 · 국어 · 4\. 의견을 조정해요 · 3차시/);
+  assert.match(html, />학년·반·번호<\/td>/);
+  assert.match(text, /5학년\s+반\s+번/);
+  assert.match(html, /학습 목표<\/b>&nbsp;&nbsp;의견을 조정할 수 있다\./);
+  assert.match(html, /background-color:#1b3c61[^>]*>&nbsp;의견 마련하기&nbsp;/, "활동 이름표");
+  assert.deepEqual([...html.matchAll(/<h3[^>]*><b[^>]*>(\d+)\.<\/b>/g)].map((match) => match[1]), ["1", "2", "3", "4"], "물음만 번호가 붙습니다");
+  assert.match(html, /<td rowspan="2"[^>]*>의견<\/td>/);
+  assert.match(html, /<td rowspan="3"[^>]*>그 이유<\/td>/);
+  assert.match(html, />실천할 수 있는가\?<\/td>(<td[^>]*><p[^>]*>&nbsp;<\/p><\/td>){2}<\/tr>/, "행 이름 옆은 빈 칸");
+  assert.equal((html.match(/<tr><td style="border:0\.75pt solid #9aa9b8; padding:4pt 6pt; vertical-align:top;">/g) ?? []).length >= 3, true);
+  assert.equal((html.match(/>○<\/td>/g) ?? []).length, 6, "두 문항 × 기본 척도 세 칸");
+  assert.match(html, />매우 잘함<\/td>[\s\S]*>잘함<\/td>[\s\S]*>보통<\/td>/);
+  assert.match(html, /도움말<\/b>&nbsp;&nbsp;이유를 구체적으로/);
+  const noInfo = renderWorksheetHtml({ title: "t", studentInfo: false, sections: [{ kind: "text", text: "- 안내" }] });
+  assert.doesNotMatch(noInfo, /학년·반·번호/);
 });

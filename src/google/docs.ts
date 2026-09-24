@@ -2,13 +2,13 @@ import { Readable } from "node:stream";
 import { docs_v1, google } from "googleapis";
 import { getAuthorizedClient } from "../auth/google-auth.js";
 import {
-  lessonPlanTitle, renderDocumentHtml, renderLessonPlanHtml,
-  type DocumentBlock, type DocumentOptions, type LessonPlanInput
+  lessonPlanTitle, renderDocumentHtml, renderLessonPlanHtml, renderWorksheetHtml,
+  type DocumentBlock, type DocumentOptions, type LessonPlanInput, type WorksheetInput
 } from "./document-html.js";
 import { extractGoogleFileId } from "./references.js";
 import { withGoogleRetry } from "./retry.js";
 
-export type { DocumentBlock, DocumentOptions, LessonPlanInput } from "./document-html.js";
+export type { DocumentBlock, DocumentOptions, LessonPlanInput, WorksheetInput, WorksheetSection } from "./document-html.js";
 
 // 문서는 HTML로 양식을 그린 뒤 Drive가 Google Docs로 변환하게 만든다(표·음영·칸 합치기·목록이 살아남는다).
 // 변환만으로는 안 되는 인쇄 설정은 변환된 문서를 읽어 한 번에 입힌다.
@@ -165,6 +165,11 @@ export async function createLessonPlan(input: LessonPlanInput, parentFolderId?: 
   const layout: PrintLayoutOptions = input.sessions.length > 1 ? { pageBreakBefore: (text) => SESSION_HEADING.test(text) } : {};
   const document = await createDocumentFromHtml(input.lesson?.trim() ? `${title} — ${input.lesson.trim()}` : title, renderLessonPlanHtml(input), parentFolderId, layout);
   return { ...document, sessionCount: input.sessions.length, standardCount: input.standards?.length ?? 0 };
+}
+
+export async function createWorksheet(input: WorksheetInput, parentFolderId?: string): Promise<CreatedDocument & { sectionCount: number }> {
+  const document = await createDocumentFromHtml(input.title, renderWorksheetHtml(input), parentFolderId);
+  return { ...document, sectionCount: input.sections.length };
 }
 
 export function extractDocumentText(elements: docs_v1.Schema$StructuralElement[] = []): string {

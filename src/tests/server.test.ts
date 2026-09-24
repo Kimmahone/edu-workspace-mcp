@@ -28,6 +28,7 @@ function services(): WorkspaceServices {
     getFileMetadata: async () => ({ id: "file-1", name: "학습지", mimeType: "application/vnd.google-apps.document" }),
     createFolder: async (name) => ({ id: "folder-1", name }),
     createDocument: async (title) => ({ documentId: "doc-1", title, url: "https://docs.google.com/document/d/doc-1/edit", pageSize: "A4" as const }),
+    createWorksheet: async (input) => ({ documentId: "sheet-doc-1", title: input.title, url: "https://docs.google.com/document/d/sheet-doc-1/edit", pageSize: "A4" as const, sectionCount: input.sections.length }),
     createLessonPlan: async (input) => ({ documentId: "plan-1", title: "과정안", url: "https://docs.google.com/document/d/plan-1/edit", pageSize: "A4" as const, sessionCount: input.sessions.length, standardCount: input.standards?.length ?? 0 }),
     readDocument: async () => ({ documentId: "doc-1", title: "학습지", url: "https://docs.google.com/document/d/doc-1/edit", totalCharacters: 2, returnedCharacters: 2, truncated: false, tabs: [{ tabId: "tab-1", title: "탭 1", index: 0, nestingLevel: 0, text: "내용", totalCharacters: 2, truncated: false }] }),
     createWorkbook: async (title) => ({ spreadsheetId: "sheet-1", title, url: "https://docs.google.com/spreadsheets/d/sheet-1/edit" }),
@@ -62,7 +63,7 @@ test("server exposes the complete MVP tool set", async () => {
     "classroom_create_assignment_draft", "classroom_list_courses", "classroom_publish_assignment",
     "classroom_list_coursework", "classroom_list_students", "classroom_list_student_submissions",
     "curriculum_get_standards", "curriculum_search_standards",
-    "docs_create_document", "docs_create_lesson_plan", "docs_read_document", "drive_create_folder", "drive_get_file_metadata", "drive_prepare_share", "drive_search_files", "drive_share_file",
+    "docs_create_document", "docs_create_lesson_plan", "docs_create_worksheet", "docs_read_document", "drive_create_folder", "drive_get_file_metadata", "drive_prepare_share", "drive_search_files", "drive_share_file",
     "education_create_assessment_tracker", "education_create_classroom_submission_tracker",
     "forms_create_quiz", "forms_read_form", "forms_list_responses", "sheets_create_workbook", "sheets_inspect_workbook", "sheets_list_sheets", "sheets_read_values",
     "slides_create_presentation", "slides_read_presentation", "workspace_get_auth_status"
@@ -344,5 +345,33 @@ test("docs_create_lesson_plan builds a lesson plan with verified standards", asy
     arguments: { subject: "국어", grade: 5, unit: "4단원", standardCodes: ["[6국09-99]"], objectives: ["목표"], sessions: [{ title: "1차시", steps: [{ stage: "도입", process: "시작", activities: ["활동"] }] }] }
   });
   assert.equal((invalid.structuredContent as { error: string }).error, "INVALID_STANDARD_CODE");
+  await client.close(); await server.close();
+});
+
+test("docs_create_worksheet validates each section kind before calling Google", async () => {
+  let received: { title: string; sections: Array<{ kind: string }> } | undefined;
+  const { client, server } = await connectedClient({
+    createWorksheet: async (input) => {
+      received = input;
+      return { documentId: "ws-1", title: input.title, url: "https://docs.google.com/document/d/ws-1/edit", pageSize: "A4" as const, sectionCount: input.sections.length };
+    }
+  });
+  const ok = await client.callTool({ name: "docs_create_worksheet", arguments: {
+    title: "활동지", grade: 5, objective: "의견을 조정할 수 있다.",
+    sections: [
+      { kind: "write", tag: "의견 마련하기", prompt: "의견과 이유를 써 봅시다.", boxes: [{ label: "의견", lines: 2 }, { label: "그 이유", lines: 3 }] },
+      { kind: "table", prompt: "평가해 봅시다.", columns: ["검토 기준", "내 의견"], rows: ["실천할 수 있는가?"] },
+      { kind: "checklist", prompt: "점검해 봅시다.", items: ["주제를 정했나요?"] }
+    ]
+  } });
+  assert.notEqual(ok.isError, true);
+  assert.deepEqual(received?.sections.map((section) => section.kind), ["write", "table", "checklist"]);
+
+  for (const section of [{ kind: "table" }, { kind: "checklist" }, { kind: "text" }, { kind: "table", columns: ["하나"], rows: ["행"] }]) {
+    received = undefined;
+    const bad = await client.callTool({ name: "docs_create_worksheet", arguments: { title: "활동지", sections: [section] } });
+    assert.equal(bad.isError, true, `${JSON.stringify(section)} 는 거절되어야 합니다`);
+    assert.equal(received, undefined);
+  }
   await client.close(); await server.close();
 });

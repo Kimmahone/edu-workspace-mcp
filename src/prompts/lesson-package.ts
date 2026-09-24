@@ -18,7 +18,7 @@ export function lessonPackagePrompt({ grade, subject, topic, classroom }: Lesson
     "2. 고른 성취기준에 맞춰 학습 목표를 학생 눈높이의 한 문장으로 정리해 보여 주세요.",
     `3. drive_create_folder로 「${grade}학년 ${subject} ${topic}」 폴더를 만드세요.`,
     "4. docs_create_lesson_plan으로 교수·학습 과정안을 만드세요. standardCodes에 고른 코드를 넣고, 성취기준 원문은 직접 쓰지 마세요. 서버가 정리된 원문과 출처를 붙입니다. 단계마다 학습 과정·활동·시간·자료(▣)·유의점(※)을 채우세요.",
-    "5. docs_create_document로 학생용 학습지를 만드세요. 학생용에는 standardCodes 대신 학습 목표 문장만 쓰고, 표나 글머리를 써서 답을 쓸 공간을 넉넉히 두세요.",
+    "5. docs_create_worksheet로 학생용 학습지를 만드세요. 학생 눈높이의 학습 목표 한 문장을 넣고, 물음마다 답 칸(write)·빈 표(table)·자기 점검표(checklist)를 알맞게 골라 답을 쓸 공간을 넉넉히 두세요. 학습지에는 성취기준 원문을 넣지 마세요.",
     "6. slides_create_presentation으로 한 장에 핵심 하나씩 수업 슬라이드를 만드세요.",
     "7. forms_create_quiz로 고른 성취기준마다 1~2문항씩 형성평가를 만들고 standardCodes를 넣으세요.",
     `8. ${classroomStep} classroom_create_assignment_draft로 학생용 자료만 첨부한 과제 초안을 만드세요. 게시는 제가 대상·마감·첨부를 확인한 뒤에만 하세요.`,

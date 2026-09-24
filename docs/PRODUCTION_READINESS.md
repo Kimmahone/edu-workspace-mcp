@@ -14,7 +14,7 @@ ChatGPT 웹은 로컬 stdio 서버를 실행하지 못하므로 현재 정식 �
 정식 버전은 다음 조건을 모두 통과한 경우에만 npm `latest`로 게시한다.
 
 1. TypeScript 정적 검사와 전체 단위·통합 테스트 통과
-2. 실제 stdio MCP 연결 및 전체 도구 검색 성공 (현재 28개)
+2. 실제 stdio MCP 연결 및 전체 도구 검색 성공 (현재 29개)
 3. macOS, Windows, Linux와 Node.js 20·22·24 CI 통과
 4. 운영 의존성 보안 감사에서 알려진 취약점 0건
 5. `npm pack --dry-run`과 설치 후 실행 스모크 테스트 통과

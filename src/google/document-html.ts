@@ -398,3 +398,149 @@ export function renderLessonPlanHtml(input: LessonPlanInput): string {
   }
   return htmlDocument(parts.join(""));
 }
+
+// ── 학생용 학습지 ─────────────────────────────────────────────────────────────
+// 교과서 활동 쪽처럼 이름 칸, 학습 목표 상자, 이름표가 붙은 줄 있는 답 칸, 빈 표, ○ 자기 점검표를 그린다.
+
+export type WorksheetSection = {
+  kind: "write" | "table" | "checklist" | "box" | "text";
+  /** 교과서의 활동 이름표. 예: 의견 마련하기 */
+  tag?: string;
+  /** 번호가 붙는 물음 */
+  prompt?: string;
+  /** write: 이름표 붙은 답 칸들. 예: [{ label: "의견", lines: 2 }, { label: "그 이유", lines: 4 }] */
+  boxes?: Array<{ label?: string; lines: number }>;
+  /** table: 머리행 */
+  columns?: string[];
+  /** table: 첫 열에 들어갈 행 이름. 없으면 blankRows 만큼 빈 행 */
+  rows?: string[];
+  blankRows?: number;
+  /** table·box: 칸 높이(줄 수) */
+  lines?: number;
+  /** checklist: 점검 문항과 척도 */
+  items?: string[];
+  scale?: string[];
+  /** text: 본문 서식 */
+  text?: string;
+  /** 물음 아래 도움말 상자 */
+  hint?: string;
+};
+
+export type WorksheetInput = {
+  title: string;
+  subject?: string;
+  grade?: number;
+  unit?: string;
+  lesson?: string;
+  objective?: string;
+  studentInfo?: boolean;
+  sections: WorksheetSection[];
+};
+
+const WRITE_LINE = `<p style="margin:0; font-size:14pt; line-height:1.3;">&nbsp;</p>`;
+const RULE = `0.75pt dotted ${COLOR.line}`;
+const FRAME = `0.75pt solid ${COLOR.line}`;
+
+function studentInfoStrip(grade?: number): string {
+  const gradeText = grade ? `${grade}학년` : "&nbsp;&nbsp;&nbsp;&nbsp;학년";
+  return `<table style="${TABLE}"><tr>`
+    + `<td style="${LABEL_CELL} width:18%;">학년·반·번호</td>`
+    + `<td style="${CELL} width:36%; vertical-align:middle;">${gradeText}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;반&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;번</td>`
+    + `<td style="${LABEL_CELL} width:10%;">이름</td>`
+    + `<td style="${CELL} width:36%;">${WRITE_LINE}</td>`
+    + "</tr></table>";
+}
+
+function sectionTag(tag: string): string {
+  return `<p style="margin:12pt 0 3pt 0;"><span style="background-color:${COLOR.navy}; color:#ffffff; font-weight:bold; font-size:9pt;">&nbsp;${escapeHtml(tag)}&nbsp;</span></p>`;
+}
+
+function promptLine(number: number, prompt: string): string {
+  // h3 로 두어 Docs 개요에 보이고, 변환 뒤 "다음 내용과 같은 쪽에" 설정이 걸리게 한다.
+  return `<h3 style="margin:6pt 0 4pt 0; font-size:11pt; font-weight:normal; color:${COLOR.ink};"><b style="color:${COLOR.navy};">${number}.</b> ${inlineHtml(prompt)}</h3>`;
+}
+
+/** 이름표가 있으면 왼쪽 칸에 세로로 합쳐 두고, 오른쪽은 점선 줄. 겉테두리는 실선. */
+function answerBox(lines: number, label?: string): string {
+  const count = Math.max(1, Math.min(lines, 20));
+  const rows = Array.from({ length: count }, (_, index) => {
+    const top = index === 0 ? FRAME : "none";
+    const bottom = index === count - 1 ? FRAME : RULE;
+    const labelCell = index === 0 && label
+      ? `<td rowspan="${count}" style="${LABEL_CELL} width:15%; border:${FRAME};">${escapeHtml(label)}</td>`
+      : "";
+    return `<tr>${labelCell}<td style="border-top:${top}; border-bottom:${bottom}; border-left:${FRAME}; border-right:${FRAME}; padding:2pt 8pt;">${WRITE_LINE}</td></tr>`;
+  }).join("");
+  return `<table style="${TABLE}">${rows}</table>`;
+}
+
+function fillTable(section: WorksheetSection): string {
+  const columns = section.columns ?? [];
+  const rowLabels = section.rows ?? [];
+  const lines = Math.max(1, Math.min(section.lines ?? 2, 12));
+  const cellBody = Array.from({ length: lines }, () => WRITE_LINE).join("");
+  const labelWidth = rowLabels.length ? 24 : 0;
+  const width = Math.floor((100 - labelWidth) / Math.max(1, columns.length - (rowLabels.length ? 1 : 0)));
+  const head = columns.map((column, index) => {
+    const w = rowLabels.length && index === 0 ? labelWidth : width;
+    return `<td style="${HEADER_CELL} width:${w}%;">${inlineHtml(column)}</td>`;
+  }).join("");
+  const bodyRows = rowLabels.length
+    ? rowLabels.map((label) => `<tr><td style="${LABEL_CELL} text-align:left; font-weight:normal;">${inlineHtml(label)}</td>${columns.slice(1).map(() => `<td style="${CELL}">${cellBody}</td>`).join("")}</tr>`)
+    : Array.from({ length: Math.max(1, Math.min(section.blankRows ?? 2, 20)) }, () => `<tr>${columns.map(() => `<td style="${CELL}">${cellBody}</td>`).join("")}</tr>`);
+  return `<table style="${TABLE}"><tr>${head}</tr>${bodyRows.join("")}</table>`;
+}
+
+function checklistTable(items: string[], scale: string[]): string {
+  const scaleWidth = Math.floor(40 / scale.length);
+  const head = `<td style="${HEADER_CELL} width:${100 - scaleWidth * scale.length}%;">점검 내용</td>`
+    + scale.map((level) => `<td style="${HEADER_CELL} width:${scaleWidth}%;">${inlineHtml(level)}</td>`).join("");
+  const rows = items.map((item) => `<tr><td style="${CELL} vertical-align:middle;">${inlineHtml(item)}</td>`
+    + scale.map(() => `<td style="${CELL} text-align:center; vertical-align:middle; font-size:14pt; color:${COLOR.line};">○</td>`).join("")
+    + "</tr>").join("");
+  return `<table style="${TABLE}"><tr>${head}</tr>${rows}</table>`;
+}
+
+function hintBox(hint: string): string {
+  return `<table style="${TABLE}"><tr><td style="background:${COLOR.highlight}; border:0.75pt solid ${COLOR.highlightLine}; padding:4pt 8pt; font-size:9pt;">`
+    + `<p style="margin:0; line-height:1.25;"><b style="color:${COLOR.navy};">도움말</b>&nbsp;&nbsp;${inlineHtml(hint)}</p></td></tr></table>`;
+}
+
+export function renderWorksheetHtml(input: WorksheetInput): string {
+  const subtitle = [input.grade ? `${input.grade}학년` : "", input.subject ?? "", input.unit ?? "", input.lesson ?? ""]
+    .map((part) => part.trim()).filter(Boolean).join(" · ");
+  const parts = [titleBox(input.title, subtitle || undefined)];
+  if (input.studentInfo ?? true) parts.push(spacer(6), studentInfoStrip(input.grade));
+  if (input.objective?.trim()) {
+    parts.push(spacer(6));
+    parts.push(`<table style="${TABLE}"><tr><td style="background:${COLOR.note}; border-left:3pt solid ${COLOR.navy}; border-top:none; border-right:none; border-bottom:none; padding:6pt 9pt;">`
+      + `<p style="margin:0; line-height:1.25;"><b style="color:${COLOR.navy};">학습 목표</b>&nbsp;&nbsp;${inlineHtml(input.objective.trim())}</p></td></tr></table>`);
+  }
+
+  let number = 0;
+  for (const section of input.sections) {
+    if (section.tag?.trim()) parts.push(sectionTag(section.tag.trim()));
+    else parts.push(spacer(8));
+    if (section.prompt?.trim()) {
+      number += 1;
+      parts.push(promptLine(number, section.prompt.trim()));
+    }
+    if (section.kind === "write") {
+      const boxes = section.boxes?.length ? section.boxes : [{ lines: 3 }];
+      boxes.forEach((box, index) => {
+        if (index > 0) parts.push(spacer(4));
+        parts.push(answerBox(box.lines, box.label));
+      });
+    } else if (section.kind === "table") {
+      parts.push(fillTable(section));
+    } else if (section.kind === "checklist") {
+      parts.push(checklistTable(section.items ?? [], section.scale?.length ? section.scale : ["매우 잘함", "잘함", "보통"]));
+    } else if (section.kind === "box") {
+      parts.push(`<table style="${TABLE}"><tr><td style="border:${FRAME}; padding:4pt 8pt;">${Array.from({ length: Math.max(2, Math.min(section.lines ?? 8, 30)) }, () => WRITE_LINE).join("")}</td></tr></table>`);
+    } else if (section.text?.trim()) {
+      parts.push(markdownToHtml(section.text));
+    }
+    if (section.hint?.trim()) parts.push(spacer(4), hintBox(section.hint.trim()));
+  }
+  return htmlDocument(parts.join(""));
+}

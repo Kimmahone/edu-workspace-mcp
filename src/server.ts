@@ -7,7 +7,7 @@ import {
   resolveStandardCodes, searchStandards, standardsSummary, toDocumentStandards, type CurriculumStandard
 } from "./curriculum/standards.js";
 import { createAssignmentDraft, listCourses, listCourseWork, listStudents, listStudentSubmissions, publishAssignment } from "./google/classroom.js";
-import { createDocument, createLessonPlan, readDocument } from "./google/docs.js";
+import { createDocument, createLessonPlan, createWorksheet, readDocument } from "./google/docs.js";
 import { createFolder, getFileMetadata, searchFiles, shareFile } from "./google/drive.js";
 import { createQuiz, listFormResponses, readForm } from "./google/forms.js";
 import { createAssessmentTracker, createSubmissionTracker } from "./google/education-sheets.js";
@@ -41,6 +41,7 @@ export type WorkspaceServices = {
   createFolder: typeof createFolder;
   createDocument: typeof createDocument;
   createLessonPlan: typeof createLessonPlan;
+  createWorksheet: typeof createWorksheet;
   readDocument: typeof readDocument;
   createWorkbook: typeof createWorkbook;
   listSheets: typeof listSheets;
@@ -60,7 +61,7 @@ export type WorkspaceServices = {
 
 const defaultServices: WorkspaceServices = {
   getAuthStatus, listCourses, listCourseWork, listStudents, listStudentSubmissions,
-  searchFiles, getFileMetadata, createFolder, createDocument, createLessonPlan, readDocument, createWorkbook, listSheets, readValues,
+  searchFiles, getFileMetadata, createFolder, createDocument, createLessonPlan, createWorksheet, readDocument, createWorkbook, listSheets, readValues,
   inspectWorkbook, createAssessmentTracker, createSubmissionTracker,
   createPresentation, readPresentation, createQuiz, readForm, listFormResponses,
   createAssignmentDraft, publishAssignment, shareFile
@@ -267,6 +268,48 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     const plan = { ...input, standards: toDocumentStandards(resolved.standards), standardsNote: CURRICULUM_SOURCE_NOTE };
     try { return jsonResult({ document: await services.createLessonPlan(plan, parentFolderId), ...standardsResult(resolved.standards) }); }
     catch (error) { return errorResult("LESSON_PLAN_CREATE_FAILED", error); }
+  });
+
+  const worksheetSectionSchema = z.object({
+    kind: z.enum(["write", "table", "checklist", "box", "text"])
+      .describe("write: 이름표 붙은 줄 있는 답 칸 · table: 빈 표 · checklist: ○ 자기 점검표 · box: 그리기·마인드맵용 큰 칸 · text: 안내 글"),
+    tag: z.string().trim().max(40).optional().describe("활동 이름표. 예: 의견 마련하기"),
+    prompt: z.string().trim().max(500).optional().describe("번호가 붙는 물음"),
+    boxes: z.array(z.object({ label: z.string().trim().max(30).optional(), lines: z.number().int().min(1).max(20) })).max(6).optional()
+      .describe("write: 예) [{label:'의견', lines:2}, {label:'그 이유', lines:4}]"),
+    columns: z.array(z.string().trim().min(1).max(60)).min(1).max(8).optional().describe("table: 머리행. rows를 쓰면 첫 열은 행 이름 열"),
+    rows: z.array(z.string().trim().min(1).max(120)).max(20).optional().describe("table: 첫 열의 행 이름(예: 검토 기준)"),
+    blankRows: z.number().int().min(1).max(20).optional().describe("table: rows가 없을 때 빈 행 수"),
+    lines: z.number().int().min(1).max(30).optional().describe("table: 칸 높이(줄 수) · box: 상자 높이(줄 수)"),
+    items: z.array(z.string().trim().min(1).max(200)).max(15).optional().describe("checklist: 점검 문항"),
+    scale: z.array(z.string().trim().min(1).max(20)).min(2).max(5).optional().describe("checklist: 척도(기본 매우 잘함·잘함·보통)"),
+    text: z.string().max(5_000).optional().describe("text: 본문 서식(docs_create_document와 같음)"),
+    hint: z.string().trim().max(300).optional().describe("물음 아래 도움말 상자")
+  }).superRefine((section, context) => {
+    if (section.kind === "table" && !section.columns?.length) context.addIssue({ code: z.ZodIssueCode.custom, message: "table 에는 columns가 필요합니다." });
+    if (section.kind === "table" && section.rows?.length && (section.columns?.length ?? 0) < 2) context.addIssue({ code: z.ZodIssueCode.custom, message: "rows를 쓰면 columns는 행 이름 열을 포함해 2개 이상이어야 합니다." });
+    if (section.kind === "checklist" && !section.items?.length) context.addIssue({ code: z.ZodIssueCode.custom, message: "checklist 에는 items가 필요합니다." });
+    if (section.kind === "text" && !section.text?.trim()) context.addIssue({ code: z.ZodIssueCode.custom, message: "text 에는 text가 필요합니다." });
+  });
+  server.registerTool("docs_create_worksheet", {
+    title: "학생용 학습지 생성",
+    description: "교과서 활동 쪽처럼 학년·반·번호·이름 칸, 학습 목표 상자, 활동 이름표, 번호 붙은 물음, 이름표 달린 줄 있는 답 칸, 빈 표(장단점·평가표), ○ 자기 점검표, 도움말 상자가 있는 A4 학습지를 Google Docs로 만듭니다. 학생용이라 성취기준 원문은 넣지 않습니다.",
+    inputSchema: {
+      title: z.string().trim().min(1).max(200),
+      subject: z.string().trim().max(20).optional(),
+      grade: z.number().int().min(1).max(6).optional(),
+      unit: z.string().trim().max(100).optional(),
+      lesson: z.string().trim().max(100).optional().describe("예: 3차시, 의견 마련하기"),
+      objective: z.string().trim().max(300).optional().describe("학생 눈높이의 학습 목표 한 문장"),
+      studentInfo: z.boolean().optional().describe("학년·반·번호·이름 칸 (기본 true)"),
+      sections: z.array(worksheetSectionSchema).min(1).max(20),
+      parentFolderId: z.string().max(200).optional()
+    },
+    annotations: createAction
+  }, async ({ parentFolderId, ...input }) => {
+    const authError = await requireAuth(); if (authError) return authError;
+    try { return jsonResult({ document: await services.createWorksheet(input, parentFolderId) }); }
+    catch (error) { return errorResult("WORKSHEET_CREATE_FAILED", error); }
   });
 
   server.registerTool("docs_read_document", {

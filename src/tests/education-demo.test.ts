@@ -37,6 +37,10 @@ function demoServices(calls: Call[]): WorkspaceServices {
       const slug = title.includes("교사용") ? "teacher-guide" : "student-worksheet";
       return { documentId: slug, title, url: `https://docs.example/${slug}`, pageSize: "A4" as const };
     },
+    createWorksheet: async (input, parentFolderId) => {
+      calls.push({ tool: "docs_create_worksheet", input: { ...input, parentFolderId } });
+      return { documentId: "worksheet", title: input.title, url: "https://docs.example/worksheet", pageSize: "A4" as const, sectionCount: input.sections.length };
+    },
     createLessonPlan: async (input, parentFolderId) => {
       calls.push({ tool: "docs_create_lesson_plan", input: { ...input, parentFolderId } });
       return { documentId: "lesson-plan", title: "과정안", url: "https://docs.example/lesson-plan", pageSize: "A4" as const, sessionCount: input.sessions.length, standardCount: input.standards?.length ?? 0 };
