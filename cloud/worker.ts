@@ -87,6 +87,8 @@ async function handle(request:Request,env:Env):Promise<Response>{
 }
 export default {
  async fetch(request:Request,env:Env){
+  // Dashboard variables survive Git deployments; absent settings use safe defaults.
+  env={...env,OWNER_EMAIL:env.OWNER_EMAIL??'',GEMINI_MODEL:env.GEMINI_MODEL||'gemini-flash-latest',OPENAI_MODEL:env.OPENAI_MODEL||'gpt-6-luna',GEMINI_FREE_TIER_CONFIRMED:env.GEMINI_FREE_TIER_CONFIRMED??'false',FORMS_TEMPLATE_ID:env.FORMS_TEMPLATE_ID??''};
   let response:Response;try{response=await handle(request,env);}catch(e){response=json({error:e instanceof HttpError?e.message:'작업을 완료하지 못했습니다. 무료 사용량 한도 또는 연결 설정을 확인해 주세요.'},e instanceof HttpError?e.status:422);}
   const h=new Headers(response.headers);h.set('Cache-Control','no-store');h.set('X-Content-Type-Options','nosniff');h.set('Referrer-Policy','no-referrer');h.set('X-Frame-Options','DENY');h.set('Content-Security-Policy',"default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");return new Response(response.body,{status:response.status,headers:h});
  },

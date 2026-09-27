@@ -44,3 +44,18 @@ test('Google request mapping preserves content and limits destinations',async()=
  assert.throws(()=>googleRequest('drive.files.get',{fileId:'../escape'},'test'));
  const slides=googleRequest('slides.presentations.batchUpdate',{presentationId:'abcd',requestBody:{requests:[{createSlide:{objectId:'slide1'}}]}},'test');assert.equal(slides.method,'POST');assert.equal(new URL(slides.url).pathname,'/v1/presentations/abcd:batchUpdate');
 });
+
+
+test('GitHub deployment starts safely without dashboard variables and respects configured models',async()=>{
+ const bundle=await build({entryPoints:['cloud/worker.ts'],bundle:true,write:false,format:'esm',platform:'browser'});
+ for(const bindings of [{},{OPENAI_MODEL:'chosen-model',GEMINI_MODEL:'chosen-flash'}]){
+  const mf=new Miniflare(convertV4MiniflareOptions({workers:[{name:'defaults',modules:true,script:bundle.outputFiles[0].text,compatibilityDate:'2026-09-27',bindings}]}));
+  try{
+   const response=await mf.dispatchFetch('https://app.example/api/status');assert.equal(response.status,200);
+   const status=await response.json() as any;
+   assert.equal(status.setupRequired,true);assert.equal(status.connected,false);assert.equal(status.ai.gemini,false);
+   assert.equal(status.models.openai,bindings.OPENAI_MODEL??'gpt-6-luna');assert.equal(status.models.gemini,bindings.GEMINI_MODEL??'gemini-flash-latest');
+   assert.equal((await mf.dispatchFetch('https://app.example/auth/google',{redirect:'manual'})).status,503);
+  }finally{await mf.dispose();}
+ }
+});

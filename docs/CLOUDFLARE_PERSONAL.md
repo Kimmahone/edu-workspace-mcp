@@ -17,25 +17,64 @@
 
 [Workers 요금](https://developers.cloudflare.com/workers/platform/pricing/) · [D1 요금](https://developers.cloudflare.com/d1/platform/pricing/)
 
-## 2. 배포 담당자가 한 번 실행할 작업
+## 2. GitHub 연결로 자동 배포 — 권장
 
-저장소에서 Node.js 22 이상으로 실행합니다. Mac과 Windows PowerShell에서 명령은 동일합니다.
+한 번 연결하면 **GitHub에 코드 push → Cloudflare 빌드 → 같은 주소에 새 버전 반영** 순서로 동작합니다. 맥을 켜 두거나 매번 배포 명령을 실행할 필요가 없습니다.
+
+### Cloudflare에서 처음 연결하기
+
+1. **Workers & Pages → 애플리케이션 생성 → GitHub 저장소 연결**을 선택합니다. 이 앱은 **Workers**로 만듭니다.
+2. GitHub 연결 권한을 허용하고 `Kimmahone/edu-workspace-mcp` 저장소를 선택합니다.
+3. 다음 값을 입력합니다. 현재 Cloudflare 코드가 있는 브랜치는 `codex/cloudflare-free-personal`입니다. `main`으로 병합한 뒤에는 Cloudflare의 Production branch를 `main`으로 바꿀 수 있습니다.
+
+| 항목 | 입력값 |
+| --- | --- |
+| Worker / 프로젝트 이름 | `workspace-lab-personal` |
+| Production branch / 배포 브랜치 | `codex/cloudflare-free-personal` |
+| Root directory / 루트 디렉터리 | 비워 두기 — 저장소 최상위 |
+| Build command / 빌드 명령 | `npm run cloud:build` |
+| Deploy command / 배포 명령 | `npm run cloud:git:deploy` |
+| Build variable | `NODE_VERSION` = `24` |
+| 비운영 브랜치 자동 빌드 / Preview | 끄기 |
+
+Cloudflare가 `package-lock.json`을 기준으로 의존성을 설치합니다. 별도의 Pages 출력 디렉터리를 지정하지 않습니다. Worker 설정이 `.cloud-build/public` 정적 파일을 함께 배포합니다.
+
+4. **Deploy**를 누르고 성공하면 표시되는 `https://workspace-lab-personal.<계정의 서브도메인>.workers.dev` 주소를 엽니다.
+5. 아래의 로그인·시크릿 설정을 한 번 완료합니다. 그 전에도 예시와 브라우저 한글 문서실은 사용할 수 있습니다.
+
+### 준비된 데이터베이스와 배포 설정
+
+- `cloud/wrangler.github.jsonc`에 현재 계정의 D1 `workspace-lab-personal`을 연결했습니다. 바인딩 이름은 **`DB`**입니다. 로그인·작업 기록 테이블 초기화도 완료했습니다. 같은 DB를 새로 만들거나 마이그레이션을 다시 실행할 필요가 없습니다.
+- 데이터베이스 식별자는 공개 가능한 리소스 ID이며 API 키가 아닙니다. 다른 사람이 자기 계정에 복제 배포할 때는 본인의 계정 ID와 D1 ID로 바꾸고 `npx wrangler d1 migrations apply workspace-lab-personal --remote --config cloud/wrangler.github.jsonc`로 스키마를 만듭니다.
+- GitHub 배포 설정은 `keep_vars: true`와 서버 기본값을 사용합니다. 대시보드에서 바꾼 환경변수와 시크릿을 다음 코드 배포가 초기화하지 않습니다.
+- 기존 사이트·MCP 릴리스를 삭제하지 않습니다. 이 앱은 별도 Worker입니다.
+- Workers Builds Free는 계정 합산 **월 3,000 빌드 분**을 제공합니다. [GitHub 연동](https://developers.cloudflare.com/workers/ci-cd/builds/git-integration/github-integration/) · [빌드 무료 한도](https://developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing/)
+
+### 최초 런타임 설정
+
+Worker → **Settings → Variables and Secrets**에 추가하고 Deploy합니다. **Build variables에 넣는 것이 아닙니다.**
+
+| 이름 | 종류 | 넣을 값 |
+| --- | --- | --- |
+| `OWNER_EMAIL` | Text | 본인이 로그인할 Google 이메일 |
+| `APP_SECRET` | Secret | 암호학적으로 생성한 32바이트 이상의 무작위 값 |
+| `GOOGLE_WEB_CLIENT_ID` | Secret | 아래 3절의 Google 웹 OAuth 클라이언트 ID |
+| `GOOGLE_WEB_CLIENT_SECRET` | Secret | 해당 클라이언트 시크릿 |
+| `GEMINI_API_KEY` | Secret | 아래 4절의 결제 미연결 Free Tier 키 |
+| `GEMINI_FREE_TIER_CONFIRMED` | Text | 실제 Free Tier 확인 후 `true` |
+| `OPENAI_API_KEY` | Secret | GPT를 사용할 때만 입력 |
+
+`APP_SECRET`은 로그인·저장 기록 암호화용입니다. 한 번 만든 값을 유지합니다. Node.js가 설치된 본인 컴퓨터에서 아래 명령으로 생성해 Secret 입력란에 직접 붙여 넣을 수 있습니다. 출력값을 GitHub나 대화에 올리지 마세요.
 
 ```sh
-npm ci
-npx wrangler login
-npm run cloud:setup
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ```
 
-설치 도우미가 계정 ID, 본인 Google 이메일, Workers Free 여부를 묻습니다. Free를 확인해야 D1을 만들고 배포합니다. 계정 ID는 Cloudflare 계정 화면에서 복사합니다. 로그인·API 키 설정 전에도 예시 편집과 브라우저 문서실을 사용할 수 있습니다.
+모델 설정을 생략하면 Gemini는 `gemini-flash-latest`, GPT는 `gpt-6-luna`입니다. 필요하면 런타임 Text 변수 `GEMINI_MODEL`, `OPENAI_MODEL`로 변경합니다.
 
-이후 코드 업데이트:
+### GitHub 연결 없이 수동 배포하는 경우만
 
-```sh
-npm run cloud:deploy
-```
-
-`cloud/wrangler.personal.jsonc`는 이 컴퓨터의 개인 배포 설정이며 Git에 올라가지 않습니다. 기본 Worker 이름은 `workspace-lab-personal`입니다. 이전 사이트나 MCP 릴리스를 삭제하지 않습니다. 이 도우미는 Cloudflare 요금제를 변경하지 않습니다.
+Node.js 22 이상에서 `npm ci`, `npx wrangler login`, `npm run cloud:setup`을 순서대로 실행합니다. 도우미는 별도 로컬 파일 `cloud/wrangler.personal.jsonc`와 암호화 시크릿을 생성합니다. 이후 `npm run cloud:deploy`로 갱신합니다. 이 대화형 명령은 Cloudflare Build/Deploy command에 입력하지 않습니다. 동일 Worker를 GitHub와 수동 배포로 번갈아 관리하지 마세요.
 
 ## 3. Google 연결 — 본인만 로그인
 
@@ -93,7 +132,7 @@ Cloudflare Worker의 **Settings → Variables and Secrets**에 입력합니다. 
 - 한글 서식 보존은 원본 구조에 따라 차이가 있습니다. PDF/OCR·운영체제의 한글 프로그램 자동화는 이 웹앱의 기능이 아닙니다.
 - Google Forms의 테마 복사는 접근 가능한 설문 원본 ID를 `FORMS_TEMPLATE_ID`에 설정합니다.
 - 로그인 세션은 8시간, 저장 작업 기록은 최대 7일 보관하며 만료 데이터는 정리합니다. 기록 삭제는 Google 파일 삭제를 의미하지 않습니다.
-- D1에는 Google 토큰과 작업 내용을 AES-GCM으로 암호화해 저장합니다. 키 `APP_SECRET`은 설치 도우미가 생성합니다. 이를 변경하면 기존 세션·기록을 읽지 못하게 됩니다.
+- D1에는 Google 토큰과 작업 내용을 AES-GCM으로 암호화해 저장합니다. 키 `APP_SECRET`은 최초 런타임 설정에서 등록합니다. 수동 설치 도우미를 사용하는 경우 도우미가 생성합니다. 이를 변경하면 기존 세션·기록을 읽지 못하게 됩니다.
 
 ## 7. 개발 검증
 
