@@ -2,7 +2,26 @@
 
 이 프로젝트는 [Semantic Versioning](https://semver.org/)을 따릅니다.
 
-## Unreleased
+## 1.1.0 - 2026-09-27
+
+### AI와 초등 학습 지도
+
+- OpenAI 기본 모델을 GPT-6 Luna로 설정하고 Gemini Flash 최신 별칭을 사용합니다. 모델별 비용 및 $10 사용량 안내를 갱신했습니다.
+- 초등 1~6학년의 다양한 교과 예시, 학습 주제 1,956개와 선수관계 1,894개를 연결했습니다.
+- 3종 디자인과 12종 예시의 HWPX·Markdown·JSON·PDF·PNG 파일을 제공합니다.
+
+### Workspace Lab 웹앱
+
+- 개인 로컬 및 다중 사용자 배포 모드를 제공하는 독립 웹 진입점, 반응형 한국어 화면과 수업·업무·일상 예시 12종을 추가했습니다.
+- Gemini 구조화 초안, GPT 개선안 비교, 검토 후 Docs·Slides·Forms·Sheets 저장, Classroom 비공개 과제와 별도 게시 확인을 연결했습니다.
+- kordoc 문서실: HWP/HWPX/DOCX 읽기, 미리보기, HWPX 생성, 원본 서식 유지 수정, 두 문서 비교와 Google Docs 왕복 변환을 제공합니다.
+- 사용자별 OAuth 컨텍스트, PKCE, CSRF, 암호화 PostgreSQL 세션, 일일 사용량 및 동시 처리 제한, 일회성 저장 확인과 결과 기록을 추가했습니다.
+- Dockerfile, Cloud Run 배포 스크립트, 환경변수 예시 및 운영 문서를 추가했습니다. 외부 계정 설정과 공개 배포는 운영 환경에서 연결해야 합니다.
+
+### 한글·Google 문서 변환
+
+- kordoc 4.15.4를 고정 의존성으로 추가했습니다. Drive의 HWP/HWPX를 Google Docs로 만드는 `docs_import_hwp`, Google Docs를 HWPX로 저장하는 `docs_export_hwpx` 도구와 `google_document_helper` 프롬프트를 추가했습니다.
+- 파일 형식·다운로드 권한·20MB 입력 크기를 확인하고 원본은 그대로 둡니다. 변환 결과에 링크, kordoc 버전, 경고와 서식 확인 안내를 반환합니다.
 
 ### 보기 좋은 문서 양식
 

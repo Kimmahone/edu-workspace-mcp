@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { PACKAGE_SPEC } from "../version.js";
 import { claudeCodeAddArgs, codexAddArgs, jsonConfigPath, updateJsonClientConfig } from "../install/configure-client.js";
 
 test("client installer preserves existing MCP servers and pins the stable version", async () => {
@@ -17,7 +18,7 @@ test("client installer preserves existing MCP servers and pins the stable versio
     };
     assert.equal(config.setting, true);
     assert.equal(config.mcpServers.existing.command, "existing");
-    assert.deepEqual(config.mcpServers["edu-workspace"], { command: "npx", args: ["-y", "edu-workspace-mcp@1.0.0"] });
+    assert.deepEqual(config.mcpServers["edu-workspace"], { command: "npx", args: ["-y", PACKAGE_SPEC] });
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
@@ -46,13 +47,13 @@ test("client config paths are computer-wide, not project-relative", () => {
 test("CLI installers use global scope and carry the read profile", () => {
   assert.deepEqual(codexAddArgs({ readAccess: true }), [
     "mcp", "add", "edu-workspace", "--env", "EDU_WORKSPACE_READ_ACCESS=1",
-    "--", "npx", "-y", "edu-workspace-mcp@1.0.0"
+    "--", "npx", "-y", PACKAGE_SPEC
   ]);
   assert.deepEqual(claudeCodeAddArgs({ readAccess: true }, "darwin"), [
     "mcp", "add", "edu-workspace", "--scope", "user", "--env", "EDU_WORKSPACE_READ_ACCESS=1",
-    "--", "npx", "-y", "edu-workspace-mcp@1.0.0"
+    "--", "npx", "-y", PACKAGE_SPEC
   ]);
   assert.deepEqual(claudeCodeAddArgs({}, "win32").slice(-6), [
-    "--", "cmd", "/c", "npx", "-y", "edu-workspace-mcp@1.0.0"
+    "--", "cmd", "/c", "npx", "-y", PACKAGE_SPEC
   ]);
 });

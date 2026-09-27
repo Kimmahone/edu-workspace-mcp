@@ -7,6 +7,7 @@ import { google } from "googleapis";
 import { CodeChallengeMethod, type Credentials } from "google-auth-library";
 import { credentialsPath, googleScopes, readAccessEnabled, tokenPath } from "../config.js";
 import { BUNDLED_GOOGLE_OAUTH_CLIENT } from "./bundled-oauth-client.js";
+import { googleContext } from "./context.js";
 
 export type AuthStatus = {
   authenticated: boolean;
@@ -257,6 +258,11 @@ export async function login(): Promise<AuthStatus> {
 }
 
 export async function getAuthorizedClient() {
+  const context = googleContext.getStore();
+  if (context) {
+    if (!context.client) throw new Error("Google 계정을 먼저 연결해 주세요.");
+    return context.client;
+  }
   const tokenFile = tokenPath();
   const { config } = await loadClientConfig();
   const client = createOAuthClient(config);

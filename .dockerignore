@@ -1,0 +1,18 @@
+node_modules
+dist
+.git
+.env
+.env.*
+credentials.json
+token.json
+.edu-workspace-mcp
+outputs
+test-results
+playwright-report
+tests
+docs
+*.log
+.DS_Store
+
+# Design references include private and large files. Only web/assets is published.
+구글/

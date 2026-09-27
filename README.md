@@ -8,6 +8,33 @@
 
 ## 할 수 있는 일
 
+### 교직원용 웹앱
+
+**v1.1.0 웹앱 바로 실행** (Node.js 22 이상):
+
+```sh
+npx -y edu-workspace-mcp@1.1.0 web
+```
+
+현재 폴더의 `.env`에 키를 설정할 수 있으며 GPT 기본 모델은 `gpt-6-luna`입니다. 기존 MCP v1.0.0 배포와 설치는 유지됩니다.
+
+단계별 API 연결·공개 배포 안내: [직접 해야 할 설정](docs/WORKSPACE_LAB_START.md).
+
+MCP와 별도로 브라우저에서 바로 쓰는 **Workspace Lab — Google 도구 활용 스튜디오**을 추가했습니다. 같은 코드로 개인 로컬 앱과 누구나 이용하는 배포용 웹앱을 운영합니다.
+
+```sh
+npm ci
+cp .env.example .env
+# .env에 GEMINI_API_KEY 입력 (예시·한글 변환만 쓸 때는 없어도 됩니다)
+npm run web:dev
+```
+
+`http://127.0.0.1:3210`에서 수업·업무 예시, Gemini/GPT 초안, Google 저장, Classroom 과제와 kordoc 문서실을 사용합니다. **배포용 웹앱도 HWP/HWPX 읽기·수정·비교, Google Docs 변환, HWPX 내보내기를 지원합니다.** 웹 배포에는 사용자별 Web OAuth·PostgreSQL·HTTPS 설정이 필요합니다.
+
+[실행·배포·운영 안내](docs/WEB_APP_OPERATIONS.md) · [환경변수 예시](.env.example) · [Dockerfile](Dockerfile)
+
+### 기존 MCP 도구
+
 - 학교 서식 같은 교수·학습 과정안(기본 정보표·단계별 과정표·평가 계획표), 교과서 활동 쪽 같은 학생용 학습지(이름 칸·줄 있는 답 칸·빈 표·자기 점검표), 표·글머리·참고 상자가 있는 A4 Google Docs 문서 생성
 - 학생 명단·평가계획·평가기록·제출현황·관찰기록·대시보드가 연결된 Google Sheets 생성
 - 셀 값과 수식 본문을 노출하지 않는 기존 Sheets 구조·수식 오류 진단
@@ -23,6 +50,19 @@
 예시 요청:
 
 > “`소화와 순환` 단원의 5문항 퀴즈와 학습지, 6장짜리 수업 슬라이드를 만들고 `2학년 과학` 클래스룸에 금요일 오후 6시 마감 과제 초안으로 등록해줘.”
+
+## 한글·Google 문서 변환 도우미 (kordoc)
+
+[kordoc](https://github.com/chrisryugj/kordoc) 4.15.4를 앱 의존성으로 포함합니다. 별도 kordoc MCP를 설치하지 않아도 두 도구를 쓸 수 있습니다.
+
+| 요청 | MCP 도구 | 결과 |
+| --- | --- | --- |
+| “Drive의 계획안.hwpx를 Google 문서로 만들어줘” | `docs_import_hwp` | 편집 가능한 Google Docs 링크 |
+| “이 Google 문서를 한글 파일로 저장해줘” | `docs_export_hwpx` | Drive에 새 HWPX 파일과 링크 |
+
+MCP 프롬프트 `google_document_helper`를 선택하면 파일 찾기부터 변환까지 안내합니다. 원본 파일은 수정하지 않고 새 파일을 만듭니다. 입력은 Drive 파일 ID 또는 URL이며 HWP/HWPX 가져오기와 Google Docs 내보내기를 지원합니다. 각 도구의 `parentFolderId`로 결과 폴더를 지정할 수 있습니다. 앱이 만든 파일이나 앱에 접근을 허용한 파일을 `drive.file` 권한으로 다루므로, 기존 Drive 파일이 검색되지 않으면 해당 파일을 앱에 허용해야 합니다.
+
+HWP/HWPX 가져오기는 본문과 표를 Google Docs 형식으로 다시 만듭니다. Google Docs 내보내기는 Google에서 DOCX로 추출한 뒤 kordoc으로 HWPX를 생성합니다. 두 방향 모두 원본의 세밀한 서식, 이미지 배치, 페이지 나눔, Google Docs 고유 요소는 달라질 수 있으므로 결과를 확인하세요. 입력 문서 크기는 최대 20MB입니다. 공개 배포 전에는 실제 Google 계정으로 양방향 변환을 점검해야 합니다.
 
 ## 실제 교육 활용 데모
 
@@ -171,8 +211,8 @@ education_create_assessment_tracker { "title": "2학기 평가", "className": "5
 기존 자료와 Classroom 학생 정보를 읽으려면 설치와 로그인에 `--read`를 붙이세요. 서비스별 읽기 전용 범위는 Google에서 민감 범위로 분류하므로 기본으로 요청하지 않습니다.
 
 ```bash
-npx -y edu-workspace-mcp@1.0.0 install claude --read
-npx -y edu-workspace-mcp@1.0.0 login --read
+npx -y edu-workspace-mcp@1.1.0 install claude --read
+npx -y edu-workspace-mcp@1.1.0 login --read
 ```
 
 MCP 클라이언트 설정에 넣을 때는 `env` 에 적습니다.
@@ -221,13 +261,13 @@ macOS, Windows, Linux에서 사용할 AI 클라이언트를 한 번만 전체 �
 
 ```bash
 # 하나만 선택
-npx -y edu-workspace-mcp@1.0.0 install codex
-npx -y edu-workspace-mcp@1.0.0 install claude          # Claude Code, 사용자 범위
-npx -y edu-workspace-mcp@1.0.0 install claude-desktop
-npx -y edu-workspace-mcp@1.0.0 install cursor
+npx -y edu-workspace-mcp@1.1.0 install codex
+npx -y edu-workspace-mcp@1.1.0 install claude          # Claude Code, 사용자 범위
+npx -y edu-workspace-mcp@1.1.0 install claude-desktop
+npx -y edu-workspace-mcp@1.1.0 install cursor
 
 # 사용자별·컴퓨터별 최초 1회 Google 연결
-npx -y edu-workspace-mcp@1.0.0 login
+npx -y edu-workspace-mcp@1.1.0 login
 ```
 
 기존 Google 자료까지 읽을 사용자는 두 명령 모두에 `--read`를 붙입니다.
@@ -237,13 +277,13 @@ AI 클라이언트를 재시작한 뒤 새 프로젝트에서도 같은 MCP를 �
 - [학교 Google Workspace 관리자 허용 안내](docs/ADMIN_GUIDE.md)
 
 ```bash
-npx -y edu-workspace-mcp@1.0.0 doctor
+npx -y edu-workspace-mcp@1.1.0 doctor
 ```
 
 Google 토큰은 `~/.edu-workspace-mcp/token.json`에 사용자 전용 권한으로 저장됩니다. 연결을 해제하면 Google 측 권한 철회와 로컬 토큰 삭제를 함께 수행합니다.
 
 ```bash
-npx -y edu-workspace-mcp@1.0.0 disconnect
+npx -y edu-workspace-mcp@1.1.0 disconnect
 ```
 
 ## MCP 클라이언트 연결
@@ -255,7 +295,7 @@ Claude Desktop과 Cursor 계열 JSON 설정:
   "mcpServers": {
     "edu-workspace": {
       "command": "npx",
-      "args": ["-y", "edu-workspace-mcp@1.0.0"]
+      "args": ["-y", "edu-workspace-mcp@1.1.0"]
     }
   }
 }
@@ -266,7 +306,7 @@ Codex·ChatGPT Desktop 계열 TOML 설정:
 ```toml
 [mcp_servers.edu-workspace]
 command = "npx"
-args = ["-y", "edu-workspace-mcp@1.0.0"]
+args = ["-y", "edu-workspace-mcp@1.1.0"]
 default_tools_approval_mode = "writes"
 ```
 

@@ -10,6 +10,7 @@ import { createAssignmentDraft, listCourses, listCourseWork, listStudents, listS
 import { createDocument, createLessonPlan, createWorksheet, readDocument } from "./google/docs.js";
 import { createFolder, getFileMetadata, searchFiles, shareFile } from "./google/drive.js";
 import { createQuiz, listFormResponses, readForm } from "./google/forms.js";
+import { exportGoogleDocumentToHwpx, importKoreanDocument } from "./google/kordoc-bridge.js";
 import { createAssessmentTracker, createSubmissionTracker } from "./google/education-sheets.js";
 import { createWorkbook, listSheets, readValues } from "./google/sheets.js";
 import { inspectWorkbook } from "./google/sheets-inspection.js";
@@ -38,6 +39,8 @@ export type WorkspaceServices = {
   listStudentSubmissions: typeof listStudentSubmissions;
   searchFiles: typeof searchFiles;
   getFileMetadata: typeof getFileMetadata;
+  importKoreanDocument: typeof importKoreanDocument;
+  exportGoogleDocumentToHwpx: typeof exportGoogleDocumentToHwpx;
   createFolder: typeof createFolder;
   createDocument: typeof createDocument;
   createLessonPlan: typeof createLessonPlan;
@@ -61,7 +64,7 @@ export type WorkspaceServices = {
 
 const defaultServices: WorkspaceServices = {
   getAuthStatus, listCourses, listCourseWork, listStudents, listStudentSubmissions,
-  searchFiles, getFileMetadata, createFolder, createDocument, createLessonPlan, createWorksheet, readDocument, createWorkbook, listSheets, readValues,
+  searchFiles, getFileMetadata, importKoreanDocument, exportGoogleDocumentToHwpx, createFolder, createDocument, createLessonPlan, createWorksheet, readDocument, createWorkbook, listSheets, readValues,
   inspectWorkbook, createAssessmentTracker, createSubmissionTracker,
   createPresentation, readPresentation, createQuiz, readForm, listFormResponses,
   createAssignmentDraft, publishAssignment, shareFile
@@ -188,6 +191,34 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     const authError = await requireAuth(); if (authError) return authError;
     try { return jsonResult(await services.getFileMetadata(file) as unknown as Record<string, unknown>); }
     catch (error) { return errorResult("DRIVE_FILE_READ_FAILED", error); }
+  });
+
+  server.registerTool("docs_import_hwp", {
+    title: "한글 파일을 Google 문서로 만들기",
+    description: "Drive의 HWP/HWPX 파일을 kordoc으로 읽어 편집 가능한 Google Docs로 만듭니다. 표와 본문을 변환하며 원본 서식·이미지 배치는 확인이 필요합니다. 먼저 drive_search_files 또는 drive_get_file_metadata로 대상을 확인하세요.",
+    inputSchema: {
+      file: googleFileRefSchema.describe("Drive에 있는 HWP/HWPX 파일 ID 또는 URL"),
+      title: z.string().trim().min(1).max(200).optional().describe("새 Google 문서 제목. 기본값은 원본 파일명"),
+      parentFolderId: z.string().trim().min(10).max(200).optional()
+    }, annotations: createAction
+  }, async ({ file, title, parentFolderId }) => {
+    const authError = await requireAuth(); if (authError) return authError;
+    try { return jsonResult(await services.importKoreanDocument(file, title, parentFolderId)); }
+    catch (error) { return errorResult("HWP_IMPORT_FAILED", error); }
+  });
+
+  server.registerTool("docs_export_hwpx", {
+    title: "Google 문서를 한글 파일로 만들기",
+    description: "Google Docs를 DOCX로 내보내 kordoc으로 HWPX를 생성하고 Drive에 저장합니다. 원본 문서는 수정하지 않습니다. 표·본문은 변환되지만 Google 고유 요소와 페이지 배치는 확인이 필요합니다.",
+    inputSchema: {
+      document: googleFileRefSchema.describe("Google Docs 문서 ID 또는 URL"),
+      name: z.string().trim().min(1).max(200).optional().describe("새 HWPX 파일 이름. 확장자는 자동으로 붙습니다."),
+      parentFolderId: z.string().trim().min(10).max(200).optional()
+    }, annotations: createAction
+  }, async ({ document, name, parentFolderId }) => {
+    const authError = await requireAuth(); if (authError) return authError;
+    try { return jsonResult(await services.exportGoogleDocumentToHwpx(document, name, parentFolderId)); }
+    catch (error) { return errorResult("HWPX_EXPORT_FAILED", error); }
   });
 
   server.registerTool("drive_create_folder", {
@@ -587,6 +618,22 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
       return jsonResult({ permission: await services.shareFile(input.fileId, input.type, input.role, input.emailAddress, input.domain) });
     } catch (error) { return errorResult("DRIVE_SHARE_FAILED", error); }
   });
+
+  server.registerPrompt("google_document_helper", {
+    title: "한글·Google 문서 변환 도우미",
+    description: "Drive의 HWP/HWPX를 Google Docs로 만들거나 Google Docs를 HWPX로 저장하는 흐름을 안내합니다.",
+    argsSchema: {
+      file: z.string().trim().min(1).max(500).describe("변환할 파일의 이름, Drive 주소 또는 Google Docs 주소"),
+      direction: z.enum(["hwp_to_google", "google_to_hwpx"]).describe("한글→Google 문서 또는 Google 문서→HWPX")
+    }
+  }, ({ file, direction }) => ({
+    messages: [{
+      role: "user",
+      content: { type: "text", text: direction === "hwp_to_google"
+        ? `「${file}」 한글 파일을 편집 가능한 Google 문서로 만들어 주세요. 파일 이름이면 drive_search_files로 찾고 drive_get_file_metadata로 대상을 확인한 다음 docs_import_hwp를 호출하세요. 변환 결과 링크와 서식 확인 안내를 보여 주세요.`
+        : `「${file}」 Google 문서를 HWPX 파일로 만들어 주세요. 파일 이름이면 drive_search_files로 찾고 drive_get_file_metadata로 대상을 확인한 다음 docs_export_hwpx를 호출하세요. 만들어진 Drive 링크와 서식 확인 안내를 보여 주세요.` }
+    }]
+  }));
 
   server.registerPrompt("lesson_package_with_standards", {
     title: "성취기준으로 수업 패키지 만들기",

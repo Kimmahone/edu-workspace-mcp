@@ -16,6 +16,7 @@ edu-workspace-mcp
   doctor      OAuth 자격 증명·토큰 상태를 확인합니다.
   disconnect  Google 권한을 철회하고 로컬 토큰을 삭제합니다.
   serve       stdio MCP 서버를 시작합니다. 명령이 없을 때의 기본 동작입니다.
+  web         Workspace Lab 로컬 웹앱을 시작합니다. 현재 폴더의 .env를 적용합니다.
   version     설치된 버전을 표시합니다.
 
 설치 예시:
@@ -35,6 +36,14 @@ async function main() {
 
   if (command === "serve") {
     await import("./index.js");
+    return;
+  }
+
+  if (command === "web") {
+    if (typeof process.loadEnvFile !== "function") throw new Error("웹앱은 Node.js 22 이상을 사용하세요.");
+    try { process.loadEnvFile(); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw new Error(".env 설정 파일을 불러올 수 없습니다."); }
+    await import("./web/main.js");
     return;
   }
 

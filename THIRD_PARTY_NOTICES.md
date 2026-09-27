@@ -10,6 +10,7 @@
 - 저장소: https://github.com/taehyeonglim/korean-elementary-learning-map-mcp
 - 사용한 버전: 0.5.1 (`devDependencies` 에 고정)
 - 사용한 파일: `data/kr/curriculum-standards.json`(성취기준 코드·학년군·영역·요지), `data/kr/standard-texts.json`(성취기준 문장)
+- 학습 지도 연동: `topics.json`, `dependencies.json`의 해시를 검사한 뒤 필요한 필드를 `data/curriculum/learning-map.json`으로 묶었습니다. 세부 주제·관찰 증거·평가 발문·선수관계는 DECK의 설계 자료이며 공식 수업 순서를 의미하지 않습니다. `scripts/build-learning-map.mjs`로 재생성합니다.
 - 바꾼 점: 문장 뒤에 붙은 다음 단원 제목·쪽 번호·탐구 활동 목록을 잘라 냈고, PDF 줄바꿈으로 생긴 띄어쓰기 오류 중 확인한 것만 고쳤으며,
   표 내용이 섞였거나 해설 문단이 들어간 문장은 싣지 않았습니다(`text: null`). 항목별 정리 내역은 `textNotes` 에 있습니다.
 
@@ -53,3 +54,14 @@ SOFTWARE.
 https://ncic.re.kr)가 공개한 PDF에서 추출한 것입니다. 교육부가 공표한 공공저작물로서 저작권법 제24조의2(공공저작물의
 자유이용)에 따라 출처를 표기해 이용합니다. 이 데이터는 교육부·국가교육위원회·NCIC의 공식 산출물이 아니며,
 공식 문서로 쓰기 전에는 NCIC 원문과 대조해야 합니다.
+
+## kordoc (MIT)
+
+- 저장소: https://github.com/chrisryugj/kordoc
+- 사용한 버전: 4.15.4 (`dependencies`에 고정)
+- 용도: HWP/HWPX·DOCX 파싱과 HWPX 생성. 원본 파일을 다시 배포하지 않으며 패키지는 npm에서 설치됩니다.
+- 라이선스: MIT. 패키지의 `LICENSE` 및 저장소 고지를 따릅니다.
+
+## Workspace Lab product artwork
+
+Google Docs, Sheets, Slides, Forms, Drive and Classroom product icons in `web/assets/google` were supplied by the project owner. Google product names and artwork remain the property of Google. They identify connected services; Workspace Lab is an independent application. Source mappings are in `docs/ASSETS.md`.

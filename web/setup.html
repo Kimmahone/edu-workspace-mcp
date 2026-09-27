@@ -1,0 +1,352 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>단계별 설정 가이드 · Workspace Lab</title><link rel="icon" href="/assets/illustrations/lab-mark.svg"><link rel="stylesheet" href="/style.css"><style>.setup{max-width:940px;margin:32px auto;padding:40px;background:white;border:1px solid #e1e5eb;border-radius:24px;line-height:1.9}.setup h1{font-size:32px;letter-spacing:-1px}.setup h2{margin-top:48px;color:#0b57d0}.setup h3{margin-top:30px}.setup a{color:#0b57d0;text-decoration:underline}.setup pre{padding:20px;background:#f1f3f4;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:14px}.setup table{border-collapse:collapse;width:100%;font-size:13px}.setup td,.setup th{border:1px solid #e1e5eb;padding:12px;text-align:left}.setup th{background:#e8f0fe}.setup code{overflow-wrap:anywhere}.setup li{margin:7px 0}@media(max-width:730px){.setup{margin:10px;padding:20px}.setup h1{font-size:26px}.setup td,.setup th{padding:6px;font-size:12px}}</style></head><body><main class="setup"><a href="/#guide">← Workspace Lab 시작 가이드</a><h1>Workspace Lab — 직접 해야 할 설정</h1>
+<p>Google 도구로 배우고 일하고 일상을 준비하는 독립 웹앱입니다. Google이 운영하거나 보증하는 서비스는 아닙니다.</p>
+<p><strong><a href="#api-keys">API 키 상세 설정·비용 안내로 바로 이동</a></strong></p>
+<h2>먼저 구분하세요</h2>
+<table>
+<thead>
+<tr>
+<th>원하는 일</th>
+<th>필요한 준비</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>완성 예시 12개 보기·HWPX/Markdown/JSON 다운로드</td>
+<td>앱 실행만. 로그인·AI 키 불필요</td>
+</tr>
+<tr>
+<td>개인용에서 예시 수정·한글 문서 변환</td>
+<td>앱 실행만. AI 키 불필요</td>
+</tr>
+<tr>
+<td>내 Google 계정에 Docs·Slides·Sheets·Forms 만들기</td>
+<td>Google 계정 연결</td>
+</tr>
+<tr>
+<td>Gemini로 새로운 초안 만들기</td>
+<td>운영자의 Gemini API 키</td>
+</tr>
+<tr>
+<td>GPT로 개선안 비교·적용</td>
+<td>선택적으로 OpenAI API 키</td>
+</tr>
+<tr>
+<td>여러 사람이 각자 로그인해서 쓰는 웹앱</td>
+<td>HTTPS 서버, PostgreSQL, Google Web OAuth</td>
+</tr>
+</tbody>
+</table>
+<p>배포용에서도 <strong>kordoc 한글 문서 기능을 사용할 수 있습니다.</strong> 배포용의 사용자 파일 변환·생성은 Google 로그인 후 서버에서 실행됩니다. 공개 갤러리의 준비된 파일은 로그인 없이 받을 수 있습니다. 기존 MCP도 별도로 계속 사용할 수 있습니다.</p>
+<h2>A. 내 컴퓨터에서 사용하기</h2>
+<h3>1. 프로젝트 폴더를 엽니다</h3>
+<p>Codex의 이 프로젝트 터미널을 사용하면 이미 올바른 폴더입니다. 다른 터미널이면 Finder에서 <code>edu-workspace-mcp</code> 폴더를 터미널로 끌어온 뒤 <code>cd</code>로 이동하세요. <code>package.json</code>이 보이는 폴더가 맞습니다.</p>
+<p>처음 설치하는 컴퓨터는 Node.js 22 이상을 설치하고 아래 명령을 실행합니다. 현재 개발 컴퓨터는 이미 의존성이 설치되어 있습니다.</p>
+<pre><code class="language-sh">npm ci
+</code></pre>
+<h3>2. Gemini API 키를 준비합니다</h3>
+<ol>
+<li><a href="https://aistudio.google.com/app/apikey">Google AI Studio API 키</a>를 열어 로그인합니다.</li>
+<li>API 키 만들기(Create API key)를 선택하고 사용할 프로젝트를 선택합니다. 프로젝트가 없으면 AI Studio에서 새 프로젝트를 만듭니다.</li>
+<li>키를 복사합니다. 앱 이용자들에게 나누어 주는 값이 아니라 운영 서버가 사용하는 비밀값입니다.</li>
+<li>프로젝트 루트의 <code>.env</code> 파일을 편집기로 엽니다. Finder에서 숨김 파일은 <code>Command + Shift + .</code>로 표시합니다. <code>.env</code>가 없을 때만 <code>.env.example</code>을 복사해 <code>.env</code>로 이름을 바꿉니다. 기존 <code>.env</code>를 덮어쓰지 마세요.</li>
+<li><code>GEMINI_API_KEY=</code> 뒤에 복사한 키를 넣고 저장합니다. 꺾쇠나 설명 문구는 넣지 않습니다. 다른 설정은 그대로 둡니다.</li>
+</ol>
+<pre><code class="language-dotenv">GEMINI_API_KEY=발급받은키
+</code></pre>
+<p>무료 등급은 제공자의 지원 모델·계정·사용량 한도 안에서 이용할 수 있습니다. 키 발급이 무제한 무료 실행을 뜻하지는 않습니다. <a href="https://ai.google.dev/gemini-api/docs/api-key">키 안내</a>와 <a href="https://ai.google.dev/gemini-api/docs/pricing">현재 요금표</a>를 확인하세요.</p>
+<h3>3. 앱을 실행합니다</h3>
+<pre><code class="language-sh">npm run web:dev
+</code></pre>
+<p><a href="http://127.0.0.1:3210/">개인용 앱 열기</a> → 왼쪽 <strong>연결 및 이용 안내</strong>에서 Gemini가 <code>키 설정됨</code>인지 확인합니다. <code>.env</code> 변경은 서버를 다시 시작해야 적용됩니다. 터미널에서 실행 중인 서버를 <code>Control + C</code>로 종료한 다음 <code>npm run web:start</code>를 실행하세요. 한 번에 하나의 서버만 3210 포트에서 실행합니다.</p>
+<h3>4. Google을 연결합니다</h3>
+<p>설정 화면이 <code>Google 연결됨</code>이면 바로 사용할 수 있습니다. 연결이 필요할 때 별도 터미널에서:</p>
+<pre><code class="language-sh">npm run cli -- login
+</code></pre>
+<p>브라우저에서 본인 계정으로 연결한 뒤 앱을 새로고침합니다. 기존 MCP 로그인 토큰을 재사용합니다. 이 명령이 OAuth 클라이언트 설정을 요구하면 저장소 README의 Google Cloud 초기 설정을 먼저 완료하세요.</p>
+<h3>5. 첫 결과물을 확인합니다</h3>
+<ol>
+<li><strong>예시 갤러리 → 작은 독서 모임, 함께 시작하기</strong>를 엽니다.</li>
+<li>오른쪽 <strong>이 예시로 시작</strong>을 누릅니다.</li>
+<li>제목과 본문을 바꾸고 <strong>미리보기</strong>를 확인합니다.</li>
+<li><strong>Google에 저장 → 새 파일 만들기</strong>를 눌러 본인 Drive에 생성합니다. 또는 HWPX로 내려받습니다.</li>
+<li>새 AI 초안을 시험하려면 요청을 적고 개인정보 확인 후 <strong>AI 초안 만들기</strong>를 누릅니다.</li>
+</ol>
+<p>GPT는 필요할 때만 <code>.env</code>의 <code>OPENAI_API_KEY</code>에 본인 API 키를 입력하고 서버를 다시 시작합니다. 연결 후 <strong>GPT로 초안 다듬기</strong>에서 기존 초안과 개선안을 비교하고 적용할 수 있습니다. API 비용과 이용 한도는 해당 API 계정에 적용됩니다.</p>
+<h2>B. 다른 사람들에게 웹앱 공개하기</h2>
+<p>이 단계는 운영자가 한 번 합니다. 일반 이용자는 API 키나 프로그램 설치 없이 앱 주소에서 Google 로그인으로 사용합니다. 아래 경로는 제공된 Cloud Run 배포 스크립트를 기준으로 합니다. 서버·DB 요금은 AI 무료 등급과 별개입니다.</p>
+<h3>1. 운영용 Google Cloud 프로젝트와 계정을 정합니다</h3>
+<p><a href="https://console.cloud.google.com/">Google Cloud 콘솔</a>에서 프로젝트를 만들거나 선택하고 <strong>프로젝트 ID</strong>를 기록합니다. 결제 계정을 연결하고 예산 알림을 설정합니다. 프로젝트 이름과 ID는 다를 수 있습니다.</p>
+<p>콘솔의 <strong>API 및 서비스 → 라이브러리</strong>에서 다음 API를 활성화합니다.</p>
+<ul>
+<li>Cloud Run Admin API, Cloud Build API, Artifact Registry API, Secret Manager API</li>
+<li>Google Drive API, Google Docs API, Google Sheets API, Google Slides API, Google Forms API</li>
+<li>Classroom 기능을 공개할 경우 Google Classroom API</li>
+</ul>
+<p><strong>IAM 및 관리자 → 서비스 계정 → 서비스 계정 만들기</strong>에서 <code>workspace-lab-runtime</code>을 만듭니다. 역할은 다음 시크릿 단계에서 필요한 권한만 부여합니다. 계정 이메일을 기록합니다.</p>
+<h3>2. PostgreSQL을 준비합니다</h3>
+<p>사용할 관리형 PostgreSQL 서비스에서 전용 데이터베이스와 사용자를 생성합니다. 연결 안내 화면의 PostgreSQL 연결 문자열을 복사합니다.</p>
+<pre><code class="language-text">postgresql://사용자:암호@호스트:5432/데이터베이스?sslmode=require
+</code></pre>
+<p>Cloud Run에서 연결 가능한 주소와 TLS 설정을 사용해야 합니다. 위 형태는 예시이며 제공자가 발급한 실제 연결 문자열을 사용하세요. 특수문자가 있는 암호는 URL 인코딩된 연결 문자열을 사용합니다. 사용자는 이 앱의 <code>edu_web_state</code> 테이블·인덱스를 생성하고 읽고 쓸 권한이 필요합니다. 앱이 첫 연결 때 테이블을 준비하므로 별도 수동 마이그레이션은 필요하지 않습니다.</p>
+<p>현재 배포 스크립트는 직접 연결 가능한 DB 주소를 전제로 합니다. Cloud SQL의 비공개 IP를 선택하면 별도의 VPC/Cloud SQL 연결 설정이 필요합니다. DB의 지역, 백업 보관과 삭제 정책도 운영 기록에 남깁니다.</p>
+<h3>3. Google 로그인용 웹 클라이언트를 만듭니다</h3>
+<ol>
+<li>콘솔 <strong>Google Auth Platform → Branding</strong>에서 앱 이름을 <code>Workspace Lab</code>, 지원 이메일을 본인 문의처로 입력합니다.</li>
+<li><strong>Audience</strong>는 학교 밖 사람도 사용할 수 있도록 <code>External</code>로 준비합니다. 처음에는 테스트 상태로 두고 시험할 Google 계정을 Test users에 등록합니다.</li>
+<li><strong>Clients → Create client → Web application</strong>을 선택합니다. 기존 MCP의 Desktop 클라이언트와 별개로 만듭니다.</li>
+<li>고정 도메인이 이미 있으면 승인된 리디렉션 URI에 <code>https://앱주소/auth/callback</code>을 등록합니다. Cloud Run 주소를 처음 발급받는다면 일단 클라이언트를 만든 뒤 6단계에서 실제 URI를 추가합니다.</li>
+<li><strong>클라이언트 ID</strong>와 <strong>클라이언트 보안 비밀번호</strong>를 기록합니다.</li>
+</ol>
+<p>기본 로그인은 <code>openid</code>, <code>email</code>, <code>drive.file</code>을 요청합니다. Classroom 연결 시에만 <code>classroom.courses.readonly</code>, <code>classroom.coursework.students</code>를 추가 요청합니다. <strong>Data Access</strong>에 요청 범위를 등록하고 공개 전 필요한 검증 절차를 진행합니다. 홈페이지는 실제 앱 주소, 개인정보 안내는 <code>https://앱주소/privacy</code>입니다. <a href="https://developers.google.com/identity/protocols/oauth2/web-server">Google 웹 OAuth 공식 안내</a>.</p>
+<h3>4. 비밀값을 Secret Manager에 넣습니다</h3>
+<p>콘솔 <strong>보안 → Secret Manager → 보안 비밀 만들기</strong>에서 아래 이름을 정확히 사용해 각각 저장합니다. 앱 키는 다음 명령으로 한 번 생성하고 안전하게 보관합니다.</p>
+<pre><code class="language-sh">node -e &quot;console.log(require('crypto').randomBytes(32).toString('hex'))&quot;
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>보안 비밀 이름</th>
+<th>넣을 값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>edu-app-secret</code></td>
+<td>위 명령의 난수 문자열</td>
+</tr>
+<tr>
+<td><code>edu-database-url</code></td>
+<td>2단계 PostgreSQL 연결 문자열</td>
+</tr>
+<tr>
+<td><code>edu-google-client-id</code></td>
+<td>Web OAuth 클라이언트 ID</td>
+</tr>
+<tr>
+<td><code>edu-google-client-secret</code></td>
+<td>Web OAuth 클라이언트 보안 비밀번호</td>
+</tr>
+<tr>
+<td><code>edu-gemini-key</code></td>
+<td>Gemini API 키</td>
+</tr>
+<tr>
+<td><code>edu-openai-key</code></td>
+<td>선택: GPT API 키</td>
+</tr>
+</tbody>
+</table>
+<p>각 보안 비밀의 <strong>권한 → 액세스 권한 부여</strong>에서 1단계 런타임 서비스 계정 이메일에 <strong>Secret Manager Secret Accessor</strong> 역할을 부여합니다. 비밀값은 <code>.env</code>와 별도로 관리하며 배포 파일이나 브라우저 코드에 입력하지 않습니다.</p>
+<h3>5. 첫 배포를 실행합니다</h3>
+<p>프로젝트 터미널에서 <code>gcloud auth login</code>으로 운영 계정에 로그인합니다. 아래 따옴표 안을 본인 값으로 바꾸어 실행하세요. 시험 사용자 이메일은 쉼표로 구분합니다.</p>
+<pre><code class="language-sh">export GOOGLE_CLOUD_PROJECT='본인-프로젝트-ID'
+export WEB_SERVICE_ACCOUNT='workspace-lab-runtime@본인-프로젝트-ID.iam.gserviceaccount.com'
+export WEB_SERVICE='workspace-lab'
+export WEB_APP_ORIGIN='https://setup.invalid'
+export WEB_ALLOWED_EMAILS='본인이메일@example.com'
+export WEB_OPERATOR='운영자 이름 또는 기관명'
+export WEB_SUPPORT_EMAIL='문의용이메일@example.com'
+bash scripts/deploy-web.sh
+</code></pre>
+<p><code>https://setup.invalid</code>는 <strong>최초 주소 발급용 임시 설정</strong>입니다. 이 상태에서 로그인이나 앱 사용을 시도하지 말고 바로 다음 단계를 완료하세요. 최종 연결된 도메인이 있으면 처음부터 그 HTTPS 주소를 사용해도 됩니다.</p>
+<p>배포 계정에는 Cloud Run 소스 배포·빌드와 서비스 계정 사용 권한이 필요합니다. 권한 오류가 나면 오류에 명시된 계정과 권한을 프로젝트 관리자에게 전달하세요. <a href="https://docs.cloud.google.com/run/docs/deploying-source-code">공식 소스 배포 안내</a>.</p>
+<h3>6. 실제 주소를 연결합니다</h3>
+<p>배포 결과의 <code>Service URL</code>을 복사합니다. 또는:</p>
+<pre><code class="language-sh">gcloud run services describe workspace-lab --project &quot;$GOOGLE_CLOUD_PROJECT&quot; --region asia-northeast3 --format='value(status.url)'
+</code></pre>
+<ol>
+<li>아래 <code>실제주소</code>를 복사한 URL로 바꾸고 다시 배포합니다. URL 끝에 <code>/</code>를 붙이지 않습니다.</li>
+</ol>
+<pre><code class="language-sh">export WEB_APP_ORIGIN='https://실제주소'
+bash scripts/deploy-web.sh
+</code></pre>
+<ol start="2">
+<li>Google Auth Platform의 Web 클라이언트에서 승인된 리디렉션 URI를 <code>https://실제주소/auth/callback</code>으로 등록합니다. <code>APP_ORIGIN</code>과 같은 호스트여야 합니다.</li>
+<li>Branding의 홈페이지와 개인정보 안내 주소를 실제 주소와 <code>/privacy</code>로 갱신합니다.</li>
+<li>앱 주소를 열어 시험 계정으로 로그인하고 Docs/Slides/Sheets/Forms 저장과 HWPX 업로드·다운로드를 각각 시험합니다.</li>
+<li>공개 전 <code>src/web/privacy.ts</code>의 안내에 운영자의 실제 호스팅/DB 지역과 백업 정책을 반영하고 재배포합니다.</li>
+</ol>
+<p>GPT까지 제공하려면 <code>edu-openai-key</code>를 만든 뒤 <code>export WEB_ENABLE_GPT=1</code>을 추가하고 같은 스크립트를 실행합니다. 비밀값을 바꾸었을 때에도 새 버전을 저장한 후 재배포합니다.</p>
+<h3>7. 모든 이용자에게 공개합니다</h3>
+<p>시험을 마치고 Google OAuth의 공개·검증 요건을 충족한 뒤 Audience에서 프로덕션으로 전환합니다. 학교·회사 관리 계정은 해당 조직의 앱 허용 정책을 따릅니다.</p>
+<p>앱의 시험 이메일 제한도 해제해야 합니다. 이 명령은 Google OAuth의 테스트 제한을 대신 해제하지 않습니다.</p>
+<pre><code class="language-sh">export WEB_PUBLIC_ACCESS=1
+export WEB_ALLOWED_EMAILS=''
+bash scripts/deploy-web.sh
+</code></pre>
+<p>이제 앱 주소를 공유합니다. 공개 예시 갤러리는 로그인 없이 접근하고, 각 이용자는 자기 Google 계정으로 자료를 저장합니다. AI 비용은 운영자가 설정한 API 계정에 합산됩니다. 사용자당 AI 20회/일과 서버 최대 3개 인스턴스가 기본 설정입니다. 운영 계정의 사용량과 예산 알림도 확인하세요.</p>
+<h2>막히면 확인할 곳</h2>
+<table>
+<thead>
+<tr>
+<th>증상</th>
+<th>확인·조치</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gemini 연결 필요</td>
+<td><code>.env</code> 키 저장 후 서버 재시작. 배포는 Secret Manager와 새 리비전 확인</td>
+</tr>
+<tr>
+<td>AI 429 오류</td>
+<td>제공자 무료 사용량·속도 한도 확인. 잠시 후 시도하거나 예시 직접 편집</td>
+</tr>
+<tr>
+<td><code>redirect_uri_mismatch</code></td>
+<td>Web 클라이언트의 승인 URI가 앱 주소 + <code>/auth/callback</code>과 정확히 같은지 확인</td>
+</tr>
+<tr>
+<td>Google 로그인이 제한됨</td>
+<td>OAuth Test users와 앱의 ALLOWED_EMAILS 양쪽 확인</td>
+</tr>
+<tr>
+<td>DB 연결 실패</td>
+<td>연결 문자열·비밀번호·TLS·방화벽·테이블 생성 권한 확인</td>
+</tr>
+<tr>
+<td><code>허용되지 않은 앱 주소</code></td>
+<td>APP_ORIGIN을 실제 접속 주소로 맞춰 재배포</td>
+</tr>
+<tr>
+<td>포트 3210 사용 중</td>
+<td>이미 실행 중인 개인용 앱이 있는지 확인. 기존 서버 종료 후 재실행</td>
+</tr>
+<tr>
+<td>한글 파일 배치가 달라짐</td>
+<td>본문·표 재구성 방식의 한계. 원본 서식 유지 수정 또는 한글에서 최종 편집</td>
+</tr>
+</tbody>
+</table>
+<p>설치·배포 설정을 입력하는 것은 운영자 작업입니다. 일반 사용자는 <strong>예시 선택 → 내용 편집 → 저장</strong>만 하면 됩니다.</p>
+<h2>C. 결과물 디자인과 Forms 양식 연결</h2>
+<h3>디자인 선택</h3>
+<p>예시 갤러리 또는 작성 화면의 <strong>결과물 디자인</strong>에서 클래식 리포트·모던 워크스페이스·웜 에디토리얼을 고릅니다. 미리보기로 확인한 뒤 Google 저장 또는 HWPX 다운로드를 실행합니다. 갤러리의 바로 다운로드 파일은 클래식 리포트로 준비되어 있습니다.</p>
+<ul>
+<li>Docs: 제목 위계, 강조 상자, 음영 표, 인쇄 여백과 반복 머리행.</li>
+<li>Sheets: 대시보드·실행 보드, 자동 집계와 도넛 차트, 상태 선택·조건부 색상·필터.</li>
+<li>Slides: 표지와 내용 카드, 일관된 색상·글꼴·쪽 번호. 긴 본문은 여러 장으로 분리.</li>
+<li>Forms: 구역과 문항 번호, 정답·배점·오답 해설. 색상·글꼴은 Forms 테마 또는 원본 양식을 사용.</li>
+<li>HWPX: kordoc 보고서 서식, 표 음영·테두리·열 너비·글꼴, 제목 띠와 쪽 설정. Google Docs와 한글은 조판 방식이 달라 줄바꿈·쪽 배치가 같지는 않습니다. 한글에서 배포 전 확인하세요.</li>
+</ul>
+<h3>Forms를 예쁜 원본 양식으로 반복 생성하기</h3>
+<p>Google Forms API는 테마 색상·글꼴·머리글을 직접 지정하는 기능을 제공하지 않습니다. 한 번 원본을 꾸며 두면 이후 복제해서 사용할 수 있도록 연결 기능을 넣었습니다.</p>
+<ol>
+<li>본인 Google Drive에서 빈 Google 설문지를 하나 만들고 <code>Workspace Lab 디자인 원본</code>으로 이름을 정합니다.</li>
+<li>우측 상단 팔레트 아이콘 <strong>테마 맞춤설정</strong>을 엽니다.</li>
+<li>앱의 퀴즈 편집 화면에서 <strong>Forms 머리글 이미지 받기</strong>를 눌러 받은 PNG를 Forms의 <strong>머리글 → 이미지 선택 → 업로드</strong>에 넣습니다.</li>
+<li>테마 색상과 배경·글꼴을 정합니다. 클래식 리포트는 남색 <code>#18324F</code>와 옅은 배경을 권장합니다.</li>
+<li>원본 설문지의 편집 주소 <code>https://docs.google.com/forms/d/여기가ID/edit</code>에서 ID만 복사합니다.</li>
+<li>개인용 <code>.env</code>에 다음 줄을 추가하고 서버를 다시 시작합니다.</li>
+</ol>
+<pre><code class="language-dotenv">GOOGLE_FORMS_TEMPLATE_ID=여기에원본설문지ID
+</code></pre>
+<ol start="7">
+<li>앱에서 퀴즈를 Google에 저장합니다. 원본 테마를 가진 <strong>새 복사본</strong>에 현재 문항을 넣습니다. 원본 설문지는 바꾸지 않습니다. 복사본의 응답 설정과 공개 상태는 공유 전에 확인하세요.</li>
+</ol>
+<p>배포 스크립트를 쓰면 <code>export WEB_FORMS_TEMPLATE_ID=여기에원본설문지ID</code>를 추가하고 배포합니다. 다만 각 로그인 사용자가 해당 원본에 접근하고 앱이 이를 복사할 권한이 있어야 합니다. 기본 <code>drive.file</code> 권한에서는 링크를 알고 있다는 이유만으로 임의 파일에 접근하지 못합니다. 먼저 운영 계정으로 검증하고 권한이 없는 공개 사용자에게는 원본 연결 없이 기본 Forms 생성 방식을 사용하세요. 여러 사용자 운영 시 공통 원본 권한 구성은 별도 검증이 필요합니다.</p>
+<p>테마가 없는 경우에도 문항·배점·해설은 생성됩니다. 위 설정을 생략하면 앱이 지원하지 않는 색상 자동 적용을 했다고 표시하지 않습니다.</p>
+<h2 id="api-keys">D. API 키 상세 설정과 비용</h2>
+<p>2026-09-27 공식 문서 확인 기준입니다. 화면 이름과 가격·무료 한도는 공급자가 변경할 수 있습니다.</p>
+<h3>어디에 넣나요?</h3>
+<p>현재 프로젝트에서 <strong>package.json과 같은 폴더의 <code>.env</code> 파일</strong>에 넣습니다. <code>.env.example</code>은 설명용 견본입니다. 현재 컴퓨터에는 <code>.env</code>가 이미 있으므로 복사하거나 덮어쓰지 말고 필요한 줄만 수정합니다.</p>
+<ol>
+<li>Codex에서 이 프로젝트의 터미널을 엽니다.</li>
+<li>아래 명령으로 macOS 텍스트 편집기에서 엽니다.</li>
+</ol>
+<pre><code class="language-sh">open -e .env
+</code></pre>
+<p>Finder에서는 프로젝트 폴더를 연 뒤 **Command + Shift + .**를 눌러 숨김 파일을 표시하면 <code>.env</code>가 보입니다. 파일 이름은 <code>.env.txt</code>가 아닌 <code>.env</code>여야 합니다. 키를 앱의 요청 입력란이나 채팅에 붙여 넣지 마세요.</p>
+<h3>Gemini: 무료 전용 프로젝트에서 키 만들기</h3>
+<ol>
+<li><a href="https://aistudio.google.com/app/apikey">Google AI Studio API 키 페이지</a>에 본인 Google 계정으로 로그인합니다.</li>
+<li><strong>Create API key / API 키 만들기</strong>를 누릅니다. 프로젝트를 새로 만들 수 있으면 <code>workspace-lab-free</code>처럼 구분되는 이름으로 만듭니다. 기존 무료 프로젝트가 있으면 그것을 선택해도 됩니다.</li>
+<li>Projects 또는 API keys 목록의 <strong>Billing Tier / Plan이 Free Tier</strong>인지 확인합니다. <strong>Set up billing / 결제 설정, Upgrade / 업그레이드, Prepay / 선결제는 진행하지 않습니다.</strong> 무료로 쓰는 핵심은 키가 속한 프로젝트에 유료 결제를 연결하지 않는 것입니다.</li>
+<li>키를 복사하고 <code>.env</code>의 <code>GEMINI_API_KEY=</code> 뒤에 붙여 넣습니다. 같은 이름의 항목을 두 줄 만들지 마세요.</li>
+<li>최신 Flash 자동 사용을 위해 아래처럼 설정합니다.</li>
+</ol>
+<pre><code class="language-dotenv">GEMINI_API_KEY=여기에_발급받은_실제_키
+GEMINI_MODEL=gemini-flash-latest
+AI_DAILY_LIMIT=20
+</code></pre>
+<p><code>gemini-flash-latest</code>는 Google이 다음 Flash 출시 때 갱신하는 공식 별칭입니다. stable·preview·experimental이 대상이 될 수 있습니다. 2026-09-27 확인 시 최신 Flash는 <code>gemini-3.8-flash</code>이고 표준 텍스트 입출력에 무료 등급이 있습니다. 특정 버전을 고정하려면 <code>GEMINI_MODEL=gemini-3.8-flash</code>로 바꿀 수 있지만, 자동 최신 사용에는 별칭을 유지하세요.</p>
+<ul>
+<li>최신 모델의 미래 무료 제공이나 사용량까지 보장되지는 않습니다. 결제 미연결 프로젝트에서 지원되지 않거나 무료 한도가 소진되면 요청이 실패할 수 있습니다. 앱은 유료 모델이나 GPT로 자동 전환하지 않습니다.</li>
+<li>키만으로 앱이 Google 프로젝트의 결제 상태를 검사하거나 무료로 강제할 수는 없습니다. AI Studio에서 Free Tier를 확인해야 합니다. 유료 프로젝트 키를 넣으면 같은 모델도 과금될 수 있습니다.</li>
+<li>무료 한도는 AI Studio의 Usage / Rate limits에서 확인합니다. 계정·모델별 한도가 달라 일률적인 일일 무료 횟수를 약속하지 않습니다. 앱의 <code>AI_DAILY_LIMIT=20</code>은 앱 자체 제한이며 Google의 무료 보장이 아닙니다.</li>
+<li>공개 배포 서버용 Google Cloud 프로젝트에는 결제를 연결할 수 있으므로 <strong>Gemini 무료 프로젝트와 분리</strong>하세요. Gemini가 무료여도 서버·DB 비용은 별도입니다. 공개 앱 이용자들은 운영자 키의 프로젝트 한도를 함께 사용합니다.</li>
+<li>무료 등급의 입력·출력은 제품 개선에 사용될 수 있습니다. 수업 주제와 가상 예시만 보내고 학생 실명·성적·상담 내용은 입력하지 마세요.</li>
+</ul>
+<p>공식 근거: <a href="https://ai.google.dev/gemini-api/docs/api-key">키 발급</a>, <a href="https://ai.google.dev/gemini-api/docs/billing">결제·Free Tier</a>, <a href="https://ai.google.dev/gemini-api/docs/models#latest">모델 별칭</a>, <a href="https://ai.google.dev/gemini-api/docs/pricing">현재 요금표</a>.</p>
+<h3>OpenAI: 선택적으로 유료 작성 기능 연결하기</h3>
+<ol>
+<li><a href="https://platform.openai.com/">OpenAI API Platform</a>에 로그인합니다. ChatGPT 앱 설정의 입력란이 아니라 API 개발자 대시보드를 사용합니다.</li>
+<li>프로젝트 메뉴에서 <code>Workspace Lab</code> 전용 프로젝트를 만들거나 사용할 프로젝트를 선택합니다.</li>
+<li><strong>Settings → Organization → Billing</strong>에서 결제 수단을 등록합니다. 선불 방식이 표시되면 화면에서 요구하는 최소 충전액을 확인하고 작은 금액으로 시작합니다. 자동 충전이 필요 없으면 Auto recharge를 끕니다. 비용은 API 계정의 사용량에 따라 청구됩니다.</li>
+<li><a href="https://platform.openai.com/api-keys">API keys</a>에서 <strong>Create new secret key</strong>를 누릅니다. 이름은 <code>workspace-lab-local</code>, 프로젝트는 위에서 선택한 것으로 지정합니다. 권한을 제한한다면 Responses 생성 요청을 허용해야 합니다.</li>
+<li>표시된 비밀 키를 복사해 <code>.env</code>의 <code>OPENAI_API_KEY=</code> 뒤에 붙여 넣습니다. 비밀 키를 다시 볼 수 없으면 새 키를 발급합니다.</li>
+<li>현재 앱의 GPT 기본 모델을 쓰려면 아래처럼 설정합니다.</li>
+</ol>
+<pre><code class="language-dotenv">OPENAI_API_KEY=여기에_발급받은_실제_키
+OPENAI_MODEL=gpt-6-luna
+</code></pre>
+<p>앱은 비용을 우선해 <code>gpt-6-luna</code>를 기본으로 사용합니다. 결과 품질을 비교한 뒤 <code>OPENAI_MODEL=gpt-6-sol</code>로 바꿀 수 있습니다. Gemini만 쓸 때는 <code>OPENAI_API_KEY=</code>를 비워 둡니다. Gemini 실패 때문에 GPT가 자동 호출되는 일은 없습니다. 사용자가 GPT를 선택해 생성하거나 <strong>GPT로 초안 다듬기</strong>를 눌렀을 때 호출됩니다.</p>
+<h3>OpenAI 비용은 얼마나 드나요?</h3>
+<p>표준 텍스트 API의 <strong>100만 토큰당 달러 요금</strong>, 캐시 할인 없이 계산한 예입니다. 토큰은 글자 수와 같지 않으며 한국어·JSON·지시문·이전 초안·교육과정 자료도 입력량에 포함됩니다.</p>
+<p>2026-09-27 확인한 Standard 짧은 컨텍스트 요금입니다.</p>
+<table>
+<thead>
+<tr>
+<th>모델</th>
+<th style="text-align:right">입력 100만 토큰</th>
+<th style="text-align:right">출력 100만 토큰</th>
+<th style="text-align:right">입력 3,000 + 과금 출력 2,000 토큰, 1회</th>
+<th style="text-align:right">$10 예산 예상 횟수</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPT-6 Luna — 앱 기본값</td>
+<td style="text-align:right">$0.10</td>
+<td style="text-align:right">$0.50</td>
+<td style="text-align:right">$0.0013</td>
+<td style="text-align:right">약 7,692회</td>
+</tr>
+<tr>
+<td>GPT-6 Sol — 품질 비교 후 선택</td>
+<td style="text-align:right">$2.00</td>
+<td style="text-align:right">$10.00</td>
+<td style="text-align:right">$0.026</td>
+<td style="text-align:right">약 384회</td>
+</tr>
+<tr>
+<td>GPT-6 Astra</td>
+<td style="text-align:right">$10.00</td>
+<td style="text-align:right">$50.00</td>
+<td style="text-align:right">$0.13</td>
+<td style="text-align:right">약 76회</td>
+</tr>
+</tbody>
+</table>
+<p>계산식은 <code>(입력 토큰 × 입력 단가 + 출력 토큰 × 출력 단가) ÷ 1,000,000</code>입니다. 출력에는 내부 추론 토큰도 포함됩니다. 위 분량은 설명용 가정이며 문서 한 건의 확정 가격이 아닙니다. 긴 수업 패키지·여러 번 다듬기·재시도는 사용량을 늘립니다. 캐시·별도 도구 비용·세금·환율·카드 수수료는 계산에서 제외했습니다. $10 한도는 충전 잔액과 별개입니다.</p>
+<p><a href="https://developers.openai.com/api/docs/pricing">공식 요금</a> · <a href="https://developers.openai.com/api/docs/models">모델 선택</a> · <a href="https://developers.openai.com/api/docs/guides/reasoning">추론 토큰</a>.</p>
+<p><strong>지출 제한:</strong> Project settings → Limits → Spend → Edit spend limit에서 월 한도를 설정하고, 실제 요청 중단을 원하면 <strong>Enforce a hard limit</strong>을 켭니다. Spend alerts만 설정하면 알림만 보내고 호출은 계속됩니다. 한도 반영 지연으로 소액 초과가 가능하므로 <a href="https://developers.openai.com/api/docs/guides/spend-limits">공식 지출 제한 안내</a>를 함께 확인하세요. 사용량은 <a href="https://platform.openai.com/usage">Usage</a>에서 확인합니다.</p>
+<h3>저장한 다음 적용하는 순서</h3>
+<ol>
+<li><code>.env</code>를 저장합니다.</li>
+<li>직접 서버를 실행 중인 터미널에서 <strong>Control + C</strong>로 종료합니다.</li>
+<li>같은 프로젝트 폴더에서 아래 명령을 실행합니다.</li>
+</ol>
+<pre><code class="language-sh">npm run web:start
+</code></pre>
+<ol start="4">
+<li><a href="http://127.0.0.1:3210/#settings">연결 및 이용 안내</a>를 새로고침합니다. <strong>키 설정됨</strong>과 모델 이름을 확인합니다. 이 표시는 서버가 키를 읽었다는 뜻이며, 실제 인증·잔액·사용 가능 여부까지 검증했다는 뜻은 아닙니다.</li>
+<li><a href="http://127.0.0.1:3210/#create/worksheet">분수 학습지</a>를 열고 Gemini를 선택합니다. 요청을 짧게 적고 개인정보 확인 후 <strong>AI 초안 만들기</strong>를 누릅니다. 실제 초안이 나오면 호출까지 성공한 것입니다.</li>
+<li>필요할 때만 GPT로 개선을 실행하고 기존 초안과 비교합니다.</li>
+</ol>
+<p><code>EADDRINUSE</code>가 나오면 기존 서버가 3210 포트에서 실행 중입니다. 두 번째 서버를 계속 실행하지 말고 원래 서버를 종료해야 합니다. Codex가 백그라운드에서 실행해 둔 서버라 터미널을 찾기 어렵다면, 키를 저장한 뒤 Codex에 “키 값은 읽지 말고 로컬 앱 서버만 다시 시작해 줘”라고 요청하면 됩니다.</p>
+<p>429 오류는 무료/계정 한도·잔액·지출 제한 등을 공급자 화면에서 확인하세요. 400·401·403·404는 키 오타, 키 권한, 모델 접근·지원 여부를 확인합니다. 앱은 키 값을 화면이나 오류 로그에 출력하지 않습니다.</p>
+<h3>초등 학습 지도 사용하기</h3>
+<p><a href="http://127.0.0.1:3210/#examples">예시 갤러리</a>의 초등 자료는 여섯 학년의 서로 다른 주제로 준비했습니다. <strong>예시로 시작 → 초등 수업 설정</strong>에서 해당 학년·교과·성취기준이 함께 불러와집니다. 직접 생성할 때는 학년·교과를 고르고 성취기준을 검색해 선택하세요.</p>
+<p><a href="https://github.com/taehyeonglim/korean-elementary-learning-map-mcp">korean-elementary-learning-map-mcp</a> 0.5.1의 성취기준 620개에 더해, 학습 주제 1,956개·선수관계 1,894개를 로컬 데이터로 연동했습니다. 연결된 관찰 증거·평가 발문·선수 학습이 AI의 수업 설계 참고 자료로 전달됩니다. 별도 MCP 서버를 띄우거나 추가 API 키를 발급할 필요가 없습니다. 세부 주제와 학습 순서는 원천 데이터 제작자의 참고 설계이며 공식 수업 순서가 아닙니다.</p>
+</main></body></html>

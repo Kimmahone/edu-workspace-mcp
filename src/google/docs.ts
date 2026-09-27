@@ -7,6 +7,7 @@ import {
 } from "./document-html.js";
 import { extractGoogleFileId } from "./references.js";
 import { withGoogleRetry } from "./retry.js";
+import { tableWeights } from "./table-layout.js";
 
 export type { DocumentBlock, DocumentOptions, LessonPlanInput, WorksheetInput, WorksheetSection } from "./document-html.js";
 
@@ -66,6 +67,7 @@ function boldRanges(content: docs_v1.Schema$StructuralElement[] = []): IndexRang
 }
 
 export type PrintLayoutOptions = {
+  repeatTableHeaders?: boolean;
   /** true 를 돌려주는 제목 문단은 새 쪽에서 시작한다. */
   pageBreakBefore?: (headingText: string) => boolean;
 };
@@ -100,8 +102,16 @@ export function printLayoutRequests(document: docs_v1.Schema$Document, options: 
     if (element.startIndex == null) continue;
     if (element.table) {
       const tableStartLocation = { index: element.startIndex };
+      if (options.repeatTableHeaders) {
+        const headers = (element.table.tableRows?.[0]?.tableCells ?? []).map(cell => extractDocumentText(cell.content).trim());
+        if ((element.table.rows ?? 0) > 1) tableWeights(headers).forEach((weight, column) => requests.push({ updateTableColumnProperties: { tableStartLocation, columnIndices: [column], tableColumnProperties: { widthType: 'FIXED_WIDTH', width: { magnitude: 495.28 * weight, unit: 'PT' } }, fields: 'widthType,width' } }));
+        requests.push({updateTableCellStyle:{tableStartLocation,tableCellStyle:{paddingTop:{magnitude:5,unit:"PT"},paddingBottom:{magnitude:5,unit:"PT"},paddingLeft:{magnitude:7,unit:"PT"},paddingRight:{magnitude:7,unit:"PT"}},fields:"paddingTop,paddingBottom,paddingLeft,paddingRight"}});
+        for(const row of element.table.tableRows??[]) for(const cell of row.tableCells??[]) for(const paragraph of cell.content??[]) {
+          if(paragraph.paragraph&&paragraph.startIndex!=null&&paragraph.endIndex!=null)requests.push({updateParagraphStyle:{range:{startIndex:paragraph.startIndex,endIndex:paragraph.endIndex},paragraphStyle:{spaceAbove:{magnitude:0,unit:"PT"},spaceBelow:{magnitude:0,unit:"PT"},lineSpacing:120},fields:"spaceAbove,spaceBelow,lineSpacing"}});
+        }
+      }
       requests.push({ updateTableRowStyle: { tableStartLocation, tableRowStyle: { preventOverflow: true }, fields: "preventOverflow" } });
-      if (isHeaderTable(element.table)) requests.push({ pinTableHeaderRows: { tableStartLocation, pinnedHeaderRowsCount: 1 } });
+      if (isHeaderTable(element.table) || options.repeatTableHeaders && (element.table.rows ?? 0) > 1) requests.push({ pinTableHeaderRows: { tableStartLocation, pinnedHeaderRowsCount: 1 } });
       continue;
     }
     const namedStyle = element.paragraph?.paragraphStyle?.namedStyleType;

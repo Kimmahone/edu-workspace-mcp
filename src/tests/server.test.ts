@@ -26,6 +26,8 @@ function services(): WorkspaceServices {
     }] }),
     searchFiles: async () => [{ id: "file-1", name: "학습지" }],
     getFileMetadata: async () => ({ id: "file-1", name: "학습지", mimeType: "application/vnd.google-apps.document" }),
+    importKoreanDocument: async (file) => ({ document: { documentId: "import-1", title: "변환 문서", url: "https://docs.google.com/document/d/import-1/edit", pageSize: "A4" as const }, source: { id: file, name: "원본.hwpx" }, kordocVersion: "4.15.4", warnings: [], note: "확인 필요" }),
+    exportGoogleDocumentToHwpx: async (document) => ({ file: { id: "export-1", name: "변환.hwpx", url: "https://drive.google.com/file/d/export-1/view", size: 100 }, source: { id: document, name: "원본" }, kordocVersion: "4.15.4", warnings: [], note: "확인 필요" }),
     createFolder: async (name) => ({ id: "folder-1", name }),
     createDocument: async (title) => ({ documentId: "doc-1", title, url: "https://docs.google.com/document/d/doc-1/edit", pageSize: "A4" as const }),
     createWorksheet: async (input) => ({ documentId: "sheet-doc-1", title: input.title, url: "https://docs.google.com/document/d/sheet-doc-1/edit", pageSize: "A4" as const, sectionCount: input.sections.length }),
@@ -63,13 +65,24 @@ test("server exposes the complete MVP tool set", async () => {
     "classroom_create_assignment_draft", "classroom_list_courses", "classroom_publish_assignment",
     "classroom_list_coursework", "classroom_list_students", "classroom_list_student_submissions",
     "curriculum_get_standards", "curriculum_search_standards",
-    "docs_create_document", "docs_create_lesson_plan", "docs_create_worksheet", "docs_read_document", "drive_create_folder", "drive_get_file_metadata", "drive_prepare_share", "drive_search_files", "drive_share_file",
+    "docs_create_document", "docs_export_hwpx", "docs_import_hwp", "docs_create_lesson_plan", "docs_create_worksheet", "docs_read_document", "drive_create_folder", "drive_get_file_metadata", "drive_prepare_share", "drive_search_files", "drive_share_file",
     "education_create_assessment_tracker", "education_create_classroom_submission_tracker",
     "forms_create_quiz", "forms_read_form", "forms_list_responses", "sheets_create_workbook", "sheets_inspect_workbook", "sheets_list_sheets", "sheets_read_values",
     "slides_create_presentation", "slides_read_presentation", "workspace_get_auth_status"
   ].sort());
   assert.equal(result.tools.find((tool) => tool.name === "drive_search_files")?.annotations?.readOnlyHint, true);
   assert.equal(result.tools.find((tool) => tool.name === "classroom_publish_assignment")?.annotations?.destructiveHint, true);
+  await client.close(); await server.close();
+});
+
+test("document bridge exposes both directions and returns created file links", async () => {
+  const { client, server } = await connectedClient();
+  const imported = await client.callTool({ name: "docs_import_hwp", arguments: { file: "source-file-123456" } });
+  assert.notEqual(imported.isError, true);
+  assert.equal((imported.structuredContent as { document: { documentId: string } }).document.documentId, "import-1");
+  const exported = await client.callTool({ name: "docs_export_hwpx", arguments: { document: "source-doc-123456" } });
+  assert.notEqual(exported.isError, true);
+  assert.equal((exported.structuredContent as { file: { id: string } }).file.id, "export-1");
   await client.close(); await server.close();
 });
 

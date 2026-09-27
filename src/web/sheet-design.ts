@@ -1,0 +1,30 @@
+import type { Draft } from './drafts.js';
+import { designs,rgb,type DesignId } from './design.js';
+export function dashboardPlan(d:Draft,id:DesignId='navy'){
+ const p=designs[id],n=d.columns.length,count=d.rows.length,statusCol=d.columns.findIndex(c=>/상태|진행/.test(c)),letter=(i:number)=>String.fromCharCode(65+i);
+ const text=(v:string)=>({userEnteredValue:{stringValue:v}}),formula=(v:string)=>({userEnteredValue:{formulaValue:v}});
+ const grid=d.rows.map(row=>({values:row.map(text)})),range=(sheetId:number,r1:number,r2:number,c1=0,c2=n)=>({sheetId,startRowIndex:r1,endRowIndex:r2,startColumnIndex:c1,endColumnIndex:c2});
+ const requests:any[]=[{updateCells:{start:{sheetId:1,rowIndex:0,columnIndex:0},rows:[{values:[text(d.title)]},{values:[text(d.summary)]},{values:[]},{values:d.columns.map(text)},...grid],fields:'userEnteredValue'}},
+ {mergeCells:{range:range(1,0,1),mergeType:'MERGE_ALL'}},{mergeCells:{range:range(1,1,2),mergeType:'MERGE_ALL'}},
+ {repeatCell:{range:{sheetId:1},cell:{userEnteredFormat:{textFormat:{fontFamily:'Arial',fontSize:11,foregroundColor:rgb('#263645')},verticalAlignment:'MIDDLE',wrapStrategy:'WRAP'}},fields:'userEnteredFormat'}},
+ {repeatCell:{range:range(1,0,1),cell:{userEnteredFormat:{backgroundColor:rgb(p.ink),textFormat:{fontSize:22,bold:true,foregroundColor:rgb('#FFFFFF')},padding:{top:12,bottom:12,left:16,right:12}}},fields:'userEnteredFormat'}},
+ {repeatCell:{range:range(1,1,2),cell:{userEnteredFormat:{backgroundColor:rgb(p.pale),textFormat:{fontSize:11,foregroundColor:rgb(p.muted)}}},fields:'userEnteredFormat'}},
+ {repeatCell:{range:range(1,3,4),cell:{userEnteredFormat:{backgroundColor:rgb(p.ink),textFormat:{bold:true,foregroundColor:rgb('#FFFFFF')},horizontalAlignment:'CENTER'}},fields:'userEnteredFormat'}},
+ {updateDimensionProperties:{range:{sheetId:1,dimension:'COLUMNS',startIndex:0,endIndex:n},properties:{pixelSize:160},fields:'pixelSize'}},
+ {updateDimensionProperties:{range:{sheetId:1,dimension:'COLUMNS',startIndex:0,endIndex:1},properties:{pixelSize:280},fields:'pixelSize'}},
+ {updateDimensionProperties:{range:{sheetId:1,dimension:'ROWS',startIndex:0,endIndex:1},properties:{pixelSize:62},fields:'pixelSize'}},
+ {updateDimensionProperties:{range:{sheetId:1,dimension:'ROWS',startIndex:1,endIndex:count+4},properties:{pixelSize:44},fields:'pixelSize'}},
+ {setBasicFilter:{filter:{range:range(1,3,count+4)}}},
+ {addBanding:{bandedRange:{range:range(1,4,Math.max(5,count+4)),rowProperties:{firstBandColor:rgb('#FFFFFF'),secondBandColor:rgb(p.pale)}}}}];
+ const statusRange=statusCol<0?'':`'실행 보드'!${letter(statusCol)}5:${letter(statusCol)}${Math.max(5,count+4)}`;
+ const dashRows=[{values:[text('PROJECT OVERVIEW')]},{values:[text(d.title)]},{values:[text(d.summary)]},{values:[]},{values:[text('전체 업무'),text('완료'),text('진행 중'),text('예정 / 기타')]},{values:[formula(`=COUNTA('실행 보드'!A5:A${Math.max(5,count+4)})`),statusCol<0?text('상태 열 없음'):formula(`=COUNTIF(${statusRange},"완료")`),statusCol<0?text('—'):formula(`=COUNTIF(${statusRange},"진행 중")`),statusCol<0?text('—'):formula('=A6-B6-C6')]},{values:[]},{values:[text('완료율'),statusCol<0?text('상태 열을 추가하세요'):formula('=IFERROR(B6/A6,0)')]},{values:[]},{values:[text('시작하기')]},{values:[text('01   실행 보드에서 할 일·담당·기한을 수정하세요.')]},{values:[text('02   상태를 바꾸면 요약과 차트가 함께 바뀝니다.')]},{values:[text('03   상태 집계는 현재 업무 범위를 기준으로 합니다.')]}];
+ requests.push({updateCells:{start:{sheetId:0,rowIndex:0,columnIndex:0},rows:dashRows,fields:'userEnteredValue'}},{repeatCell:{range:{sheetId:0},cell:{userEnteredFormat:{textFormat:{fontFamily:'Arial',fontSize:11,foregroundColor:rgb(p.ink)},wrapStrategy:'WRAP',verticalAlignment:'MIDDLE'}},fields:'userEnteredFormat'}});
+ for(const row of [0,1,2,9,10,11,12])requests.push({mergeCells:{range:{sheetId:0,startRowIndex:row,endRowIndex:row+1,startColumnIndex:0,endColumnIndex:4},mergeType:'MERGE_ALL'}});
+ requests.push({repeatCell:{range:range(0,0,3,0,4),cell:{userEnteredFormat:{backgroundColor:rgb(p.ink),textFormat:{foregroundColor:rgb('#FFFFFF'),fontSize:12}}},fields:'userEnteredFormat'}},{repeatCell:{range:range(0,1,2,0,4),cell:{userEnteredFormat:{textFormat:{bold:true,fontSize:24}}},fields:'userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.fontSize'}},{repeatCell:{range:range(0,4,6,0,4),cell:{userEnteredFormat:{backgroundColor:rgb(p.pale),horizontalAlignment:'CENTER'}},fields:'userEnteredFormat.backgroundColor,userEnteredFormat.horizontalAlignment'}},{repeatCell:{range:range(0,5,6,0,4),cell:{userEnteredFormat:{textFormat:{bold:true,fontSize:30,foregroundColor:rgb(p.accent)}}},fields:'userEnteredFormat.textFormat'}},{updateDimensionProperties:{range:{sheetId:0,dimension:'COLUMNS',startIndex:0,endIndex:4},properties:{pixelSize:185},fields:'pixelSize'}},{updateDimensionProperties:{range:{sheetId:0,dimension:'ROWS',startIndex:0,endIndex:14},properties:{pixelSize:42},fields:'pixelSize'}},{updateDimensionProperties:{range:{sheetId:0,dimension:'ROWS',startIndex:5,endIndex:6},properties:{pixelSize:72},fields:'pixelSize'}});
+ if(statusCol>=0){
+ requests.push({repeatCell:{range:range(0,7,8,1,2),cell:{userEnteredFormat:{numberFormat:{type:'PERCENT',pattern:'0%'}}},fields:'userEnteredFormat.numberFormat'}},{setDataValidation:{range:range(1,4,Math.max(5,count+4),statusCol,statusCol+1),rule:{condition:{type:'ONE_OF_LIST',values:['예정','진행 중','완료','보류'].map(userEnteredValue=>({userEnteredValue}))},strict:false,showCustomUi:true}}});
+ for(const [i,label]of ['완료','진행 중','예정','보류'].entries())requests.push({addConditionalFormatRule:{index:i,rule:{ranges:[range(1,4,Math.max(5,count+4),statusCol,statusCol+1)],booleanRule:{condition:{type:'TEXT_EQ',values:[{userEnteredValue:label}]},format:{backgroundColor:rgb(['#D9EEDC','#FFF0C2','#E8EEF7','#FADBD7'][i]),textFormat:{bold:true}}}}}});
+ requests.push({addChart:{chart:{spec:{title:'진행 상태',fontName:'Arial',backgroundColor:rgb('#FFFFFF'),pieChart:{legendPosition:'RIGHT_LEGEND',domain:{sourceRange:{sources:[range(0,4,5,1,4)]}},series:{sourceRange:{sources:[range(0,5,6,1,4)]}},pieHole:.65}},position:{overlayPosition:{anchorCell:{sheetId:0,rowIndex:15,columnIndex:0},widthPixels:720,heightPixels:320}}}}});
+ }
+ return requests;
+}

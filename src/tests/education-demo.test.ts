@@ -28,6 +28,8 @@ function demoServices(calls: Call[]): WorkspaceServices {
     listStudentSubmissions: async (courseId, courseWorkId) => ({ courseId, courseWorkId, returnedSubmissions: 0, hasMore: false, submissions: [] }),
     searchFiles: async () => [],
     getFileMetadata: async () => ({ id: "lesson-folder", name: "수업 자료" }),
+    importKoreanDocument: async (file) => ({ document: { documentId: "import-1", title: "변환 문서", url: "https://docs.google.com/document/d/import-1/edit", pageSize: "A4" as const }, source: { id: file, name: "원본.hwpx" }, kordocVersion: "4.15.4", warnings: [], note: "확인 필요" }),
+    exportGoogleDocumentToHwpx: async (document) => ({ file: { id: "export-1", name: "변환.hwpx", url: "https://drive.google.com/file/d/export-1/view", size: 100 }, source: { id: document, name: "원본" }, kordocVersion: "4.15.4", warnings: [], note: "확인 필요" }),
     createFolder: async (name, parentId) => {
       calls.push({ tool: "drive_create_folder", input: { name, parentId } });
       return { id: "lesson-folder", name, url: "https://drive.example/lesson-folder" };

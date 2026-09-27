@@ -7,3 +7,10 @@ credentials.json
 token.json
 .edu-workspace-mcp/
 outputs/
+test-results/
+playwright-report/
+
+# Private design reference files and local notes
+구글/
+작업기록_*.md
+*.tgz
