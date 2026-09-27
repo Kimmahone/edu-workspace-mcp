@@ -25,12 +25,12 @@
 
 1. **Workers & Pages → 애플리케이션 생성 → GitHub 저장소 연결**을 선택합니다. 이 앱은 **Workers**로 만듭니다.
 2. GitHub 연결 권한을 허용하고 `Kimmahone/edu-workspace-mcp` 저장소를 선택합니다.
-3. 다음 값을 입력합니다. 현재 Cloudflare 코드가 있는 브랜치는 `codex/cloudflare-free-personal`입니다. `main`으로 병합한 뒤에는 Cloudflare의 Production branch를 `main`으로 바꿀 수 있습니다.
+3. 다음 값을 입력합니다. 기본 배포 브랜치는 `main`입니다. 생성 화면에 브랜치 선택란이 없으면 그대로 진행하고, 생성 후 Settings → Build → Branch control에서 `main`인지 확인합니다.
 
 | 항목 | 입력값 |
 | --- | --- |
 | Worker / 프로젝트 이름 | `workspace-lab-personal` |
-| Production branch / 배포 브랜치 | `codex/cloudflare-free-personal` |
+| Production branch / 배포 브랜치 | `main` (생성 화면에서 선택란이 없으면 기본값) |
 | Root directory / 루트 디렉터리 | 비워 두기 — 저장소 최상위 |
 | Build command / 빌드 명령 | `npm run cloud:build` |
 | Deploy command / 배포 명령 | `npm run cloud:git:deploy` |
@@ -44,8 +44,8 @@ Cloudflare가 `package-lock.json`을 기준으로 의존성을 설치합니다. 
 
 ### 준비된 데이터베이스와 배포 설정
 
-- `cloud/wrangler.github.jsonc`에 현재 계정의 D1 `workspace-lab-personal`을 연결했습니다. 바인딩 이름은 **`DB`**입니다. 로그인·작업 기록 테이블 초기화도 완료했습니다. 같은 DB를 새로 만들거나 마이그레이션을 다시 실행할 필요가 없습니다.
-- 데이터베이스 식별자는 공개 가능한 리소스 ID이며 API 키가 아닙니다. 다른 사람이 자기 계정에 복제 배포할 때는 본인의 계정 ID와 D1 ID로 바꾸고 `npx wrangler d1 migrations apply workspace-lab-personal --remote --config cloud/wrangler.github.jsonc`로 스키마를 만듭니다.
+- `wrangler.jsonc`에 현재 계정의 D1 `workspace-lab-personal`을 연결했습니다. 바인딩 이름은 **`DB`**입니다. 로그인·작업 기록 테이블 초기화도 완료했습니다. 같은 DB를 새로 만들거나 마이그레이션을 다시 실행할 필요가 없습니다.
+- 데이터베이스 식별자는 공개 가능한 리소스 ID이며 API 키가 아닙니다. 다른 사람이 자기 계정에 복제 배포할 때는 본인의 계정 ID와 D1 ID로 바꾸고 `npx wrangler d1 migrations apply workspace-lab-personal --remote --config wrangler.jsonc`로 스키마를 만듭니다.
 - GitHub 배포 설정은 `keep_vars: true`와 서버 기본값을 사용합니다. 대시보드에서 바꾼 환경변수와 시크릿을 다음 코드 배포가 초기화하지 않습니다.
 - 기존 사이트·MCP 릴리스를 삭제하지 않습니다. 이 앱은 별도 Worker입니다.
 - Workers Builds Free는 계정 합산 **월 3,000 빌드 분**을 제공합니다. [GitHub 연동](https://developers.cloudflare.com/workers/ci-cd/builds/git-integration/github-integration/) · [빌드 무료 한도](https://developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing/)

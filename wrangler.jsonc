@@ -1,12 +1,12 @@
 {
-  "$schema": "../node_modules/wrangler/config-schema.json",
+  "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "workspace-lab-personal",
-  "main": "worker.ts",
+  "main": "cloud/worker.ts",
   "compatibility_date": "2026-09-27",
   "workers_dev": true,
   "preview_urls": false,
   "assets": {
-    "directory": "../.cloud-build/public",
+    "directory": ".cloud-build/public",
     "binding": "ASSETS",
     "run_worker_first": [
       "/api/*",
@@ -19,7 +19,7 @@
       "binding": "DB",
       "database_name": "workspace-lab-personal",
       "database_id": "d029591d-37c2-4148-a124-ee94ffe42568",
-      "migrations_dir": "migrations"
+      "migrations_dir": "cloud/migrations"
     }
   ],
   "triggers": {

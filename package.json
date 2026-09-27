@@ -62,7 +62,7 @@
     "cloud:dev": "npm run cloud:build && wrangler dev --config cloud/wrangler.jsonc --port 3211",
     "cloud:setup": "node scripts/cloud-deploy.mjs --setup",
     "cloud:deploy": "node scripts/cloud-deploy.mjs",
-    "cloud:git:deploy": "wrangler deploy --config cloud/wrangler.github.jsonc",
+    "cloud:git:deploy": "wrangler deploy --config wrangler.jsonc",
     "test:cloud": "node --import tsx --test cloud/worker.test.ts",
     "test:cloud:browser": "node scripts/test-cloud-browser.mjs"
   },
