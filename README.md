@@ -403,3 +403,7 @@ Google API 실계정 테스트에는 별도 테스트 계정을 사용하세요.
 ## 라이선스
 
 [MIT](LICENSE). 포함된 교육과정 데이터의 원천과 라이선스는 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)를 참고하세요.
+
+## 개인용 무료 웹앱 (Cloudflare)
+
+맥을 끄고도 윈도우·맥의 브라우저에서 사용하려면 [Cloudflare 개인용 배포 안내](docs/CLOUDFLARE_PERSONAL.md)를 참고하세요. Kordoc은 브라우저 Web Worker에서, 로그인·API 중계는 Workers Free와 D1 Free에서 실행합니다. Cloud Run과 PostgreSQL이 필요하지 않습니다. 기존 MCP와 로컬 앱은 유지됩니다.

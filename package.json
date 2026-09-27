@@ -55,7 +55,15 @@
     "test:web": "npm run build && node --test --import tsx src/tests/web.test.ts",
     "test:web:ui": "npm run build && playwright test",
     "web:examples": "npm run build && node scripts/build-web-examples.mjs && node scripts/render-web-examples.mjs && node scripts/render-form-headers.mjs",
-    "web:guide": "node scripts/build-web-guide.mjs"
+    "web:guide": "node scripts/build-web-guide.mjs",
+    "cloud:build": "node scripts/build-cloud.mjs",
+    "cloud:types": "wrangler types cloud/worker-configuration.d.ts --config cloud/wrangler.jsonc --strict-vars=false",
+    "cloud:check": "npm run cloud:types && tsc -p cloud/tsconfig.json && tsc -p cloud/browser/tsconfig.json",
+    "cloud:dev": "npm run cloud:build && wrangler dev --config cloud/wrangler.jsonc --port 3211",
+    "cloud:setup": "node scripts/cloud-deploy.mjs --setup",
+    "cloud:deploy": "node scripts/cloud-deploy.mjs",
+    "test:cloud": "node --import tsx --test cloud/worker.test.ts",
+    "test:cloud:browser": "node scripts/test-cloud-browser.mjs"
   },
   "publishConfig": {
     "access": "public"
@@ -77,8 +85,22 @@
     "@types/node": "22.20.1",
     "@types/pg": "^8.23.1",
     "@types/sanitize-html": "^2.16.1",
+    "assert": "^2.1.0",
+    "browserify-cipher": "^1.0.1",
+    "browserify-zlib": "^0.2.0",
+    "buffer": "^6.0.3",
+    "create-hash": "^1.2.0",
+    "esbuild": "^0.28.2",
+    "events": "^3.3.0",
     "korean-elementary-learning-map-mcp": "0.5.1",
+    "miniflare": "^5.20260925.0-alpha",
+    "path-browserify": "^1.0.1",
+    "pbkdf2": "^3.1.6",
+    "process": "^0.11.10",
+    "stream-browserify": "^3.0.0",
     "tsx": "4.20.5",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "util": "^0.12.5",
+    "wrangler": "^4.141.0"
   }
 }

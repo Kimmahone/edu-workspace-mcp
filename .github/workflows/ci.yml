@@ -38,3 +38,27 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm pack --dry-run
+
+  cloudflare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run cloud:check
+      - run: npm run test:cloud
+      - run: npm run cloud:build
+      - run: npx playwright install --with-deps chromium
+      - name: Browser Kordoc and Google adapters (mock APIs)
+        run: |
+          npx wrangler dev --config cloud/wrangler.jsonc --port 3211 > /tmp/workspace-worker.log 2>&1 &
+          WORKER_PID=$!
+          trap 'kill "$WORKER_PID"' EXIT
+          for attempt in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:3211/healthz && break
+            sleep 1
+          done
+          npm run test:cloud:browser
