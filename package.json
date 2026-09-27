@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",
-    "google-auth-library": "10.9.1",
+    "google-auth-library": "11.1.0",
     "googleapis": "178.0.0",
     "kordoc": "4.15.4",
     "markdown-it": "^15.0.2",
