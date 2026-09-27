@@ -99,7 +99,7 @@
     "pbkdf2": "^3.1.6",
     "process": "^0.11.10",
     "stream-browserify": "^3.0.0",
-    "tsx": "4.20.5",
+    "tsx": "4.23.15",
     "typescript": "5.9.3",
     "util": "^0.12.5",
     "wrangler": "^4.141.0"
