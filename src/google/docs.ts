@@ -1,4 +1,3 @@
-import { Readable } from "node:stream";
 import { docs_v1, google } from "googleapis";
 import { getAuthorizedClient } from "../auth/google-auth.js";
 import {
@@ -146,8 +145,8 @@ export async function createDocumentFromHtml(title: string, html: string, parent
       mimeType: "application/vnd.google-apps.document",
       parents: parentFolderId ? [parentFolderId] : undefined
     },
-    // 재시도마다 새 스트림을 만든다. 한 번 읽힌 스트림을 다시 보내면 빈 문서가 된다.
-    media: { mimeType: "text/html", body: Readable.from([html]) },
+    // 문자열 본문은 재전송 가능하며 Node와 브라우저 API 어댑터에서 같은 HTML을 보낸다.
+    media: { mimeType: "text/html", body: html },
     fields: "id"
   }), { idempotent: false });
   const documentId = created.data.id;

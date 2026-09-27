@@ -1,5 +1,7 @@
 # Workspace Lab — 실행과 배포
 
+> **개인용 무료 웹 배포는 [Cloudflare 개인용 가이드](CLOUDFLARE_PERSONAL.md)를 사용하세요.** Cloud Run·PostgreSQL은 아래의 기존 다중 사용자 서버 배포 방식이며 Cloudflare 개인용에는 필요하지 않습니다.
+
 처음 설정하는 운영자는 [직접 해야 할 설정](WORKSPACE_LAB_START.md)의 단계별 안내부터 읽으세요.
 
 ## 완성된 기능

@@ -14,3 +14,11 @@ playwright-report/
 구글/
 작업기록_*.md
 *.tgz
+
+# Cloudflare generated files and private configuration
+.cloud-build/
+.wrangler/
+.dev.vars*
+!*.example
+cloud/worker-configuration.d.ts
+cloud/wrangler.personal.jsonc

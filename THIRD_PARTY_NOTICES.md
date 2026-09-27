@@ -65,3 +65,9 @@ https://ncic.re.kr)가 공개한 PDF에서 추출한 것입니다. 교육부가 
 ## Workspace Lab product artwork
 
 Google Docs, Sheets, Slides, Forms, Drive and Classroom product icons in `web/assets/google` were supplied by the project owner. Google product names and artwork remain the property of Google. They identify connected services; Workspace Lab is an independent application. Source mappings are in `docs/ASSETS.md`.
+
+## Cloudflare 개인용 브라우저 문서 엔진
+
+Kordoc 4.15.4 (MIT)을 브라우저 Web Worker에 번들합니다. HWP/HWPX/DOCX 처리 코드는 동일하며 파일 시스템·운영체제·PDF/OCR 전용 경로는 브라우저에서 명시적으로 지원하지 않습니다. Buffer·압축·문서용 해시/암호 연산을 브라우저 호환 모듈로 연결합니다. 교육과정 JSON은 공개 정적 번들에 포함합니다.
+
+`npm run cloud:build`는 실제 번들에 포함된 패키지의 라이선스 전문을 `/cloud/LICENSES.txt`로 생성합니다. Kordoc과 모든 브라우저 의존성의 고지는 배포 파일과 함께 제공됩니다.

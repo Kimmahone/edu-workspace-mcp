@@ -1,0 +1,42 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "workspace-lab-personal",
+  "main": "cloud/worker.ts",
+  "compatibility_date": "2026-09-27",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": ".cloud-build/public",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/*",
+      "/auth/*",
+      "/healthz"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "workspace-lab-personal",
+      "database_id": "d029591d-37c2-4148-a124-ee94ffe42568",
+      "migrations_dir": "cloud/migrations"
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "17 19 * * *"
+    ]
+  },
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false,
+      "head_sampling_rate": 0.1
+    },
+    "traces": {
+      "enabled": false
+    }
+  },
+  "keep_vars": true,
+  "account_id": "dd114ece842a3ca34a4361eeb753b2be"
+}
