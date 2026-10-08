@@ -407,3 +407,9 @@ Google API 실계정 테스트에는 별도 테스트 계정을 사용하세요.
 ## 개인용 무료 웹앱 (Cloudflare)
 
 맥을 끄고도 윈도우·맥의 브라우저에서 사용하려면 [Cloudflare 개인용 배포 안내](docs/CLOUDFLARE_PERSONAL.md)를 참고하세요. Kordoc은 브라우저 Web Worker에서, 로그인·API 중계는 Workers Free와 D1 Free에서 실행합니다. Cloud Run과 PostgreSQL이 필요하지 않습니다. 기존 MCP와 로컬 앱은 유지됩니다.
+
+## Google 데이터와 AI 모델 학습 금지
+
+Google Workspace 원본·집계·익명화·파생 데이터는 범용 AI/ML 모델을 생성·학습·개선하는 용도로 사용하거나 전송할 수 없습니다. 데스크톱 MCP는 특정 AI 모델·요금제·중개 API를 내장하지 않고 사용자가 선택한 stdio 호스트에 결과를 반환하는 도구 통합 플랫폼입니다. 호스트의 학습 데이터 공유를 비활성화하고 서비스·요금제·정책을 확인한 후에만 Google 자료를 읽으세요. 호스트가 학습에 데이터를 사용하면 해당 호스트와 Google 데이터의 연결을 중단해야 합니다. 오프라인 클라이언트는 외부 전송이 없어야 합니다.
+
+Workspace Lab의 무료 Gemini 경로는 서버에서 차단합니다. OpenAI API는 학습 공유 비활성 확인 후 `OPENAI_NO_TRAINING_CONFIRMED=true`, Gemini는 학습에 사용하지 않는 Paid Service 확인 후 `GEMINI_NO_TRAINING_CONFIRMED=true`를 명시적으로 설정해야 합니다. 자동 결제 전환이나 모델 대체는 하지 않습니다. 사용자가 AI 전송에 별도로 동의해야 하며 `store=false`는 응답 저장 설정으로 학습 금지·Zero Data Retention을 보장하지 않습니다. [MCP 정책](https://edu.jeld.kr/privacy.html) · [웹앱 정책](https://workspace-lab-personal.kimjj0709.workers.dev/privacy)

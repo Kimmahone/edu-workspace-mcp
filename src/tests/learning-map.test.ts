@@ -27,8 +27,8 @@ test('learning map uses the pinned dataset; topic and prerequisite IDs resolve a
  assert.throws(()=>learningContext(['[없는기준]']));
 });
 test('latest Flash alias and selected learning map reach Gemini; quota failure never falls back to paid GPT',async()=>{
- const config=webConfig({GEMINI_API_KEY:'test',OPENAI_API_KEY:'test'});assert.equal(config.geminiModel,'gemini-flash-latest');
- const input=requestSchema.parse({template:'worksheet',prompt:'분수 학습지 만들기',grade:3,subject:'수학',audience:'초등 수업',standardCodes:['[4수01-09]'],noPersonalData:true});
+ const config=webConfig({GEMINI_API_KEY:'test',OPENAI_API_KEY:'test',GEMINI_NO_TRAINING_CONFIRMED:'true'});assert.equal(config.geminiModel,'gemini-flash-latest');
+ const input=requestSchema.parse({template:'worksheet',prompt:'분수 학습지 만들기',provider:'gemini',grade:3,subject:'수학',audience:'초등 수업',standardCodes:['[4수01-09]'],noPersonalData:true,aiProcessingConsent:true});
  let body:any;
  await generateDraft(input,config,async(_url,init)=>{body=JSON.parse(String(init?.body));return new Response(JSON.stringify({status:'completed',output_text:JSON.stringify(sampleDraft('worksheet'))}));});
  assert.equal(body.model,'gemini-flash-latest');const prompt=JSON.parse(body.input);assert.ok(prompt.learningMap.topics.length);assert.equal(prompt.standards[0].code,'[4수01-09]');

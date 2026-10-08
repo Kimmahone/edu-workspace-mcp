@@ -12,6 +12,7 @@ import { templates, templateIds, sampleDraft, draftSchema, documentDraftSchema, 
 import { generateDraft } from "./ai.js";
 import { renderMarkdown } from "./render.js";
 import { documentJob, MAX_FILE } from "./documents.js";
+import {assertAiDataPolicy} from "./ai-policy.js";
 import { saveOutput, outputKinds, readGoogleDoc, type OutputKind } from "./workspace.js";
 import { googleContext } from "../auth/context.js";
 import { getAuthStatus } from "../auth/google-auth.js";
@@ -82,7 +83,7 @@ export async function createWebServer(config: WebConfig, suppliedStore?: Store, 
       }
       if (route === "/api/status" && req.method === "GET") {
         const local = !config.hosted ? await (dependencies.localAuth ?? getAuthStatus)().catch(() => undefined) : undefined;
-        return json(res, { mode: config.hosted ? "hosted" : "local", csrf: session.value.csrf, user: session.value.user, connected: config.hosted ? Boolean(session.value.user) : Boolean(local?.authenticated), ai: { gemini: Boolean(config.geminiKey), openai: Boolean(config.openaiKey) }, models: { gemini: config.geminiModel, openai: config.openaiModel }, kordoc: VERSION, templates:templates.map(t=>({...t,...(elementaryExamples[t.id]?{prompt:elementaryExamples[t.id].prompt,education:elementaryExamples[t.id]}: {})})), designs, elementaryExamples, curriculum: {...curriculumInfo(), learningMap:learningMapInfo(), subjects:CURRICULUM_SUBJECTS}, formsThemeConnected: Boolean(config.formsTemplateId), dailyLimit: config.aiDailyLimit });
+        return json(res, { mode: config.hosted ? "hosted" : "local", csrf: session.value.csrf, user: session.value.user, connected: config.hosted ? Boolean(session.value.user) : Boolean(local?.authenticated), ai: { gemini: Boolean(config.geminiKey) && config.geminiNoTrainingConfirmed, openai: Boolean(config.openaiKey) && config.openaiNoTrainingConfirmed }, models: { gemini: config.geminiModel, openai: config.openaiModel }, kordoc: VERSION, templates:templates.map(t=>({...t,...(elementaryExamples[t.id]?{prompt:elementaryExamples[t.id].prompt,education:elementaryExamples[t.id]}: {})})), designs, elementaryExamples, curriculum: {...curriculumInfo(), learningMap:learningMapInfo(), subjects:CURRICULUM_SUBJECTS}, formsThemeConnected: Boolean(config.formsTemplateId), dailyLimit: config.aiDailyLimit });
       }
       if (route === "/auth/google" && req.method === "GET" && config.hosted) { res.writeHead(302, { Location: await auth.start(session.id, url.searchParams.get("classroom") === "1") }); return res.end(); }
       if (route === "/auth/callback" && req.method === "GET" && config.hosted) {
@@ -155,6 +156,7 @@ export async function createWebServer(config: WebConfig, suppliedStore?: Store, 
       }
       if (route === "/api/generate" && req.method === "POST") {
         const data = requestSchema.parse(await input(req));
+        assertAiDataPolicy(data.provider, config);
         if (!(data.provider === "gemini" ? config.geminiKey : config.openaiKey)) throw new HttpError(422, "선택한 AI의 API 키가 설정되지 않았습니다. 예시로 먼저 시작해 주세요.");
         if (!await store.claim(`ai-running:${ownerKey}`, true, 120000)) throw new HttpError(429, "이 계정의 다른 AI 요청을 처리 중입니다.");
         try { await quota(ownerKey, "ai", config.aiDailyLimit); return json(res, await (dependencies.generate ?? generateDraft)(data, config)); }

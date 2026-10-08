@@ -54,9 +54,9 @@ test("draft validation prevents invalid quiz answers and ragged sheet rows", () 
   const sheet = sampleDraft("tracker"); sheet.rows[0].pop(); assert.throws(() => validateDraft(sheet, "tracker"));
 });
 test("both AI adapters validate structured output and never return provider secrets", async () => {
-  const draft = sampleDraft("notice"), config = webConfig({ GEMINI_API_KEY: "gemini-secret", OPENAI_API_KEY: "openai-secret" });
+  const draft = sampleDraft("notice"), config = webConfig({ GEMINI_API_KEY: "gemini-secret", OPENAI_API_KEY: "openai-secret", GEMINI_NO_TRAINING_CONFIRMED: "true", OPENAI_NO_TRAINING_CONFIRMED: "true" });
   for (const provider of ["gemini", "openai"] as const) {
-    const input = requestSchema.parse({ template: "notice", prompt: "안내문 만들기", provider, noPersonalData: true });
+    const input = requestSchema.parse({ template: "notice", prompt: "안내문 만들기", provider, noPersonalData: true, aiProcessingConsent: true });
     let sent: any;
     const fake: typeof fetch = async (_url, init) => {
       sent = JSON.parse(String(init?.body));

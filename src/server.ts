@@ -74,7 +74,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
   const services = { ...defaultServices, ...overrides };
   const server = new McpServer(
     { name: "edu-workspace-mcp", version: APP_VERSION },
-    { instructions: "Google Workspace for Education MCP입니다. 검색·조회 도구로 대상을 먼저 확인하세요. 학생 개인정보가 포함된 자료는 필요한 최소 범위만 읽고 응답에 불필요하게 반복하지 마세요. 생성 도구는 요청한 콘텐츠만 만들며 비멱등이므로 실패 또는 시간 초과 후 자동으로 중복 호출하지 마세요. Classroom 게시와 Drive 공유는 대상·마감·첨부·권한을 사용자에게 보여 주고 명시적으로 확인받은 경우에만 확정 도구를 호출하세요. 초등 성취기준을 자료에 넣을 때는 원문을 직접 쓰지 말고 curriculum_search_standards로 코드를 찾아 교사에게 확인받은 뒤 생성 도구의 standardCodes로 넘기세요. 서버가 정리된 원문과 출처를 붙이고, 원문이 깨진 항목은 원문 확인 필요로 표시합니다." }
+    { instructions: "Google Workspace for Education MCP입니다. Google API의 원본·집계·파생 데이터를 범용 AI 모델 학습·개선에 사용하거나 학습하는 외부 서비스에 보내면 안 됩니다. 사용자가 지정한 자료만 읽고, MCP 호스트의 데이터 학습 공유가 비활성임을 확인한 환경에서 처리하세요. 검색·조회 도구로 대상을 먼저 확인하세요. 학생 개인정보가 포함된 자료는 필요한 최소 범위만 읽고 응답에 불필요하게 반복하지 마세요. 생성 도구는 요청한 콘텐츠만 만들며 비멱등이므로 실패 또는 시간 초과 후 자동으로 중복 호출하지 마세요. Classroom 게시와 Drive 공유는 대상·마감·첨부·권한을 사용자에게 보여 주고 명시적으로 확인받은 경우에만 확정 도구를 호출하세요. 초등 성취기준을 자료에 넣을 때는 원문을 직접 쓰지 말고 curriculum_search_standards로 코드를 찾아 교사에게 확인받은 뒤 생성 도구의 standardCodes로 넘기세요. 서버가 정리된 원문과 출처를 붙이고, 원문이 깨진 항목은 원문 확인 필요로 표시합니다." }
   );
 
   const standardCodesSchema = (max: number) => z.array(z.string().trim().min(3).max(30)).max(max).optional()

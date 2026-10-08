@@ -36,7 +36,7 @@ export async function api(path:string,data?:any,raw=false):Promise<any>{
  if(route==='/api/documents/compare')return documentJob({action:'compare',input:Buffer.from(data.first,'base64'),other:Buffer.from(data.second,'base64')});
  if(!status?.connected)throw new Error('연결 및 이용 안내에서 본인 Google 계정으로 로그인해 주세요.');
  if(route==='/api/documents/google')return readGoogleDoc(data.url);
- if(route==='/api/generate')return generateDraft(requestSchema.parse(data),{geminiKey:'server-managed',openaiKey:'server-managed',geminiModel:status.models.gemini,openaiModel:status.models.openai} as any,async(url,options)=>fetch('/api/cloud/ai',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':status.csrf,'X-AI-Provider':data.provider},body:options?.body,signal:options?.signal}));
+ if(route==='/api/generate')return generateDraft(requestSchema.parse(data),{geminiKey:'server-managed',openaiKey:'server-managed',geminiNoTrainingConfirmed:status.ai.gemini,openaiNoTrainingConfirmed:status.ai.openai,geminiModel:status.models.gemini,openaiModel:status.models.openai} as any,async(url,options)=>fetch('/api/cloud/ai',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':status.csrf,'X-AI-Provider':data.provider},body:JSON.stringify({...JSON.parse(String(options?.body)),aiProcessingConsent:data.aiProcessingConsent}),signal:options?.signal}));
  if(route==='/api/save/prepare'){
   const draft=documentDraftSchema.parse(data.draft);validateDraft(draft,data.template);resolveStandardCodes(data.standardCodes??[]);
   if(!data.kinds?.length||data.kinds.length>5||new Set(data.kinds).size!==data.kinds.length)throw new Error('저장 형식을 확인해 주세요.');

@@ -60,9 +60,11 @@ Worker → **Settings → Variables and Secrets**에 추가하고 Deploy합니�
 | `APP_SECRET` | Secret | 암호학적으로 생성한 32바이트 이상의 무작위 값 |
 | `GOOGLE_WEB_CLIENT_ID` | Secret | 아래 3절의 Google 웹 OAuth 클라이언트 ID |
 | `GOOGLE_WEB_CLIENT_SECRET` | Secret | 해당 클라이언트 시크릿 |
-| `GEMINI_API_KEY` | Secret | 아래 4절의 결제 미연결 Free Tier 키 |
-| `GEMINI_FREE_TIER_CONFIRMED` | Text | 실제 Free Tier 확인 후 `true` |
+| `GEMINI_API_KEY` | Secret | 아래 4절의 확인된 Paid Service 키(현재 비활성) |
+| `GEMINI_FREE_TIER_CONFIRMED` | Text | 과거 무료 설정이며 AI 활성화에 사용하지 않음 |
 | `OPENAI_API_KEY` | Secret | GPT를 사용할 때만 입력 |
+| `OPENAI_NO_TRAINING_CONFIRMED` | Text | API 조직의 학습 공유 비활성 확인 후 `true` |
+| `GEMINI_NO_TRAINING_CONFIRMED` | Text | 현재 `false`. 학습 없는 Paid Service 확인 후에만 `true` |
 
 `APP_SECRET`은 로그인·저장 기록 암호화용입니다. 한 번 만든 값을 유지합니다. Node.js가 설치된 본인 컴퓨터에서 아래 명령으로 생성해 Secret 입력란에 직접 붙여 넣을 수 있습니다. 출력값을 GitHub나 대화에 올리지 마세요.
 
@@ -97,19 +99,16 @@ Google 문서를 내 계정에 저장하려면 이 설정은 한 번 필요합�
 
 Cloudflare Worker의 **Settings → Variables and Secrets**에 입력합니다. 웹앱 브라우저 소스·GitHub·일반 Variables에 키를 넣지 마세요. 키는 반드시 Secret으로 지정합니다. 로컬 `.env`에 있는 키는 자동으로 클라우드에 복사되지 않습니다.
 
-### Gemini — 결제 미연결 Free Tier만
+### Gemini — 무료 경로는 차단
 
-1. [Google AI Studio API Keys](https://aistudio.google.com/api-keys)에서 **결제가 연결되지 않은 Free Tier 프로젝트**로 키를 발급합니다.
-2. `GEMINI_API_KEY`를 Secret으로 추가합니다.
-3. 해당 프로젝트가 Free Tier임을 확인한 뒤 일반 Variable `GEMINI_FREE_TIER_CONFIRMED`를 문자열 `true`로 바꿉니다. 기본값 `false`에서는 키가 있어도 Gemini 호출을 차단합니다.
-4. 기본 모델은 `gemini-flash-latest`입니다. Google이 변경하는 최신 Flash 별칭이므로 Free Tier 지원 여부도 달라질 수 있습니다. 미지원·할당량 오류가 나면 중단하며 GPT로 자동 전환하지 않습니다.
+Google Workspace 원본·집계·파생 데이터를 학습에 쓰는 무료 Gemini로 보내지 않습니다. 기존 `GEMINI_FREE_TIER_CONFIRMED=true`만으로는 활성화되지 않습니다. 입력을 학습에 사용하지 않는 Paid Service 정책 적용을 운영자가 확인한 경우에만 `GEMINI_NO_TRAINING_CONFIRMED=true`를 설정할 수 있습니다. 이 값은 결제 상태를 바꾸지 않으며 앱이 자동으로 유료 전환하지 않습니다. 현재 개인용 배포는 Gemini 비활성입니다.
 
-앱은 키만으로 Google 프로젝트의 결제 상태를 판별할 수 없습니다. 확인 스위치는 실제 결제 상태를 바꾸지 않습니다. 무료 한도 초과 시 멈추게 하려면 반드시 **결제 미연결 프로젝트**를 유지하세요. [Gemini 요금·무료 조건](https://ai.google.dev/gemini-api/docs/pricing)
+[Gemini 데이터 이용 조건](https://ai.google.dev/gemini-api/terms)
 
 ### GPT — 선택할 때만 유료
 
 1. [OpenAI API Keys](https://platform.openai.com/api-keys)에서 키를 발급합니다.
-2. `OPENAI_API_KEY`를 Cloudflare Secret으로 추가합니다.
+2. `OPENAI_API_KEY`를 Cloudflare Secret으로 추가합니다. API 조직의 Data controls → Sharing에서 피드백·평가·입출력 공유가 모두 Disabled인지 확인한 후 일반 Text 변수 `OPENAI_NO_TRAINING_CONFIRMED=true`를 설정합니다. 확인 전에는 키가 있어도 서버가 호출을 차단합니다. ChatGPT 구독과 API 요금제는 별개이며 `store=false`는 학습 금지나 Zero Data Retention을 뜻하지 않습니다.
 3. 기본 모델은 **`gpt-6-luna`**입니다. 브라우저가 다른 모델을 보내도 서버 설정을 적용합니다. AI 생성에서 GPT를 직접 선택했을 때만 호출합니다.
 4. 앱의 AI 요청은 두 제공자를 합쳐 하루 20회, 한 번에 1건, 출력 최대 12,000토큰입니다. 이것은 횟수 제한이며 **월 10달러 하드 차단 기능은 아닙니다**. OpenAI 프로젝트 예산은 알림형일 수 있으므로 결제·잔액·사용량을 별도로 확인하세요. [API 요금](https://openai.com/api/pricing/) · [사용량](https://platform.openai.com/usage)
 
@@ -120,7 +119,7 @@ Cloudflare Worker의 **Settings → Variables and Secrets**에 입력합니다. 
 1. 예시 갤러리에서 양식을 선택하고 ‘이 예시로 시작’을 누릅니다.
 2. 제목·내용·디자인을 바꿔 미리 봅니다. 여기까지 AI 비용이 없습니다.
 3. ‘한글 내려받기’는 브라우저의 Kordoc으로 HWPX를 만듭니다. 서버나 AI에 문서 원본을 보내지 않습니다.
-4. 새 AI 초안이 필요할 때만 Gemini 또는 GPT를 선택합니다. 해당 요청·초안은 선택한 AI 제공자에게 전송됩니다.
+4. 새 AI 초안이 필요할 때만 설정이 확인된 GPT 또는 Gemini Paid Service를 선택하고 전송에 동의합니다. 해당 요청·초안은 선택한 AI 제공자에게 전송됩니다.
 5. Google 저장은 미리 검토한 후 실행합니다. Google Docs·Sheets·Slides·Forms에 실제 편집 가능한 파일을 만듭니다.
 6. 다른 컴퓨터에서는 같은 URL로 접속해 본인 Google 계정으로 로그인합니다. 작성 중인 초안은 자동 동기화되지 않으므로 ‘편집본 보관’ JSON 파일을 옮겨 이어서 작업합니다.
 

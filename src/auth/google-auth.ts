@@ -185,7 +185,7 @@ export async function getAuthStatus(): Promise<AuthStatus> {
   }
 }
 
-export async function login(): Promise<AuthStatus> {
+export async function login(options: { openBrowser?: boolean } = {}): Promise<AuthStatus> {
   const tokenFile = tokenPath();
 
   const { config } = await loadClientConfig();
@@ -237,7 +237,7 @@ export async function login(): Promise<AuthStatus> {
     code_challenge: codeChallenge,
     code_challenge_method: CodeChallengeMethod.S256
   });
-  const browserOpened = await openSystemBrowser(authUrl);
+  const browserOpened = options.openBrowser === false ? false : await openSystemBrowser(authUrl);
   console.log(browserOpened ? "기본 브라우저에서 Google 로그인을 완료하세요.\n" : "브라우저에서 아래 URL을 열어 Google 로그인을 완료하세요:\n");
   console.log(authUrl);
 

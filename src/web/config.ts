@@ -23,6 +23,8 @@ export function webConfig(env: NodeJS.ProcessEnv = process.env) {
     googleClientId: env.GOOGLE_WEB_CLIENT_ID, googleClientSecret: env.GOOGLE_WEB_CLIENT_SECRET,
     geminiKey: env.GEMINI_API_KEY, geminiModel: env.GEMINI_MODEL || "gemini-flash-latest",
     openaiKey: env.OPENAI_API_KEY, openaiModel: env.OPENAI_MODEL ?? "gpt-6-luna",
+    geminiNoTrainingConfirmed: env.GEMINI_NO_TRAINING_CONFIRMED === "true",
+    openaiNoTrainingConfirmed: env.OPENAI_NO_TRAINING_CONFIRMED === "true",
     aiDailyLimit,
     formsTemplateId: env.GOOGLE_FORMS_TEMPLATE_ID,
     operator: env.APP_OPERATOR ?? "Workspace Lab 운영자",

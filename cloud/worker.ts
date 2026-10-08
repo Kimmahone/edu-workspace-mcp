@@ -1,7 +1,8 @@
+import {assertAiDataPolicy} from '../src/web/ai-policy';
 import {State,nonce} from './state';
 import {googleRequest} from './google';
 type Secrets={APP_SECRET?:string;GOOGLE_WEB_CLIENT_ID?:string;GOOGLE_WEB_CLIENT_SECRET?:string;GEMINI_API_KEY?:string;OPENAI_API_KEY?:string};
-type Env=Cloudflare.Env & Secrets;
+type Env=Cloudflare.Env & Secrets & {GEMINI_NO_TRAINING_CONFIRMED?:string;OPENAI_NO_TRAINING_CONFIRMED?:string};
 type Session={csrf:string;user:{id:string;email:string};access:string;refresh?:string;expires:number};
 const TTL=8*3600000;
 const json=(data:unknown,status=200)=>Response.json(data,{status});
@@ -20,7 +21,7 @@ async function handle(request:Request,env:Env):Promise<Response>{
  const configured=!!(env.DB&&env.APP_SECRET&&env.APP_SECRET.length>=32&&env.OWNER_EMAIL&&env.GOOGLE_WEB_CLIENT_ID&&env.GOOGLE_WEB_CLIENT_SECRET);
  const store=configured?new State(env.DB,env.APP_SECRET!):null;
  const sid=cookies(request,'__Host-workspace'),session=sid&&store?await store.get<Session>('session:'+sid):undefined;
- if(route==='/api/status'&&request.method==='GET')return json({runtime:'cloudflare',mode:'hosted',connected:!!session,user:session?.user,csrf:session?.csrf??'',ai:{gemini:!!env.GEMINI_API_KEY&&env.GEMINI_FREE_TIER_CONFIRMED==='true',openai:!!env.OPENAI_API_KEY},models:{gemini:env.GEMINI_MODEL,openai:env.OPENAI_MODEL},formsThemeConnected:!!env.FORMS_TEMPLATE_ID,formsTemplateId:session?env.FORMS_TEMPLATE_ID:undefined,dailyLimit:20,setupRequired:!configured,documentRuntime:'browser'});
+ if(route==='/api/status'&&request.method==='GET')return json({runtime:'cloudflare',mode:'hosted',connected:!!session,user:session?.user,csrf:session?.csrf??'',ai:{gemini:!!env.GEMINI_API_KEY&&env.GEMINI_NO_TRAINING_CONFIRMED==='true',openai:!!env.OPENAI_API_KEY&&env.OPENAI_NO_TRAINING_CONFIRMED==='true'},models:{gemini:env.GEMINI_MODEL,openai:env.OPENAI_MODEL},formsThemeConnected:!!env.FORMS_TEMPLATE_ID,formsTemplateId:session?env.FORMS_TEMPLATE_ID:undefined,dailyLimit:20,setupRequired:!configured,documentRuntime:'browser'});
  if(!configured||!store)fail(503,'개인용 로그인 설정이 아직 필요합니다. 시작 가이드의 Cloudflare 설정을 완료해 주세요. 예시·한글 문서실은 로그인 없이 사용할 수 있습니다.');
  const state=store!;
  if(route==='/auth/google'&&request.method==='GET'){
@@ -61,9 +62,9 @@ async function handle(request:Request,env:Env):Promise<Response>{
  }
  if(route==='/api/cloud/ai'){
   const provider=request.headers.get('x-ai-provider');if(!['gemini','openai'].includes(provider??''))fail(400,'AI를 선택해 주세요.');
-  if(provider==='gemini'&&env.GEMINI_FREE_TIER_CONFIRMED!=='true')fail(403,'결제 미연결 Gemini Free Tier 프로젝트 확인 후 활성화해 주세요.');
+  try{assertAiDataPolicy(provider!,{geminiNoTrainingConfirmed:env.GEMINI_NO_TRAINING_CONFIRMED==='true',openaiNoTrainingConfirmed:env.OPENAI_NO_TRAINING_CONFIRMED==='true'});}catch(e){fail(403,e instanceof Error?e.message:'AI 데이터 처리 설정을 확인해 주세요.');}
   const key=provider==='gemini'?env.GEMINI_API_KEY:env.OPENAI_API_KEY;if(!key)fail(422,'AI 키가 연결되지 않았습니다.');
-  const d=await input(request);const lock='ai:'+owner;if(!await state.claim(lock,120000))fail(429,'다른 AI 요청을 처리 중입니다.');
+  const d=await input(request);if(d.aiProcessingConsent!==true)fail(400,'선택한 AI 제공자에게 입력을 보내는 데 동의해 주세요.');const lock='ai:'+owner;if(!await state.claim(lock,120000))fail(429,'다른 AI 요청을 처리 중입니다.');
   try{
    await state.quota('ai:'+owner,20);
    const isGemini=provider==='gemini';

@@ -1,3 +1,4 @@
+import {assertAiDataPolicy} from "./ai-policy.js";
 import {writingBrief} from "./quality.js";
 import { draftJsonSchema, draftSchema, validateDraft, type DraftRequest } from "./drafts.js";
 import { resolveStandardCodes } from "../curriculum/standards.js";
@@ -5,6 +6,7 @@ import {learningContext} from '../curriculum/learning-map.js';
 import type { WebConfig } from "./config.js";
 
 export async function generateDraft(input: DraftRequest, config: WebConfig, send: typeof fetch = fetch) {
+  assertAiDataPolicy(input.provider, config);
   const standards = resolveStandardCodes(input.standardCodes);
   const instruction = [
     writingBrief(input),

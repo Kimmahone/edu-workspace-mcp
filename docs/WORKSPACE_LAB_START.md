@@ -29,19 +29,15 @@ Codex의 이 프로젝트 터미널을 사용하면 이미 올바른 폴더입�
 npm ci
 ```
 
-### 2. Gemini API 키를 준비합니다
+### 2. 학습에 사용하지 않는 AI API를 준비합니다
 
-1. [Google AI Studio API 키](https://aistudio.google.com/app/apikey)를 열어 로그인합니다.
-2. API 키 만들기(Create API key)를 선택하고 사용할 프로젝트를 선택합니다. 프로젝트가 없으면 AI Studio에서 새 프로젝트를 만듭니다.
-3. 키를 복사합니다. 앱 이용자들에게 나누어 주는 값이 아니라 운영 서버가 사용하는 비밀값입니다.
-4. 프로젝트 루트의 `.env` 파일을 편집기로 엽니다. Finder에서 숨김 파일은 `Command + Shift + .`로 표시합니다. `.env`가 없을 때만 `.env.example`을 복사해 `.env`로 이름을 바꿉니다. 기존 `.env`를 덮어쓰지 마세요.
-5. `GEMINI_API_KEY=` 뒤에 복사한 키를 넣고 저장합니다. 꺾쇠나 설명 문구는 넣지 않습니다. 다른 설정은 그대로 둡니다.
+기존 `.env`는 덮어쓰지 않습니다. 파일이 없을 때만 `.env.example`을 복사합니다. Google Workspace 자료를 보내려면 공급자의 학습 비활성 정책과 설정을 먼저 확인합니다.
 
-```dotenv
-GEMINI_API_KEY=발급받은키
-```
+- OpenAI API: API 키를 `OPENAI_API_KEY`에 넣고 조직 Data controls → Sharing의 피드백·평가·입출력 공유를 모두 Disabled로 확인한 후 `OPENAI_NO_TRAINING_CONFIRMED=true`를 설정합니다. ChatGPT 구독과 별도인 API 사용량 과금이 발생합니다.
+- Gemini: 무료 서비스는 차단됩니다. 학습에 사용하지 않는 Paid Service 적용을 확인한 경우에만 `GEMINI_API_KEY`와 `GEMINI_NO_TRAINING_CONFIRMED=true`를 설정합니다. 앱은 자동으로 결제 연결이나 유료 전환을 하지 않습니다.
+- API를 연결하지 않아도 예시 편집과 문서 변환은 계속 사용할 수 있습니다.
 
-무료 등급은 제공자의 지원 모델·계정·사용량 한도 안에서 이용할 수 있습니다. 키 발급이 무제한 무료 실행을 뜻하지는 않습니다. [키 안내](https://ai.google.dev/gemini-api/docs/api-key)와 [현재 요금표](https://ai.google.dev/gemini-api/docs/pricing)를 확인하세요.
+[OpenAI API 데이터 정책](https://developers.openai.com/api/docs/guides/your-data) · [Gemini 데이터 조건](https://ai.google.dev/gemini-api/terms)
 
 ### 3. 앱을 실행합니다
 
@@ -49,7 +45,7 @@ GEMINI_API_KEY=발급받은키
 npm run web:dev
 ```
 
-[개인용 앱 열기](http://127.0.0.1:3210/) → 왼쪽 **연결 및 이용 안내**에서 Gemini가 `키 설정됨`인지 확인합니다. `.env` 변경은 서버를 다시 시작해야 적용됩니다. 터미널에서 실행 중인 서버를 `Control + C`로 종료한 다음 `npm run web:start`를 실행하세요. 한 번에 하나의 서버만 3210 포트에서 실행합니다.
+[개인용 앱 열기](http://127.0.0.1:3210/) → 왼쪽 **연결 및 이용 안내**에서 사용할 AI의 정책 확인 및 키 설정 상태를 확인합니다. `.env` 변경은 서버를 다시 시작해야 적용됩니다. 터미널에서 실행 중인 서버를 `Control + C`로 종료한 다음 `npm run web:start`를 실행하세요. 한 번에 하나의 서버만 3210 포트에서 실행합니다.
 
 ### 4. Google을 연결합니다
 
@@ -249,29 +245,20 @@ open -e .env
 
 Finder에서는 프로젝트 폴더를 연 뒤 **Command + Shift + .**를 눌러 숨김 파일을 표시하면 `.env`가 보입니다. 파일 이름은 `.env.txt`가 아닌 `.env`여야 합니다. 키를 앱의 요청 입력란이나 채팅에 붙여 넣지 마세요.
 
-### Gemini: 무료 전용 프로젝트에서 키 만들기
+### Gemini: 학습 없는 Paid Service만 허용
 
-1. [Google AI Studio API 키 페이지](https://aistudio.google.com/app/apikey)에 본인 Google 계정으로 로그인합니다.
-2. **Create API key / API 키 만들기**를 누릅니다. 프로젝트를 새로 만들 수 있으면 `workspace-lab-free`처럼 구분되는 이름으로 만듭니다. 기존 무료 프로젝트가 있으면 그것을 선택해도 됩니다.
-3. Projects 또는 API keys 목록의 **Billing Tier / Plan이 Free Tier**인지 확인합니다. **Set up billing / 결제 설정, Upgrade / 업그레이드, Prepay / 선결제는 진행하지 않습니다.** 무료로 쓰는 핵심은 키가 속한 프로젝트에 유료 결제를 연결하지 않는 것입니다.
-4. 키를 복사하고 `.env`의 `GEMINI_API_KEY=` 뒤에 붙여 넣습니다. 같은 이름의 항목을 두 줄 만들지 마세요.
-5. 최신 Flash 자동 사용을 위해 아래처럼 설정합니다.
+무료 서비스의 원본·집계·파생 데이터가 모델 학습·개선에 사용될 수 있어 Workspace Lab에서는 무료 Gemini 호출을 차단합니다. `GEMINI_FREE_TIER_CONFIRMED=true`는 과거 설정이며 활성화 조건이 아닙니다.
+
+Paid Service 적용과 학습 비사용 정책을 운영자가 확인한 경우에만 아래 설정을 사용합니다. 확인 값은 실제 결제 상태를 변경하지 않습니다. 사용료가 발생할 수 있으며 결제·모델·사용량은 운영자가 확인합니다. 현재 개인용 웹 배포에서는 Gemini를 비활성화합니다.
 
 ```dotenv
-GEMINI_API_KEY=여기에_발급받은_실제_키
+GEMINI_API_KEY=확인된_Paid_Service_키
 GEMINI_MODEL=gemini-flash-latest
+GEMINI_NO_TRAINING_CONFIRMED=true
 AI_DAILY_LIMIT=20
 ```
 
-`gemini-flash-latest`는 Google이 다음 Flash 출시 때 갱신하는 공식 별칭입니다. stable·preview·experimental이 대상이 될 수 있습니다. 2026-09-27 확인 시 최신 Flash는 `gemini-3.8-flash`이고 표준 텍스트 입출력에 무료 등급이 있습니다. 특정 버전을 고정하려면 `GEMINI_MODEL=gemini-3.8-flash`로 바꿀 수 있지만, 자동 최신 사용에는 별칭을 유지하세요.
-
-- 최신 모델의 미래 무료 제공이나 사용량까지 보장되지는 않습니다. 결제 미연결 프로젝트에서 지원되지 않거나 무료 한도가 소진되면 요청이 실패할 수 있습니다. 앱은 유료 모델이나 GPT로 자동 전환하지 않습니다.
-- 키만으로 앱이 Google 프로젝트의 결제 상태를 검사하거나 무료로 강제할 수는 없습니다. AI Studio에서 Free Tier를 확인해야 합니다. 유료 프로젝트 키를 넣으면 같은 모델도 과금될 수 있습니다.
-- 무료 한도는 AI Studio의 Usage / Rate limits에서 확인합니다. 계정·모델별 한도가 달라 일률적인 일일 무료 횟수를 약속하지 않습니다. 앱의 `AI_DAILY_LIMIT=20`은 앱 자체 제한이며 Google의 무료 보장이 아닙니다.
-- 공개 배포 서버용 Google Cloud 프로젝트에는 결제를 연결할 수 있으므로 **Gemini 무료 프로젝트와 분리**하세요. Gemini가 무료여도 서버·DB 비용은 별도입니다. 공개 앱 이용자들은 운영자 키의 프로젝트 한도를 함께 사용합니다.
-- 무료 등급의 입력·출력은 제품 개선에 사용될 수 있습니다. 수업 주제와 가상 예시만 보내고 학생 실명·성적·상담 내용은 입력하지 마세요.
-
-공식 근거: [키 발급](https://ai.google.dev/gemini-api/docs/api-key), [결제·Free Tier](https://ai.google.dev/gemini-api/docs/billing), [모델 별칭](https://ai.google.dev/gemini-api/docs/models#latest), [현재 요금표](https://ai.google.dev/gemini-api/docs/pricing).
+[공식 데이터 이용 조건](https://ai.google.dev/gemini-api/terms) · [현재 요금표](https://ai.google.dev/gemini-api/docs/pricing)
 
 ### OpenAI: 선택적으로 유료 작성 기능 연결하기
 
@@ -280,11 +267,12 @@ AI_DAILY_LIMIT=20
 3. **Settings → Organization → Billing**에서 결제 수단을 등록합니다. 선불 방식이 표시되면 화면에서 요구하는 최소 충전액을 확인하고 작은 금액으로 시작합니다. 자동 충전이 필요 없으면 Auto recharge를 끕니다. 비용은 API 계정의 사용량에 따라 청구됩니다.
 4. [API keys](https://platform.openai.com/api-keys)에서 **Create new secret key**를 누릅니다. 이름은 `workspace-lab-local`, 프로젝트는 위에서 선택한 것으로 지정합니다. 권한을 제한한다면 Responses 생성 요청을 허용해야 합니다.
 5. 표시된 비밀 키를 복사해 `.env`의 `OPENAI_API_KEY=` 뒤에 붙여 넣습니다. 비밀 키를 다시 볼 수 없으면 새 키를 발급합니다.
-6. 현재 앱의 GPT 기본 모델을 쓰려면 아래처럼 설정합니다.
+6. API 조직의 Data controls → Sharing에서 피드백·평가·입출력 공유가 모두 Disabled인지 확인한 후 아래처럼 설정합니다. `store=false`만으로 학습 비활성이나 Zero Data Retention을 보장하지 않습니다.
 
 ```dotenv
 OPENAI_API_KEY=여기에_발급받은_실제_키
 OPENAI_MODEL=gpt-6-luna
+OPENAI_NO_TRAINING_CONFIRMED=true
 ```
 
 앱은 비용을 우선해 `gpt-6-luna`를 기본으로 사용합니다. 결과 품질을 비교한 뒤 `OPENAI_MODEL=gpt-6-sol`로 바꿀 수 있습니다. Gemini만 쓸 때는 `OPENAI_API_KEY=`를 비워 둡니다. Gemini 실패 때문에 GPT가 자동 호출되는 일은 없습니다. 사용자가 GPT를 선택해 생성하거나 **GPT로 초안 다듬기**를 눌렀을 때 호출됩니다.
@@ -318,7 +306,7 @@ npm run web:start
 ```
 
 4. [연결 및 이용 안내](http://127.0.0.1:3210/#settings)를 새로고침합니다. **키 설정됨**과 모델 이름을 확인합니다. 이 표시는 서버가 키를 읽었다는 뜻이며, 실제 인증·잔액·사용 가능 여부까지 검증했다는 뜻은 아닙니다.
-5. [분수 학습지](http://127.0.0.1:3210/#create/worksheet)를 열고 Gemini를 선택합니다. 요청을 짧게 적고 개인정보 확인 후 **AI 초안 만들기**를 누릅니다. 실제 초안이 나오면 호출까지 성공한 것입니다.
+5. [분수 학습지](http://127.0.0.1:3210/#create/worksheet)를 열고 정책 설정이 확인된 AI를 선택합니다. 요청을 짧게 적고 개인정보 확인 및 AI 전송 동의 후 **AI 초안 만들기**를 누릅니다. 실제 초안이 나오면 호출까지 성공한 것입니다.
 6. 필요할 때만 GPT로 개선을 실행하고 기존 초안과 비교합니다.
 
 `EADDRINUSE`가 나오면 기존 서버가 3210 포트에서 실행 중입니다. 두 번째 서버를 계속 실행하지 말고 원래 서버를 종료해야 합니다. Codex가 백그라운드에서 실행해 둔 서버라 터미널을 찾기 어렵다면, 키를 저장한 뒤 Codex에 “키 값은 읽지 말고 로컬 앱 서버만 다시 시작해 줘”라고 요청하면 됩니다.
