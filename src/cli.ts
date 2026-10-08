@@ -12,7 +12,7 @@ edu-workspace-mcp
 명령어:
   setup       초기 폴더와 MCP 설정 예시를 보여줍니다.
   install     AI 클라이언트 전체 프로젝트 설정에 MCP를 등록합니다.
-  login       Google OAuth 로그인 후 토큰을 안전한 로컬 경로에 저장합니다.
+  login       Google OAuth 로그인 후 토큰을 안전한 로컬 경로에 저장합니다. --no-browser는 브라우저 자동 열기를 끕니다.
   doctor      OAuth 자격 증명·토큰 상태를 확인합니다.
   disconnect  Google 권한을 철회하고 로컬 토큰을 삭제합니다.
   serve       stdio MCP 서버를 시작합니다. 명령이 없을 때의 기본 동작입니다.
@@ -74,7 +74,8 @@ async function main() {
 
   if (command === "login") {
     if (process.argv.includes("--read")) process.env.EDU_WORKSPACE_READ_ACCESS = "1";
-    const status = await login();
+    console.log("Google API 결과는 선택한 MCP 클라이언트로 반환됩니다. 학습 공유가 꺼진 AI 서비스 또는 오프라인 클라이언트에서만 사용하세요. Google 원본·집계·파생 데이터의 범용 AI 모델 학습·개선은 금지됩니다.");
+    const status = await login({ openBrowser: !process.argv.includes("--no-browser") });
     console.log(status.message);
     console.log(`토큰 저장 위치: ${status.tokenPath}`);
     return;

@@ -44,8 +44,8 @@ export const requestSchema = z.object({
   standardCodes: z.array(z.string().max(30)).max(10).default([]),
   design: designSchema,
   audience: z.string().trim().max(100).default("누구나"),
-  provider: z.enum(["gemini", "openai"]).default("gemini"),
-  noPersonalData: z.literal(true), previous: draftSchema.optional()
+  provider: z.enum(["gemini", "openai"]).default("openai"),
+  noPersonalData: z.literal(true), aiProcessingConsent: z.literal(true), previous: draftSchema.optional()
 });
 export type DraftRequest = z.infer<typeof requestSchema>;
 export function validateDraft(draft: Draft, template: string): Draft {
