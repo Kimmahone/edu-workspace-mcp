@@ -70,7 +70,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.30.0",
+    "@modelcontextprotocol/sdk": "1.31.0",
     "google-auth-library": "10.9.1",
     "googleapis": "178.0.0",
     "kordoc": "4.15.4",
@@ -103,5 +103,8 @@
     "typescript": "5.9.3",
     "util": "^0.12.5",
     "wrangler": "^4.141.0"
+  },
+  "overrides": {
+    "sharp": "0.35.5"
   }
 }
