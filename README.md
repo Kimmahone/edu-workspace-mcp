@@ -4,19 +4,19 @@
 
 [공식 홈페이지](https://edu.jeld.kr/) · [복사 가능한 예시 프롬프트](https://edu.jeld.kr/#prompts) · [개인정보처리방침](https://edu.jeld.kr/privacy.html) · [이용약관](https://edu.jeld.kr/terms.html)
 
-> `1.0.0`은 로컬 stdio MCP 정식 안정 버전입니다. 공용 Google 데스크톱 OAuth 클라이언트가 포함되어 있어 최종 사용자가 Google Cloud 프로젝트를 만들 필요가 없습니다. 기본 모드는 앱이 다루는 파일에 한정된 `drive.file`을 사용하며, 기존 자료 읽기는 사용자가 `--read`로 선택합니다.
+> `1.1.1`은 로컬 stdio MCP 정식 안정 버전입니다. 공용 Google 데스크톱 OAuth 클라이언트가 포함되어 있어 최종 사용자가 Google Cloud 프로젝트를 만들 필요가 없습니다. 기본 모드는 앱이 다루는 파일에 한정된 `drive.file`을 사용하며, 기존 자료 읽기는 사용자가 `--read`로 선택합니다.
 
 ## 할 수 있는 일
 
 ### 교직원용 웹앱
 
-**v1.1.0 웹앱 바로 실행** (Node.js 22 이상):
+**v1.1.1 웹앱 바로 실행** (Node.js 22 이상):
 
 ```sh
-npx -y edu-workspace-mcp@1.1.0 web
+npx -y edu-workspace-mcp@1.1.1 web
 ```
 
-현재 폴더의 `.env`에 키를 설정할 수 있으며 GPT 기본 모델은 `gpt-6-luna`입니다. 기존 MCP v1.0.0 배포와 설치는 유지됩니다.
+현재 폴더의 `.env`에 키를 설정할 수 있으며 GPT 기본 모델은 `gpt-6-luna`입니다. OpenAI API의 학습 공유 비활성 설정을 확인한 운영자만 `OPENAI_NO_TRAINING_CONFIRMED=true`를 설정합니다. Gemini는 학습에 사용하지 않는 Paid Service를 확인한 경우에만 `GEMINI_NO_TRAINING_CONFIRMED=true`로 이용합니다. 확인 전에는 AI 전송을 차단하며 예시 편집과 한글 변환은 계속 사용할 수 있습니다. 기존 Google 연결과 생성 파일은 유지됩니다.
 
 단계별 API 연결·공개 배포 안내: [직접 해야 할 설정](docs/WORKSPACE_LAB_START.md).
 
@@ -25,7 +25,7 @@ MCP와 별도로 브라우저에서 바로 쓰는 **Workspace Lab — Google 도
 ```sh
 npm ci
 cp .env.example .env
-# .env에 GEMINI_API_KEY 입력 (예시·한글 변환만 쓸 때는 없어도 됩니다)
+# .env에 AI API 키와 학습 공유 비활성 확인 설정 입력 (예시·한글 변환은 키 없이 가능)
 npm run web:dev
 ```
 
@@ -208,11 +208,15 @@ education_create_assessment_tracker { "title": "2학기 평가", "className": "5
 기본 범위인 `drive.file` 은 **이 앱이 만들었거나 사용자가 이 앱으로 연 파일만** 다룹니다.
 그래서 예전부터 쓰던 Docs·Sheets·Slides·Forms는 기본 설정으로는 읽히지 않을 수 있습니다.
 
-기존 자료와 Classroom 학생 정보를 읽으려면 설치와 로그인에 `--read`를 붙이세요. 서비스별 읽기 전용 범위는 Google에서 민감 범위로 분류하므로 기본으로 요청하지 않습니다.
+기존 자료와 Classroom 학생 정보를 읽으려면 설치와 로그인에 `--read`를 붙이세요. 추가 읽기 범위에는 Google 민감 권한이 포함되어 있어 기본으로 요청하지 않습니다.
+
+2026년 10월 11일, 공용 OAuth 프로젝트 `edu-workspace-mcp`의 Docs·Sheets·Slides·Forms 문항·Forms 응답 읽기 민감 권한 5개가 Google 검수를 통과했습니다. 현재 총 9개 권한 구성은 유지합니다. 학교 계정은 기관 관리자의 제3자 앱 허용이 필요할 수 있으며, 새 권한이나 다른 OAuth 프로젝트에는 이번 승인이 자동으로 적용되지 않습니다.
+
+Google 원본·집계·파생 자료는 범용 AI 모델 학습에 사용하면 안 됩니다. MCP를 연결할 AI 서비스에서 학습 데이터 공유를 끄거나 오프라인 클라이언트를 사용하세요.
 
 ```bash
-npx -y edu-workspace-mcp@1.1.0 install claude --read
-npx -y edu-workspace-mcp@1.1.0 login --read
+npx -y edu-workspace-mcp@1.1.1 install claude --read
+npx -y edu-workspace-mcp@1.1.1 login --read
 ```
 
 MCP 클라이언트 설정에 넣을 때는 `env` 에 적습니다.
@@ -261,13 +265,13 @@ macOS, Windows, Linux에서 사용할 AI 클라이언트를 한 번만 전체 �
 
 ```bash
 # 하나만 선택
-npx -y edu-workspace-mcp@1.1.0 install codex
-npx -y edu-workspace-mcp@1.1.0 install claude          # Claude Code, 사용자 범위
-npx -y edu-workspace-mcp@1.1.0 install claude-desktop
-npx -y edu-workspace-mcp@1.1.0 install cursor
+npx -y edu-workspace-mcp@1.1.1 install codex
+npx -y edu-workspace-mcp@1.1.1 install claude          # Claude Code, 사용자 범위
+npx -y edu-workspace-mcp@1.1.1 install claude-desktop
+npx -y edu-workspace-mcp@1.1.1 install cursor
 
 # 사용자별·컴퓨터별 최초 1회 Google 연결
-npx -y edu-workspace-mcp@1.1.0 login
+npx -y edu-workspace-mcp@1.1.1 login
 ```
 
 기존 Google 자료까지 읽을 사용자는 두 명령 모두에 `--read`를 붙입니다.
@@ -277,13 +281,13 @@ AI 클라이언트를 재시작한 뒤 새 프로젝트에서도 같은 MCP를 �
 - [학교 Google Workspace 관리자 허용 안내](docs/ADMIN_GUIDE.md)
 
 ```bash
-npx -y edu-workspace-mcp@1.1.0 doctor
+npx -y edu-workspace-mcp@1.1.1 doctor
 ```
 
 Google 토큰은 `~/.edu-workspace-mcp/token.json`에 사용자 전용 권한으로 저장됩니다. 연결을 해제하면 Google 측 권한 철회와 로컬 토큰 삭제를 함께 수행합니다.
 
 ```bash
-npx -y edu-workspace-mcp@1.1.0 disconnect
+npx -y edu-workspace-mcp@1.1.1 disconnect
 ```
 
 ## MCP 클라이언트 연결
@@ -295,7 +299,7 @@ Claude Desktop과 Cursor 계열 JSON 설정:
   "mcpServers": {
     "edu-workspace": {
       "command": "npx",
-      "args": ["-y", "edu-workspace-mcp@1.1.0"]
+      "args": ["-y", "edu-workspace-mcp@1.1.1"]
     }
   }
 }
@@ -306,7 +310,7 @@ Codex·ChatGPT Desktop 계열 TOML 설정:
 ```toml
 [mcp_servers.edu-workspace]
 command = "npx"
-args = ["-y", "edu-workspace-mcp@1.1.0"]
+args = ["-y", "edu-workspace-mcp@1.1.1"]
 default_tools_approval_mode = "writes"
 ```
 
@@ -390,7 +394,7 @@ Google API 실계정 테스트에는 별도 테스트 계정을 사용하세요.
 - [x] macOS·Windows·Linux 공통 npm 실행 구조
 - [x] 단위·MCP 통합·stdio 스모크 테스트
 - [x] 실계정 OAuth·Classroom 조회·Sheets 생성 E2E 테스트
-- [x] Google OAuth 브랜딩 검증·프로덕션 게시·비민감 범위 판정
+- [x] Google OAuth 브랜딩 검증·프로덕션 게시·민감 읽기 권한 5개 검수 승인(2026-10-11)
 - [x] PKCE·state·토큰 파일 보호·할당량 재시도 정책
 - [x] Codex·Claude Code·Claude Desktop·Cursor 전역 자동 설치
 - [x] 초등 2022 개정 교육과정 성취기준 연결(정리본·`standardCodes`·수업 패키지 프롬프트)

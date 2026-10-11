@@ -17,7 +17,7 @@
 
 ## 1. 개인용 실행
 
-npm 배포 버전은 Node.js 22 이상에서 `npx -y edu-workspace-mcp@1.1.0 web`으로 실행합니다. 현재 터미널 폴더의 `.env`를 읽으며 키 없이 예시·문서 변환부터 사용할 수 있습니다. Google 연결은 `npx -y edu-workspace-mcp@1.1.0 login`으로 진행합니다. 기존 MCP v1.0.0은 `npx -y edu-workspace-mcp@1.0.0`으로 계속 사용할 수 있습니다.
+npm 배포 버전은 Node.js 22 이상에서 `npx -y edu-workspace-mcp@1.1.1 web`으로 실행합니다. 현재 터미널 폴더의 `.env`를 읽으며 키 없이 예시·문서 변환부터 사용할 수 있습니다. Google 연결은 `npx -y edu-workspace-mcp@1.1.1 login`으로 진행합니다. 기존 MCP v1.0.0은 `npx -y edu-workspace-mcp@1.0.0`으로 계속 사용할 수 있습니다.
 
 
 Node.js 22 이상 권장. 프로젝트 폴더에서:
@@ -32,6 +32,8 @@ npm run web:dev
 브라우저에서 `http://127.0.0.1:3210` 접속. 이후 코드 변경이 없으면 `npm run web:start`로 실행.
 
 Google 연결이 없으면 별도 터미널에서 `npm run cli -- login` 실행. 기존 MCP 로그인과 토큰 파일을 재사용한다. 이 앱은 127.0.0.1에서만 수신하므로 외부에 공개되지 않는다. 환경변수의 origin도 loopback만 허용한다. Gemini/GPT 키를 설정하지 않아도 예시, 한글 문서 읽기·수정·변환·비교는 작동한다.
+
+AI 요청 전에는 사용자의 별도 전송 동의와 운영자의 학습 금지 설정 확인이 필요합니다. OpenAI API의 학습 공유 비활성을 확인한 뒤 `OPENAI_NO_TRAINING_CONFIRMED=true`를 설정합니다. Gemini는 학습에 사용하지 않는 Paid Service를 확인한 경우에만 `GEMINI_NO_TRAINING_CONFIRMED=true`로 이용합니다. 확인 전에는 AI 전송을 차단하며 예시 편집·문서 변환은 사용할 수 있습니다.
 
 현재 초안과 업로드 원본은 브라우저 메모리에만 남는다. 다른 자료를 열기 전 ‘편집본 보관’으로 내려받는다. 로컬 최근 작업 기록은 프로세스를 종료하면 사라지며, 만들어진 Google 파일은 유지된다.
 
