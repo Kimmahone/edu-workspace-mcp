@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "workspace-lab-public",
+  "main": "cloud/worker.ts",
+  "compatibility_date": "2026-10-11",
+  "workers_dev": true,
+  "preview_urls": false,
+  "account_id": "dd114ece842a3ca34a4361eeb753b2be",
+  "assets": {
+    "directory": ".cloud-build/public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/auth/*", "/healthz"]
+  },
+  "vars": {
+    "PUBLIC_APP": "true",
+    "OWNER_EMAIL": "",
+    "GEMINI_MODEL": "gemini-flash-latest",
+    "OPENAI_MODEL": "gpt-6-luna",
+    "GEMINI_NO_TRAINING_CONFIRMED": "false",
+    "OPENAI_NO_TRAINING_CONFIRMED": "false",
+    "FORMS_TEMPLATE_ID": ""
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "workspace-lab-public",
+    "database_id": "f79b89ff-afb4-4403-8856-aa4f81460089",
+    "migrations_dir": "cloud/migrations"
+  }],
+  "triggers": {"crons": ["17 19 * * *"]},
+  "observability": {
+    "enabled": true,
+    "logs": {"enabled": true, "invocation_logs": false, "head_sampling_rate": 0.1},
+    "traces": {"enabled": true, "head_sampling_rate": 0.01}
+  },
+  "keep_vars": true
+}

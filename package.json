@@ -58,6 +58,7 @@
     "web:examples": "npm run build && node scripts/build-web-examples.mjs && node scripts/render-web-examples.mjs && node scripts/render-form-headers.mjs",
     "web:guide": "node scripts/build-web-guide.mjs",
     "cloud:build": "node scripts/build-cloud.mjs",
+    "cloud:public:build": "node scripts/build-cloud.mjs --public",
     "cloud:types": "wrangler types cloud/worker-configuration.d.ts --config cloud/wrangler.jsonc --strict-vars=false",
     "cloud:check": "npm run cloud:types && tsc -p cloud/tsconfig.json && tsc -p cloud/browser/tsconfig.json",
     "cloud:dev": "npm run cloud:build && wrangler dev --config cloud/wrangler.jsonc --port 3211",
