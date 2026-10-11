@@ -46,6 +46,48 @@ test('Google request mapping preserves content and limits destinations',async()=
  const slides=googleRequest('slides.presentations.batchUpdate',{presentationId:'abcd',requestBody:{requests:[{createSlide:{objectId:'slide1'}}]}},'test');assert.equal(slides.method,'POST');assert.equal(new URL(slides.url).pathname,'/v1/presentations/abcd:batchUpdate');
 });
 
+test('Public Workers: verified accounts, isolated records/tokens, CSRF and no shared AI spending',async()=>{
+ const bundle=await build({entryPoints:['cloud/worker.ts'],bundle:true,write:false,format:'esm',platform:'browser'});
+ const secret='public-test-secret-'.repeat(3),sidA=nonce(),sidB=nonce(),csrfA=nonce(),csrfB=nonce();
+ const outbound:{url:string;authorization:string|null}[]=[];let verified=true;
+ const mf=new Miniflare(convertV4MiniflareOptions({workers:[{name:'public-test',modules:true,script:bundle.outputFiles[0].text,compatibilityDate:'2026-10-02',d1Databases:{DB:'public-test'},bindings:{PUBLIC_APP:'true',APP_SECRET:secret,OWNER_EMAIL:'',GOOGLE_WEB_CLIENT_ID:'fake-client',GOOGLE_WEB_CLIENT_SECRET:'fake-secret',OPENAI_API_KEY:'must-not-be-used',OPENAI_NO_TRAINING_CONFIRMED:'true',GEMINI_API_KEY:'must-not-be-used',GEMINI_NO_TRAINING_CONFIRMED:'true',FORMS_TEMPLATE_ID:'personal-template'},outboundService:async(r:any)=>{
+  if(r.url==='https://oauth2.googleapis.com/token')return new MFResponse(JSON.stringify({access_token:'login-access',refresh_token:'login-refresh',expires_in:3600}));
+  if(r.url==='https://openidconnect.googleapis.com/v1/userinfo')return new MFResponse(JSON.stringify({sub:'new-user',email:'new-user@example.test',email_verified:verified}));
+  outbound.push({url:r.url,authorization:r.headers.get('authorization')});return new MFResponse('{}');
+ }}]}));
+ try{
+  const db=await mf.getD1Database('DB');await db.exec((await readFile('cloud/migrations/0001_state.sql','utf8')).replaceAll('\n',' '));
+  const store=new State(db as any,secret);
+  await store.put('session:'+sidA,{csrf:csrfA,user:{id:'alice',email:'alice@example.test'},access:'alice-access',expires:Date.now()+3600000},3600000);
+  await store.put('session:'+sidB,{csrf:csrfB,user:{id:'bob',email:'bob@example.test'},access:'bob-access',expires:Date.now()+3600000},3600000);
+  const req=(sid:string,csrf:string,route:string,data:any,extra={})=>mf.dispatchFetch('https://public.example'+route,{method:'POST',headers:{'content-type':'application/json',origin:'https://public.example',cookie:`__Host-workspace=${sid}`,'x-csrf-token':csrf,...extra},body:JSON.stringify(data)});
+  const status=await (await mf.dispatchFetch('https://public.example/api/status')).json() as any;
+  assert.equal(status.access,'public');assert.equal(status.setupRequired,false);assert.deepEqual(status.ai,{gemini:false,openai:false});assert.equal(status.formsThemeConnected,false);assert.equal(status.dailyLimit,0);
+  assert.equal((await req(sidB,csrfA,'/api/cloud/state',{action:'get',key:'history'})).status,403);
+  assert.equal((await req(sidA,csrfA,'/api/cloud/state',{action:'put',key:'history',value:['alice-document']})).status,200);
+  assert.deepEqual(await (await req(sidA,csrfA,'/api/cloud/state',{action:'get',key:'history'})).json(),{value:['alice-document']});
+  assert.deepEqual(await (await req(sidB,csrfB,'/api/cloud/state',{action:'get',key:'history'})).json(),{});
+  assert.equal((await req(sidB,csrfB,'/api/cloud/state',{action:'get',key:'user:alice:history'})).status,400);
+  await req(sidB,csrfB,'/api/cloud/state',{action:'put',key:'history',value:['bob-document']});
+  await req(sidB,csrfB,'/api/cloud/state',{action:'remove',key:'history'});
+  assert.deepEqual(await store.get('user:alice:history'),['alice-document']);
+  await req(sidA,csrfA,'/api/cloud/google',{operation:'sheets.spreadsheets.create',parameters:{requestBody:{properties:{title:'Alice test'}}}});
+  await req(sidB,csrfB,'/api/cloud/google',{operation:'sheets.spreadsheets.create',parameters:{requestBody:{properties:{title:'Bob test'}}}});
+  assert.deepEqual(outbound.map(x=>x.authorization),['Bearer alice-access','Bearer bob-access']);
+  const ai=await req(sidB,csrfB,'/api/cloud/ai',{input:'test',aiProcessingConsent:true},{'x-ai-provider':'openai'});
+  assert.equal(ai.status,403);assert.equal(outbound.length,2);
+  for(const value of [true,false]){
+   verified=value;const start=await mf.dispatchFetch('https://public.example/auth/google',{redirect:'manual'});
+   const auth=new URL(start.headers.get('location')!);
+   const result=await mf.dispatchFetch('https://public.example/auth/callback?state='+auth.searchParams.get('state')+'&code=fake-code',{redirect:'manual',headers:{cookie:start.headers.get('set-cookie')!.split(';')[0]}});
+   assert.equal(result.status,value?302:403);
+  }
+  assert.equal((await req(sidB,csrfB,'/api/logout',{})).status,200);
+  assert.ok(await store.get('session:'+sidA));assert.equal(await store.get('session:'+sidB),undefined);
+  assert.deepEqual(await store.get('user:alice:history'),['alice-document']);
+ }finally{await mf.dispose();}
+});
+
 
 test('GitHub deployment starts safely without dashboard variables and respects configured models',async()=>{
  const bundle=await build({entryPoints:['cloud/worker.ts'],bundle:true,write:false,format:'esm',platform:'browser'});

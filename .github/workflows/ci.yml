@@ -62,3 +62,7 @@ jobs:
             sleep 1
           done
           npm run test:cloud:browser
+      - name: Public web build and deployment package
+        run: |
+          npm run cloud:public:build
+          npx wrangler deploy --config wrangler.public.jsonc --dry-run

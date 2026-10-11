@@ -2,7 +2,7 @@ import {assertAiDataPolicy} from '../src/web/ai-policy';
 import {State,nonce} from './state';
 import {googleRequest} from './google';
 type Secrets={APP_SECRET?:string;GOOGLE_WEB_CLIENT_ID?:string;GOOGLE_WEB_CLIENT_SECRET?:string;GEMINI_API_KEY?:string;OPENAI_API_KEY?:string};
-type Env=Cloudflare.Env & Secrets & {GEMINI_NO_TRAINING_CONFIRMED?:string;OPENAI_NO_TRAINING_CONFIRMED?:string};
+type Env=Cloudflare.Env & Secrets & {GEMINI_NO_TRAINING_CONFIRMED?:string;OPENAI_NO_TRAINING_CONFIRMED?:string;PUBLIC_APP?:string};
 type Session={csrf:string;user:{id:string;email:string};access:string;refresh?:string;expires:number};
 const TTL=8*3600000;
 const json=(data:unknown,status=200)=>Response.json(data,{status});
@@ -18,11 +18,12 @@ async function handle(request:Request,env:Env):Promise<Response>{
  const url=new URL(request.url),route=url.pathname;
  if(route==='/healthz')return json({ok:true,hosting:'cloudflare-free',documents:'browser'});
  if(!route.startsWith('/api/')&&!route.startsWith('/auth/'))return env.ASSETS.fetch(request);
- const configured=!!(env.DB&&env.APP_SECRET&&env.APP_SECRET.length>=32&&env.OWNER_EMAIL&&env.GOOGLE_WEB_CLIENT_ID&&env.GOOGLE_WEB_CLIENT_SECRET);
+ const publicApp=env.PUBLIC_APP==='true';
+ const configured=!!(env.DB&&env.APP_SECRET&&env.APP_SECRET.length>=32&&(publicApp||env.OWNER_EMAIL)&&env.GOOGLE_WEB_CLIENT_ID&&env.GOOGLE_WEB_CLIENT_SECRET);
  const store=configured?new State(env.DB,env.APP_SECRET!):null;
  const sid=cookies(request,'__Host-workspace'),session=sid&&store?await store.get<Session>('session:'+sid):undefined;
- if(route==='/api/status'&&request.method==='GET')return json({runtime:'cloudflare',mode:'hosted',connected:!!session,user:session?.user,csrf:session?.csrf??'',ai:{gemini:!!env.GEMINI_API_KEY&&env.GEMINI_NO_TRAINING_CONFIRMED==='true',openai:!!env.OPENAI_API_KEY&&env.OPENAI_NO_TRAINING_CONFIRMED==='true'},models:{gemini:env.GEMINI_MODEL,openai:env.OPENAI_MODEL},formsThemeConnected:!!env.FORMS_TEMPLATE_ID,formsTemplateId:session?env.FORMS_TEMPLATE_ID:undefined,dailyLimit:20,setupRequired:!configured,documentRuntime:'browser'});
- if(!configured||!store)fail(503,'개인용 로그인 설정이 아직 필요합니다. 시작 가이드의 Cloudflare 설정을 완료해 주세요. 예시·한글 문서실은 로그인 없이 사용할 수 있습니다.');
+ if(route==='/api/status'&&request.method==='GET')return json({runtime:'cloudflare',mode:'hosted',access:publicApp?'public':'personal',connected:!!session,user:session?.user,csrf:session?.csrf??'',ai:{gemini:!publicApp&&!!env.GEMINI_API_KEY&&env.GEMINI_NO_TRAINING_CONFIRMED==='true',openai:!publicApp&&!!env.OPENAI_API_KEY&&env.OPENAI_NO_TRAINING_CONFIRMED==='true'},models:{gemini:env.GEMINI_MODEL,openai:env.OPENAI_MODEL},formsThemeConnected:!publicApp&&!!env.FORMS_TEMPLATE_ID,formsTemplateId:session&&!publicApp?env.FORMS_TEMPLATE_ID:undefined,dailyLimit:publicApp?0:20,setupRequired:!configured,documentRuntime:'browser'});
+ if(!configured||!store)fail(503,publicApp?'Google 연결을 준비하고 있습니다. 예시 편집·한글 문서실은 바로 사용할 수 있습니다.':'개인용 로그인 설정이 아직 필요합니다. 시작 가이드의 Cloudflare 설정을 완료해 주세요. 예시·한글 문서실은 로그인 없이 사용할 수 있습니다.');
  const state=store!;
  if(route==='/auth/google'&&request.method==='GET'){
   const ip=request.headers.get('CF-Connecting-IP')??'local';await state.quota('login:'+ip,30);
@@ -40,14 +41,15 @@ async function handle(request:Request,env:Env):Promise<Response>{
   const t=await oauth(env,{grant_type:'authorization_code',code,code_verifier:pending.verifier,redirect_uri:url.origin+'/auth/callback'});
   const userResponse=await fetch('https://openidconnect.googleapis.com/v1/userinfo',{headers:{Authorization:'Bearer '+t.access_token},signal:AbortSignal.timeout(20000)});
   if(!userResponse.ok)fail(401,'Google 계정을 확인하지 못했습니다.');const user=await userResponse.json() as any;
-  if(!user.sub||user.email_verified!==true||user.email?.toLowerCase()!==env.OWNER_EMAIL.toLowerCase())fail(403,'이 앱은 소유자 본인만 사용할 수 있습니다.');
+  if(typeof user.sub!=='string'||!user.sub||user.sub.length>200||typeof user.email!=='string'||!user.email||user.email.length>254||user.email_verified!==true)fail(403,'확인된 Google 계정으로 로그인해 주세요.');
+  if(!publicApp&&user.email.toLowerCase()!==env.OWNER_EMAIL.toLowerCase())fail(403,'이 앱은 소유자 본인만 사용할 수 있습니다.');
   const newId=nonce();await state.put('session:'+newId,{csrf:nonce(),user:{id:user.sub,email:user.email},access:t.access_token,refresh:t.refresh_token,expires:Date.now()+t.expires_in*1000},TTL);
   if(sid)await state.remove('session:'+sid);const h=new Headers({Location:'/'});h.append('Set-Cookie',cookie('__Host-workspace',newId));h.append('Set-Cookie',cookie('__Host-workspace-login','',0));return new Response(null,{status:302,headers:h});
  }
- if(!session||!sid)fail(401,'본인 Google 계정으로 로그인해 주세요.');
+ if(!session||!sid)fail(401,'Google 계정으로 로그인해 주세요.');
  if(request.method!=='POST')fail(405,'POST 요청이 필요합니다.');
  if(request.headers.get('origin')!==url.origin||request.headers.get('x-csrf-token')!==session!.csrf)fail(403,'화면을 새로고침하고 다시 시도해 주세요.');
- if(session!.user.email.toLowerCase()!==env.OWNER_EMAIL.toLowerCase())fail(403,'이 앱의 소유자 계정으로 다시 로그인해 주세요.');
+ if(!publicApp&&session!.user.email.toLowerCase()!==env.OWNER_EMAIL.toLowerCase())fail(403,'이 앱의 소유자 계정으로 다시 로그인해 주세요.');
  const owner=session!.user.id;
  if(route==='/api/logout'){await state.remove('session:'+sid);const r=json({ok:true});r.headers.set('Set-Cookie',cookie('__Host-workspace','',0));return r;}
  if(route==='/api/cloud/state'){
@@ -61,6 +63,7 @@ async function handle(request:Request,env:Env):Promise<Response>{
   fail(400,'지원하지 않는 저장 작업입니다.');
  }
  if(route==='/api/cloud/ai'){
+  if(publicApp)fail(403,'공개 웹앱은 예시 편집·문서 변환·Google 저장을 제공합니다. AI 생성은 아직 제공하지 않습니다.');
   const provider=request.headers.get('x-ai-provider');if(!['gemini','openai'].includes(provider??''))fail(400,'AI를 선택해 주세요.');
   try{assertAiDataPolicy(provider!,{geminiNoTrainingConfirmed:env.GEMINI_NO_TRAINING_CONFIRMED==='true',openaiNoTrainingConfirmed:env.OPENAI_NO_TRAINING_CONFIRMED==='true'});}catch(e){fail(403,e instanceof Error?e.message:'AI 데이터 처리 설정을 확인해 주세요.');}
   const key=provider==='gemini'?env.GEMINI_API_KEY:env.OPENAI_API_KEY;if(!key)fail(422,'AI 키가 연결되지 않았습니다.');
