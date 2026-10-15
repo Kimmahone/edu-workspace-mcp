@@ -22,6 +22,12 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
       - run: npm ci
+      - name: Load content-free live Agent release evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release download "$GITHUB_REF_NAME" --pattern agent-release-readiness.json --output .release-readiness.local.json
+      - run: npm run release:guard
       - run: npm run release:check
       - name: Verify release tag matches package version
         shell: bash
@@ -33,4 +39,4 @@ jobs:
           fi
       - name: Use an npm CLI version that supports trusted publishing
         run: npm install --global npm@latest
-      - run: npm publish --access public
+      - run: npm publish --access public --tag agent

@@ -31,3 +31,5 @@ npx -y edu-workspace-mcp@1.1.2 doctor
 ## 기존 버전 보호
 
 기존 1.1.1 이하에 새 옵션을 전달하거나 이전 실패한 공개 ID-only 로그인을 반복하지 않습니다. 기존 버전·기존 토큰을 유지한 채 검증된 새 Agent를 별도로 연결합니다. 고급 private/legacy/web 경로는 명시적으로 선택한 경우에만 사용합니다.
+
+GitHub의 기존 npm 신뢰 게시 경로는 릴리스 첨부 `agent-release-readiness.json`을 받아 같은 공개 guard를 실행합니다. 운영자는 모든 실제 검사를 마친 뒤 `scripts/export-release-evidence.mjs`로 상태·시각·권한·공개 정책 해시만 허용 목록으로 내보냅니다. 이 첨부에는 로컬 상세 기록·계정 목록·문서·자격증명이 없고 정확한 릴리스 commit에 묶입니다. 원본 로컬 검증 파일은 계속 Git과 npm에서 제외합니다. 기존 OIDC 게시 권한을 사용하며 새 npm 토큰을 만들지 않습니다.

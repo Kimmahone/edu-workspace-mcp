@@ -16,6 +16,7 @@ const REQUIRED_LIVE_CHECKS = [
 export function releaseReasons(proof, expected, now = Date.now()) {
   const reasons = [];
   if (proof?.schemaVersion !== 1 || proof.evidenceKind !== 'live' || proof.version !== expected.version || proof.serverUrl !== expected.serverUrl) reasons.push('이 버전·서버의 실제 검증 기록 필요');
+  if (expected.sourceCommit && proof?.sourceCommit !== expected.sourceCommit) reasons.push('검증한 릴리스 commit 일치 필요');
   const checkedAt = Date.parse(proof?.accountCheckedAt);
   const reviewedAt = Date.parse(proof?.costReviewedAt);
   const expiresAt = Date.parse(proof?.costReviewExpiresAt);
@@ -29,4 +30,12 @@ export function releaseReasons(proof, expected, now = Date.now()) {
   if (proof?.maintenancePlanReviewed !== true || typeof proof.maintenancePlan !== 'string' || !proof.maintenancePlan.trim()) reasons.push('검토 만료 시 중단·재검토하는 운영 계획 확인 필요');
   if (proof?.publicationApproved !== true) reasons.push('검증한 버전의 구체적인 공개 배포 승인 필요');
   return reasons;
+}
+
+// This projection intentionally excludes local notes, account inventory and private proof details.
+export function publicReleaseEvidence(proof, expected, sourceCommit, now=Date.now()) {
+  if (!/^[a-f0-9]{40}$/.test(sourceCommit) || releaseReasons(proof,expected,now).length) throw new Error('LIVE_RELEASE_EVIDENCE_REQUIRED');
+  const fields=['schemaVersion','evidenceKind','version','serverUrl','workersPlan','accountCheckedAt','costReviewedAt','costReviewExpiresAt','noPaidServices','noSeparateModelApiCalls','googleStandardTierOnly','aiWebClientVerified','approvedGoogleScopes','publicPolicyUrl','publicPolicySourceHash','maintenancePlanReviewed','maintenancePlan','publicationApproved'];
+  const result=Object.fromEntries(fields.map(key=>[key,proof[key]]));
+  return {...result,sourceCommit,checks:Object.fromEntries(REQUIRED_LIVE_CHECKS.map(key=>[key,proof.checks[key]]))};
 }

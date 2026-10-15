@@ -14,6 +14,7 @@ try {
   const proof = JSON.parse(raw);
   const reasons = releaseReasons(proof, {
     version: manifest.version,
+    sourceCommit: process.env.GITHUB_ACTIONS === 'true' ? process.env.GITHUB_SHA : undefined,
     serverUrl,
     publicPolicySourceHash: createHash('sha256').update(policy).digest('hex')
   });
