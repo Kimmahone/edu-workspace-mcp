@@ -1,6 +1,6 @@
 # 🎓 edu-workspace-mcp
 
-> **1.1.2 Agent 설치 후보**: 별도 Web OAuth/MCP 서버와 JSON 없는 로컬 bridge를 구현하고 제한 시험 서버를 배포했습니다. 2026-10-15 실제 두 계정의 Google 로그인·문서 읽기·Google/MCP 갱신·계정 분리·연결 해제를 확인했습니다. 무료 운영·정리·패키지 설치 검증을 모두 마치기 전에는 npm에 공개하지 않습니다. 일반 사용자는 Cloud 프로젝트나 JSON을 준비하지 않습니다. 기존 `latest` 1.1.1은 유지하며 새 Agent는 별도 `agent` 태그를 사용합니다. [설치 안내](docs/PUBLIC_MCP_INSTALL.md)와 [인증·운영 상태](docs/PUBLIC_AUTH_OPTIONS.md)를 확인하세요. **1.1.1 이하에 `--workspace-readonly`를 전달하지 마세요.**
+> **Workspace 읽기 전용 Agent 1.1.2**: 패키지 설치와 사용자 브라우저 동의로 Google Docs·Forms·Sheets·Slides 읽기 권한 5개를 연결합니다. Google Cloud 프로젝트나 OAuth JSON을 따로 준비하지 않습니다. 실제 두 계정의 로그인·문서 읽기·Google/MCP 갱신·계정 분리·연결 해제, 무료 한도 차단과 만료 인증 정리를 검증했습니다. 기존 `latest` 1.1.1은 유지하며 새 Agent는 별도 `agent` 태그와 정확한 버전 번호로 설치합니다. [공개 설치 절차](docs/PUBLIC_MCP_INSTALL.md)의 npm 게시 여부를 먼저 확인하세요. 무료 운영 검토가 만료되면 요청을 중단하며, 자동 갱신·유료 전환·별도 모델 API 호출은 하지 않습니다. **1.1.1 이하에 `--workspace-readonly`를 전달하지 마세요.**
 
 AI에 요청할 문장:
 
