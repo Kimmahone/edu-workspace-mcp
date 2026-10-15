@@ -12,7 +12,7 @@ test("client installer preserves existing MCP servers and pins the stable versio
   const configPath = path.join(directory, "mcp.json");
   try {
     await writeFile(configPath, JSON.stringify({ mcpServers: { existing: { command: "existing" } }, setting: true }));
-    await updateJsonClientConfig(configPath);
+    await updateJsonClientConfig(configPath, { platform: "darwin" });
     const config = JSON.parse(await readFile(configPath, "utf8")) as {
       setting: boolean;
       mcpServers: Record<string, { command: string; args?: string[] }>;
@@ -46,13 +46,16 @@ test("client config paths are computer-wide, not project-relative", () => {
 });
 
 test("CLI installers use global scope and carry the read profile", () => {
-  assert.deepEqual(codexAddArgs({ readAccess: true }), [
+  assert.deepEqual(codexAddArgs({ readAccess: true, platform: "darwin" }), [
     "mcp", "add", "edu-workspace", "--env", "EDU_WORKSPACE_READ_ACCESS=1",
     "--", "npx", "-y", PACKAGE_SPEC, "serve", "--legacy"
   ]);
   assert.deepEqual(claudeCodeAddArgs({ readAccess: true }, "darwin"), [
     "mcp", "add", "edu-workspace", "--scope", "user", "--env", "EDU_WORKSPACE_READ_ACCESS=1",
     "--", "npx", "-y", PACKAGE_SPEC, "serve", "--legacy"
+  ]);
+  assert.deepEqual(codexAddArgs({ platform: "win32" }).slice(-10), [
+    "--", "cmd", "/d", "/s", "/c", "npx", "-y", PACKAGE_SPEC, "serve", "--workspace-readonly"
   ]);
   assert.deepEqual(claudeCodeAddArgs({}, "win32").slice(-10), [
     "--", "cmd", "/d", "/s", "/c", "npx", "-y", PACKAGE_SPEC, "serve", "--workspace-readonly"
