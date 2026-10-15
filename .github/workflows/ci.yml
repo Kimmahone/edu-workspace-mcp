@@ -25,7 +25,12 @@ jobs:
       - run: npm run version:check
       - run: npm run check
       - run: npm test
-      - run: npm run test:mcp
+      - name: MCP connection on supported Node versions
+        if: matrix.node-version != 20
+        run: npm run test:mcp
+      - name: Unsupported Node stops before MCP startup
+        if: matrix.node-version == 20
+        run: node scripts/check-node-requirement.mjs
       - run: npm audit --omit=dev
 
   package:

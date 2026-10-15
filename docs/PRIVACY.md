@@ -2,7 +2,7 @@
 
 공개 정책의 기준 문서는 [https://edu.jeld.kr/privacy.html](https://edu.jeld.kr/privacy.html)입니다. 이 문서는 저장소에서 데이터 흐름을 빠르게 확인하기 위한 요약입니다.
 
-## 로컬 stdio 버전
+## 기존 로컬 stdio 버전 (1.1.1 이하·명시적 private/legacy 경로)
 
 - 배포용 데스크톱 OAuth 클라이언트 식별자는 앱에 포함되며, 사용자의 Google 액세스·갱신 토큰은 사용자의 컴퓨터에만 저장됩니다.
 - MCP 서버는 요청을 처리하기 위해 Google API와 직접 통신합니다.
@@ -21,4 +21,10 @@
 
 ## 원격 버전
 
-호스팅형 MCP는 아직 제공하지 않습니다. 향후 제공할 경우 토큰 암호화, 보관 기간, 로그 정책, 하위 처리자, 데이터 삭제 절차를 포함한 별도 개인정보처리방침을 공개합니다.
+별도 호스팅형 읽기 전용 MCP와 로컬 stdio bridge를 배포해 실제 Google 두 계정의 연결·읽기·갱신·분리·해제를 검증했습니다. 정확한 공개 버전과 설치 절차는 공개 설치 안내를 확인합니다. 서버는 현재 무료 조건 검토의 유효기간 내에서 운영하고 만료 시 요청을 중단합니다.
+
+원격 Agent에서는 운영자 Cloudflare Worker가 Google 인증 코드·verifier·토큰과 사용자가 지정한 문서·시트·슬라이드·폼 응답을 처리합니다. Google refresh token은 서버 키로 암호화해 D1에 보관하고 Google access token은 API 호출 동안 메모리에서만 사용합니다. 임시 OAuth transaction은 암호화해 KV에 최대 10분, 연결은 30일 미사용 만료로 설계합니다. 문서 본문은 서버 DB·캐시·로그·학습 자료에 저장하지 않으며 요청한 AI 앱으로 전달합니다. AI 앱의 데이터 정책은 별도로 적용됩니다.
+
+사용자 컴퓨터의 `~/.edu-workspace-mcp-agent/remote/`에는 별도 MCP credential만 저장합니다. 연결 해제는 서버 접근 차단·활성 Google token ciphertext 제거·선택한 로컬 MCP credential 제거이며 Google 프로젝트 전체 동의까지 철회하지 않습니다. 전체 Google revoke는 같은 프로젝트의 일반 client에도 영향을 줄 수 있어 별도 확인이 필요합니다. 활성 DB 삭제와 백업의 즉시 물리 삭제는 다르며 Cloudflare D1 Free Time Travel 이력은 7일입니다.
+
+운영자·처리 목적·지역/하위 처리자·만료 정리·복구 절차·권리 요청 방법을 실제 운영 조건에 맞춰 공개 정책에도 반영한 후 배포해야 합니다. 이 저장소 문서 수정만으로 현재 공개 홈페이지의 개인정보처리방침을 변경했다고 보고하지 않습니다.

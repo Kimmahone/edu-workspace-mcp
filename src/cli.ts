@@ -1,118 +1,98 @@
 #!/usr/bin/env node
-import { mkdir } from "node:fs/promises";
-import { APP_DIRECTORY, credentialsPath } from "./config.js";
-import { disconnectGoogleAccount, getAuthStatus, getAuthorizedClient, login } from "./auth/google-auth.js";
-import { installClient, type InstallClient } from "./install/configure-client.js";
+import { workspaceReadonlyEnabled, loginCommand } from "./config.js";
+import { parseCliOptions, CLIENTS } from "./cli-options.js";
 import { APP_VERSION, PACKAGE_SPEC } from "./version.js";
 
-function printHelp() {
-  console.log(`
-edu-workspace-mcp
+function help() {
+  console.log(`edu-workspace-mcp ${APP_VERSION}
+Node.js 22 이상이 필요합니다.
 
-명령어:
-  setup       초기 폴더와 MCP 설정 예시를 보여줍니다.
-  install     AI 클라이언트 전체 프로젝트 설정에 MCP를 등록합니다.
-  login       Google OAuth 로그인 후 토큰을 안전한 로컬 경로에 저장합니다. --no-browser는 브라우저 자동 열기를 끕니다.
-  doctor      OAuth 자격 증명·토큰 상태를 확인합니다.
-  disconnect  Google 권한을 철회하고 로컬 토큰을 삭제합니다.
-  serve       stdio MCP 서버를 시작합니다. 명령이 없을 때의 기본 동작입니다.
-  web         Workspace Lab 로컬 웹앱을 시작합니다. 현재 폴더의 .env를 적용합니다.
-  version     설치된 버전을 표시합니다.
+  setup                 운영체제와 설치 앱 확인; Google 로그인은 별도 사용자 단계
+  setup <app>           선택 앱 설치 후 다음 단계 안내
+  install <app|all>     codex, claude(Claude Code), claude-desktop, cursor 등록
+  login                 승인된 Workspace 읽기 5개로 브라우저 로그인
+  doctor                같은 모드의 연결 상태 확인
+  serve                 기본 stdio MCP (읽기 도구 10개)
+  web                   기존 Workspace Lab 웹앱
+  version               버전 확인
 
-설치 예시:
-  npx -y ${PACKAGE_SPEC} install codex
-  npx -y ${PACKAGE_SPEC} install claude --read
-  npx -y ${PACKAGE_SPEC} install claude-desktop --read
-  npx -y ${PACKAGE_SPEC} install cursor
+기본 Agent는 Docs·Forms·Sheets·Slides 읽기 5개만 사용합니다.
+--workspace-readonly: 같은 기본 모드를 명시합니다.
+--legacy: 기존 생성·Classroom 모드를 명시적으로 선택합니다.
+--read: --legacy에서만 기존 읽기 확장을 선택합니다.
+--no-browser: login의 브라우저 자동 열기를 끕니다.
 
-읽기 확장:
-  install과 login에 --read를 붙이면 기존 Docs·Sheets·Slides·Forms와
-  Classroom 학생 명단을 읽을 수 있는 읽기 전용 범위를 요청합니다.
-`);
+설치: npx -y ${PACKAGE_SPEC} setup codex
+로그인·Google 동의는 사용자 직접 단계이며 설치만으로 연결 완료가 아닙니다.`);
 }
 
 async function main() {
-  const command = process.argv[2] ?? "serve";
+  const options = parseCliOptions(process.argv.slice(2));
+  if (options.help) { help(); return; }
+  if (options.command === "version") { console.log(APP_VERSION); return; }
+  if (Number(process.versions.node.split(".")[0]) < 22) throw new Error("Node.js 22 이상을 설치한 뒤 다시 실행하세요: https://nodejs.org/en/download");
+  if (options.legacy) delete process.env.EDU_WORKSPACE_SCOPE_PROFILE;
+  else process.env.EDU_WORKSPACE_SCOPE_PROFILE = "workspace-readonly";
+  if (options.readAccess) process.env.EDU_WORKSPACE_READ_ACCESS = "1";
 
-  if (command === "serve") {
-    await import("./index.js");
+  const remoteAgent = !options.legacy && !process.env.EDU_WORKSPACE_CREDENTIALS_PATH;
+  if (options.command === "serve") {
+    if (remoteAgent) await (await import("./remote/bridge.js")).serveRemote();
+    else await import("./index.js");
     return;
   }
-
-  if (command === "web") {
-    if (typeof process.loadEnvFile !== "function") throw new Error("웹앱은 Node.js 22 이상을 사용하세요.");
+  if (options.command === "web") {
     try { process.loadEnvFile(); }
     catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw new Error(".env 설정 파일을 불러올 수 없습니다."); }
-    await import("./web/main.js");
-    return;
+    delete process.env.EDU_WORKSPACE_SCOPE_PROFILE;
+    await import("./web/main.js"); return;
   }
-
-  if (command === "setup") {
-    await mkdir(APP_DIRECTORY, { recursive: true });
-    const status = await getAuthStatus();
-    console.log(`\n설정 폴더: ${APP_DIRECTORY}`);
-    console.log(`OAuth 클라이언트: ${status.oauthClientConfigured ? `${status.oauthClientSource} 설정 사용` : "아직 구성되지 않음"}`);
-    console.log(`\n권장 자동 설치:\n  npx -y ${PACKAGE_SPEC} install codex --read\n  npx -y ${PACKAGE_SPEC} install claude --read\n  npx -y ${PACKAGE_SPEC} install claude-desktop --read\n  npx -y ${PACKAGE_SPEC} install cursor --read`);
-    console.log(`\nCodex/ChatGPT Desktop 예시:\n[mcp_servers.edu-workspace]\ncommand = "npx"\nargs = ["-y", "${PACKAGE_SPEC}"]`);
-    console.log(`\nClaude Desktop/Cursor 예시:\n{\n  "mcpServers": {\n    "edu-workspace": {\n      "command": "npx",\n      "args": ["-y", "${PACKAGE_SPEC}"]\n    }\n  }\n}`);
-    console.log(status.oauthClientConfigured
-      ? `\n\`npx -y ${PACKAGE_SPEC} login\`으로 Google 계정을 연결하세요.`
-      : `\n공개 배포 전에는 배포자가 공용 OAuth 앱을 설정해야 합니다. 개발 중에는 ${credentialsPath()}에 credentials.json을 둘 수 있습니다.`);
-    return;
-  }
-
-  if (command === "install") {
-    const client = process.argv[3] as InstallClient | undefined;
-    if (!client || !["codex", "claude", "claude-desktop", "cursor"].includes(client)) {
-      throw new Error("설치 대상을 지정하세요: codex, claude, claude-desktop, cursor");
+  if (options.command === "setup" || options.command === "install") {
+    const { installClient, detectClients } = await import("./install/configure-client.js");
+    if (!options.client) {
+      console.log(`운영체제: ${process.platform}; Node.js ${process.version}`);
+      const detected = await detectClients();
+      console.log(`감지된 앱: ${detected.join(", ") || "없음"}`);
+      console.log(`설치 앱을 선택한 뒤 npx -y ${PACKAGE_SPEC} setup <app>을 실행하세요. 지원 앱: ${CLIENTS.join(", ")}, all`);
+      console.log("앱이나 Node.js를 자동 설치하거나 Google 로그인하지 않습니다.");
+      return;
     }
-    const readAccess = process.argv.includes("--read");
-    console.log(await installClient(client, { readAccess }));
-    console.log(`다음 단계: npx -y ${PACKAGE_SPEC} login${readAccess ? " --read" : ""}`);
+    const targets = options.client === "all" ? await detectClients() : [options.client];
+    if (!targets.length) throw new Error("설치된 앱을 찾지 못했습니다. 사용할 앱을 설치하고 setup <app>으로 다시 진행하세요.");
+    for (const client of targets) console.log(await installClient(client, { readAccess: options.readAccess, workspaceReadonly: !options.legacy }));
+    console.log(`다음 사용자 단계: npx -y ${PACKAGE_SPEC} ${options.legacy ? "login --legacy" : "login"}${options.readAccess ? " --read" : ""}`);
+    console.log("등록은 Google 인증 완료가 아닙니다. 로그인·동의는 사용자가 브라우저에서 직접 진행하세요.");
     return;
   }
-
-  if (command === "login") {
-    if (process.argv.includes("--read")) process.env.EDU_WORKSPACE_READ_ACCESS = "1";
-    console.log("Google API 결과는 선택한 MCP 클라이언트로 반환됩니다. 학습 공유가 꺼진 AI 서비스 또는 오프라인 클라이언트에서만 사용하세요. Google 원본·집계·파생 데이터의 범용 AI 모델 학습·개선은 금지됩니다.");
-    const status = await login({ openBrowser: !process.argv.includes("--no-browser") });
-    console.log(status.message);
-    console.log(`토큰 저장 위치: ${status.tokenPath}`);
-    return;
+  if (remoteAgent) {
+    const { loginRemote, remoteStatus, disconnectRemote } = await import("./remote/session.js");
+    if (options.command === "login") {const status=await loginRemote({openBrowser:!options.noBrowser});console.log(status.message);return;}
+    if (options.command === "doctor") {
+      const status=await remoteStatus(); console.log(JSON.stringify({version:APP_VERSION,...status},null,2));
+      if(!status.authenticated) throw new Error(status.message);
+      const result=await (await import("./remote/bridge.js")).callRemote("workspace_get_auth_status");
+      if(result.isError) throw new Error("원격 서버 연결을 확인하지 못했습니다.");
+      console.log("원격 MCP 연결 확인 완료. 실제 Google 읽기는 지정한 자료로 별도 확인하세요.");return;
+    }
+    if (options.command === "disconnect") {console.log((await disconnectRemote(Boolean(options.localOnly))).message);return;}
   }
-
-  if (command === "doctor") {
-    if (process.argv.includes("--read")) process.env.EDU_WORKSPACE_READ_ACCESS = "1";
+  const { login, getAuthStatus, getAuthorizedClient, disconnectGoogleAccount } = await import("./auth/google-auth.js");
+  if (options.command === "login") {
+    console.log("Google API 원본·집계·파생 데이터를 범용 AI 모델 학습·개선에 사용하지 마세요. 학습 공유가 꺼진 MCP 호스트에서만 처리하세요.");
+    const status = await login({ openBrowser: !options.noBrowser });
+    console.log(status.message); console.log(`토큰 저장 위치: ${status.tokenPath}`); return;
+  }
+  if (options.command === "doctor") {
     const status = await getAuthStatus();
     console.log(JSON.stringify({ version: APP_VERSION, node: process.version, ...status }, null, 2));
-    if (Number(process.versions.node.split(".")[0]) < 20) throw new Error("Node.js 20 이상이 필요합니다.");
-    if (status.authenticated) {
-      const client = await getAuthorizedClient();
-      await client.getAccessToken();
-      console.log("Google OAuth 토큰 갱신: 정상");
-      if (status.missingScopes?.length) throw new Error("필수 OAuth 범위가 누락되었습니다. disconnect 후 다시 로그인하세요.");
-      if (status.unexpectedScopes?.length) console.warn("경고: 이전의 추가 OAuth 권한이 남아 있습니다. 최소 권한 재로그인을 권장합니다.");
-      if (status.tokenFileProtected === false) throw new Error("OAuth 토큰 파일 권한이 안전하지 않습니다.");
-    }
-    return;
+    if (!status.authenticated) throw new Error(status.message);
+    if (status.missingScopes?.length || (workspaceReadonlyEnabled() && status.unexpectedScopes?.length)) throw new Error(`${loginCommand()}으로 같은 범위에서 다시 연결하세요.`);
+    await (await getAuthorizedClient()).getAccessToken();
+    console.log("Google OAuth 토큰 갱신: 정상"); return;
   }
-
-  if (command === "version" || command === "--version" || command === "-v") {
-    console.log(APP_VERSION);
-    return;
+  if (options.command === "disconnect") {
+    const result = await disconnectGoogleAccount({ localOnly: options.localOnly });
+    console.log(`${result.revoked ? "Google 권한을 철회하고 " : ""}선택한 모드의 로컬 토큰을 제거했습니다: ${result.tokenPath}`);
   }
-
-  if (command === "disconnect") {
-    const localOnly = process.argv.includes("--local-only");
-    const result = await disconnectGoogleAccount({ localOnly });
-    console.log(`${result.revoked ? "Google OAuth 권한을 철회하고 " : ""}로컬 토큰을 제거했습니다: ${result.tokenPath}`);
-    return;
-  }
-
-  printHelp();
 }
-
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+main().catch(error => { console.error(error instanceof Error ? error.message : "명령 실행에 실패했습니다."); process.exitCode = 1; });

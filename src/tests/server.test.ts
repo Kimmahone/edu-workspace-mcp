@@ -58,6 +58,44 @@ async function connectedClient(overrides: Partial<WorkspaceServices> = {}) {
   return { client, server };
 }
 
+test("Agent mode exposes only reviewed Workspace readers and local curriculum tools", async () => {
+  process.env.EDU_WORKSPACE_SCOPE_PROFILE = "workspace-readonly";
+  const { client, server } = await connectedClient();
+  try {
+    const result = await client.listTools();
+    assert.deepEqual(result.tools.map(tool => tool.name).sort(), [
+      "workspace_get_auth_status", "curriculum_get_standards", "curriculum_search_standards",
+      "docs_read_document", "forms_read_form", "forms_list_responses", "sheets_read_values",
+      "sheets_list_sheets", "sheets_inspect_workbook", "slides_read_presentation"
+    ].sort());
+    await assert.rejects(() => client.listPrompts(), /Method not found/);
+    const blocked = await client.callTool({ name: "classroom_list_students", arguments: { courseId: "course-1" } });
+    assert.equal(blocked.isError, true);
+  } finally {
+    await client.close(); await server.close();
+    delete process.env.EDU_WORKSPACE_SCOPE_PROFILE;
+  }
+});
+
+test("Agent scope recovery stays in the five-scope mode and blocks overbroad tokens", async () => {
+  process.env.EDU_WORKSPACE_SCOPE_PROFILE = "workspace-readonly";
+  const { client, server } = await connectedClient({ getAuthStatus: async () => ({
+    authenticated: true, oauthClientConfigured: true, oauthClientSource: "credentials_file",
+    credentialsPath: "/test/agent-credentials.json", tokenPath: "/test/agent-token.json",
+    grantedScopes: [], unexpectedScopes: ["classroom"], readAccessEnabled: true, message: "scope mismatch"
+  }) });
+  try {
+    const result = await client.callTool({ name: "docs_read_document", arguments: { document: "document-1234567890" } });
+    assert.equal(result.isError, true);
+    const message = (result.structuredContent as { message: string }).message;
+    assert.match(message, /login --workspace-readonly/);
+    assert.doesNotMatch(message, /login --read(?:\s|$)/);
+  } finally {
+    await client.close(); await server.close();
+    delete process.env.EDU_WORKSPACE_SCOPE_PROFILE;
+  }
+});
+
 test("server exposes the complete MVP tool set", async () => {
   const { client, server } = await connectedClient();
   const result = await client.listTools();

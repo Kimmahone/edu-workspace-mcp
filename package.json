@@ -1,6 +1,6 @@
 {
   "name": "edu-workspace-mcp",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "교육자를 위한 Google Docs, Sheets, Slides, Forms, Drive 및 Classroom MCP 서버",
   "license": "MIT",
   "type": "module",
@@ -33,10 +33,15 @@
     "docs/WORKSPACE_LAB_START.md",
     "docs/ASSETS.md",
     "docs/RESULT_QUALITY.md",
-    "docs/CLOUDFLARE_PERSONAL.md"
+    "docs/CLOUDFLARE_PERSONAL.md",
+    "AGENTS.md",
+    "docs/PUBLIC_MCP_INSTALL.md",
+    "docs/WORKSPACE_READONLY_AGENT.md",
+    "docs/PUBLIC_AUTH_OPTIONS.md",
+    "docs/PRIVACY.md"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "build": "node scripts/clean.mjs && tsc -p tsconfig.build.json",
@@ -45,12 +50,14 @@
     "cli": "tsx src/cli.ts",
     "check": "tsc --noEmit -p tsconfig.json",
     "curriculum:build": "node scripts/build-curriculum-data.mjs && node scripts/build-learning-map.mjs",
-    "test": "npm run build && node scripts/run-tests.mjs",
+    "test": "npm run build && node scripts/run-tests.mjs && node --test scripts/release-guard.test.mjs",
     "test:mcp": "npm run build && tsx src/tests/mcp-smoke.ts",
     "test:e2e": "npm run build && node scripts/e2e-google.mjs",
     "version:check": "node scripts/check-version.mjs",
     "release:check": "npm run version:check && npm run check && npm test && npm run test:mcp && npm audit --omit=dev && npm pack --dry-run",
     "prepack": "npm run version:check && npm run check && npm test",
+    "release:guard": "node scripts/release-guard.mjs",
+    "prepublishOnly": "npm run release:guard",
     "web:dev": "npm run build && node --env-file-if-exists=.env dist/web/main.js",
     "web:start": "node --env-file-if-exists=.env dist/web/main.js",
     "test:web": "npm run build && node --test --import tsx src/tests/web.test.ts",
@@ -66,10 +73,12 @@
     "cloud:deploy": "node scripts/cloud-deploy.mjs",
     "cloud:git:deploy": "wrangler deploy --config wrangler.jsonc",
     "test:cloud": "node --import tsx --test cloud/worker.test.ts",
-    "test:cloud:browser": "node scripts/test-cloud-browser.mjs"
+    "test:cloud:browser": "node scripts/test-cloud-browser.mjs",
+    "pilot:live": "node scripts/live-agent-pilot.mjs"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "tag": "agent"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.31.0",
@@ -79,6 +88,7 @@
     "markdown-it": "^15.0.2",
     "pg": "^8.23.0",
     "sanitize-html": "^2.17.7",
+    "smol-toml": "1.9.1",
     "zod": "3.25.76",
     "zod-to-json-schema": "^3.25.2"
   },
