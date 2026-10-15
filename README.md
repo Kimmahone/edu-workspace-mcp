@@ -344,8 +344,8 @@ node dist/cli.js login
 
 - 필요한 Google OAuth 범위만 요청합니다.
 - OAuth 로그인에 PKCE(S256), 무작위 `state`, 5분 만료와 loopback 콜백 검증을 적용합니다.
-- 후보의 원격 Agent는 Google refresh token을 서버에 암호화 저장하고 컴퓨터에는 별도 MCP token만 저장하는 구조입니다. 별도 제한 시험 서버에서 실제 Google 연결을 검증했으며 공개 운영 준비 상태는 인증·운영 문서에서 확인합니다. 기존 local/private 경로는 로컬 Google token을 사용합니다.
-- 후보 package에는 Google client secret을 포함하지 않습니다. 기존 1.1.1 이하의 bundled OAuth 사용자는 자동으로 후보에 전환하지 않습니다.
+- 원격 Agent는 Google refresh token을 서버에 암호화 저장하고 컴퓨터에는 별도 MCP token만 저장하는 구조입니다. 별도 제한 시험 서버에서 실제 Google 연결을 검증했으며 공개 운영 준비 상태는 인증·운영 문서에서 확인합니다. 기존 local/private 경로는 로컬 Google token을 사용합니다.
+- Agent package에는 Google client secret을 포함하지 않습니다. 기존 1.1.1 이하의 bundled OAuth 사용자는 자동으로 Agent에 전환하지 않습니다.
 - 기본 Agent는 승인된 읽기 5개만 요청합니다. 기존 `--read` 확장은 명시적 `--legacy`에서만 사용합니다.
 - 검색·조회 도구에는 `readOnlyHint`를 표시합니다.
 - 교육과정 도구는 패키지에 들어 있는 정리본만 읽고 네트워크를 쓰지 않습니다(`openWorldHint: false`).
@@ -363,7 +363,7 @@ node dist/cli.js login
 | 만들기 | 새 폴더·문서·시트·슬라이드·퀴즈, Classroom **초안** 과제. 만든 직후 그 파일에만 서식·인쇄 설정을 입히고 지정한 폴더로 옮김 |
 | 확인 후에만 | Classroom 과제 게시, Drive 공유. 15분 동안 한 번만 쓰는 승인 ID가 있어야 함. 이메일 주소로 공유하면 Google이 공유 알림 메일을 보냄 |
 | 하지 않음 | 파일·폴더 삭제나 휴지통 이동, 이 앱이 만들지 않은 기존 파일의 내용 수정, Classroom 점수 입력·반환, 인터넷 전체 편집 공유 |
-| 네트워크 | 기존 private/legacy 경로는 Google API와 로그인용 로컬 주소를 사용합니다. 후보 Agent는 원격 운영자 MCP를 거쳐 Google 자료를 읽습니다. 교육과정 도구는 네트워크를 쓰지 않습니다 |
+| 네트워크 | 기존 private/legacy 경로는 Google API와 로그인용 로컬 주소를 사용합니다. Agent는 원격 운영자 MCP를 거쳐 Google 자료를 읽습니다. 교육과정 도구는 네트워크를 쓰지 않습니다 |
 
 ### Google이 멈추거나 느릴 때
 
@@ -374,7 +374,7 @@ node dist/cli.js login
 
 ### 자동 보안 검사에서 보일 수 있는 것
 
-- 후보에는 실제 Google secret을 포함하지 않습니다. 운영자 Web secret은 서버에, 명시적 private 경로의 자격증명은 사용자가 직접 지정한 비공개 파일에만 둡니다.
+- Agent에는 실제 Google secret을 포함하지 않습니다. 운영자 Web secret은 서버에, 명시적 private 경로의 자격증명은 사용자가 직접 지정한 비공개 파일에만 둡니다.
 - 브라우저 열기와 앱 탐지는 고정된 실행 프로그램·인수 및 `shell:false`를 사용합니다. OAuth callback 주소·인증 code·token을 로그에 출력하지 않습니다.
 
 Google OAuth 브랜딩과 개인정보처리방침을 공개해야 하며, Google Workspace for Education 관리자가 제3자 앱을 허용해야 할 수 있습니다.
