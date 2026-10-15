@@ -1,6 +1,6 @@
 # 🎓 edu-workspace-mcp
 
-> **Workspace 읽기 전용 Agent 1.1.2**: 패키지 설치와 사용자 브라우저 동의로 Google Docs·Forms·Sheets·Slides 읽기 권한 5개를 연결합니다. Google Cloud 프로젝트나 OAuth JSON을 따로 준비하지 않습니다. 실제 두 계정의 로그인·문서 읽기·Google/MCP 갱신·계정 분리·연결 해제, 무료 한도 차단과 만료 인증 정리를 검증했습니다. 기존 `latest` 1.1.1은 유지하며 새 Agent는 별도 `agent` 태그와 정확한 버전 번호로 설치합니다. [공개 설치 절차](docs/PUBLIC_MCP_INSTALL.md)의 npm 게시 여부를 먼저 확인하세요. 무료 운영 검토가 만료되면 요청을 중단하며, 자동 갱신·유료 전환·별도 모델 API 호출은 하지 않습니다. **1.1.1 이하에 `--workspace-readonly`를 전달하지 마세요.**
+> **Workspace 읽기 전용 Agent 1.1.2**: 패키지 설치와 사용자 브라우저 동의로 Google Docs·Forms·Sheets·Slides 읽기 권한 5개를 연결합니다. Google Cloud 프로젝트나 OAuth JSON을 따로 준비하지 않습니다. 실제 두 계정의 로그인·문서 읽기·Google/MCP 갱신·계정 분리·연결 해제, 무료 한도 차단과 만료 인증 정리를 검증했습니다. 기존 `latest` 1.1.1은 유지하며 새 Agent는 별도 `agent` 태그와 정확한 버전 번호로 설치합니다. [공개 설치 절차](docs/PUBLIC_MCP_INSTALL.md)의 npm 게시 여부를 먼저 확인하세요. 고정24시간 시험 종료 없이 무료 한도 안에서 운영하며 공식 요금 조건을 자동 확인합니다. 조건 변경·48시간 확인 실패·사용량 초과 시 요청을 중단하고 유료 전환·별도 모델 API 호출은 하지 않습니다. **1.1.1 이하에 `--workspace-readonly`를 전달하지 마세요.**
 
 AI에 요청할 문장:
 
