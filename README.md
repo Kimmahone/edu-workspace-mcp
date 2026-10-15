@@ -1,5 +1,14 @@
 # 🎓 edu-workspace-mcp
 
+> **1.1.2 Agent 설치 후보**: 별도 Web OAuth/MCP 서버와 JSON 없는 로컬 bridge를 구현하고 제한 시험 서버를 배포했습니다. 2026-10-15 실제 두 계정의 Google 로그인·문서 읽기·Google/MCP 갱신·계정 분리·연결 해제를 확인했습니다. 무료 운영·정리·패키지 설치 검증을 모두 마치기 전에는 npm에 공개하지 않습니다. 일반 사용자는 Cloud 프로젝트나 JSON을 준비하지 않습니다. 기존 `latest` 1.1.1은 유지하며 새 Agent는 별도 `agent` 태그를 사용합니다. [설치 안내](docs/PUBLIC_MCP_INSTALL.md)와 [인증·운영 상태](docs/PUBLIC_AUTH_OPTIONS.md)를 확인하세요. **1.1.1 이하에 `--workspace-readonly`를 전달하지 마세요.**
+
+AI에 요청할 문장:
+
+> 이 GitHub의 MCP를 현재 사용하는 앱에 설치해 주세요. OS·Node.js 22+와 게시된 버전을 확인하고, 승인된 읽기 권한 5개의 Agent만 등록해 주세요. Google 로그인과 동의는 제가 직접 하겠습니다.
+
+루트 [AGENTS.md](AGENTS.md)에 AI 설치 순서가 있습니다. 등록과 Google 인증은 별도 단계이며 GitHub 주소만으로 계정 연결이 완료되지 않습니다.
+
+
 자연어로 Google Docs, Sheets, Slides, Forms, Drive와 Classroom을 사용하는 교육 특화 Model Context Protocol(MCP) 서버입니다. Apps Script 없이 Google 공식 API를 직접 호출합니다.
 
 [공식 홈페이지](https://edu.jeld.kr/) · [복사 가능한 예시 프롬프트](https://edu.jeld.kr/#prompts) · [개인정보처리방침](https://edu.jeld.kr/privacy.html) · [이용약관](https://edu.jeld.kr/terms.html)
@@ -335,9 +344,9 @@ node dist/cli.js login
 
 - 필요한 Google OAuth 범위만 요청합니다.
 - OAuth 로그인에 PKCE(S256), 무작위 `state`, 5분 만료와 loopback 콜백 검증을 적용합니다.
-- 사용자의 OAuth 액세스·갱신 토큰은 Git에 포함되지 않고 로컬 사용자 폴더에만 저장됩니다.
-- 설치형 앱은 비밀을 유지할 수 없는 공개 클라이언트이므로 배포용 데스크톱 client ID와 client secret은 앱에 포함됩니다.
-- 기존 자료 읽기 범위는 기본으로 요청하지 않고 `--read` 또는 `EDU_WORKSPACE_READ_ACCESS=1`로 켠 사람에게만 추가합니다.
+- 후보의 원격 Agent는 Google refresh token을 서버에 암호화 저장하고 컴퓨터에는 별도 MCP token만 저장하는 구조입니다. 별도 제한 시험 서버에서 실제 Google 연결을 검증했으며 공개 운영 준비 상태는 인증·운영 문서에서 확인합니다. 기존 local/private 경로는 로컬 Google token을 사용합니다.
+- 후보 package에는 Google client secret을 포함하지 않습니다. 기존 1.1.1 이하의 bundled OAuth 사용자는 자동으로 후보에 전환하지 않습니다.
+- 기본 Agent는 승인된 읽기 5개만 요청합니다. 기존 `--read` 확장은 명시적 `--legacy`에서만 사용합니다.
 - 검색·조회 도구에는 `readOnlyHint`를 표시합니다.
 - 교육과정 도구는 패키지에 들어 있는 정리본만 읽고 네트워크를 쓰지 않습니다(`openWorldHint: false`).
 - Classroom 게시와 Drive 공유에는 `destructiveHint`를 표시합니다.
@@ -354,7 +363,7 @@ node dist/cli.js login
 | 만들기 | 새 폴더·문서·시트·슬라이드·퀴즈, Classroom **초안** 과제. 만든 직후 그 파일에만 서식·인쇄 설정을 입히고 지정한 폴더로 옮김 |
 | 확인 후에만 | Classroom 과제 게시, Drive 공유. 15분 동안 한 번만 쓰는 승인 ID가 있어야 함. 이메일 주소로 공유하면 Google이 공유 알림 메일을 보냄 |
 | 하지 않음 | 파일·폴더 삭제나 휴지통 이동, 이 앱이 만들지 않은 기존 파일의 내용 수정, Classroom 점수 입력·반환, 인터넷 전체 편집 공유 |
-| 네트워크 | Google API(`googleapis.com`)와 로그인용 로컬 주소(`127.0.0.1`)만 씁니다. 교육과정 도구는 네트워크를 쓰지 않습니다 |
+| 네트워크 | 기존 private/legacy 경로는 Google API와 로그인용 로컬 주소를 사용합니다. 후보 Agent는 원격 운영자 MCP를 거쳐 Google 자료를 읽습니다. 교육과정 도구는 네트워크를 쓰지 않습니다 |
 
 ### Google이 멈추거나 느릴 때
 
@@ -365,8 +374,8 @@ node dist/cli.js login
 
 ### 자동 보안 검사에서 보일 수 있는 것
 
-- `src/auth/bundled-oauth-client.ts`의 `GOCSPX-…` 값은 Google이 **공개 클라이언트**로 취급하는 데스크톱 앱용 client secret입니다. 설치형 앱은 이 값을 비밀로 지킬 수 없으므로 앱에 포함되며, 대신 PKCE(S256)와 `state` 검증으로 로그인을 보호합니다. 패턴 검사기가 "하드코딩된 시크릿"으로 표시할 수 있습니다.
-- `spawn`·`spawnSync`는 두 곳뿐입니다. `src/auth/google-auth.ts`는 로그인 주소를 기본 브라우저로 여는 데(`open`·`xdg-open`·`rundll32`), `src/install/configure-client.ts`는 사용자가 `install codex`를 실행했을 때 `codex mcp` 명령으로 설정을 등록하는 데 씁니다. 실행할 프로그램은 고정되어 있고 셸을 거치지 않습니다.
+- 후보에는 실제 Google secret을 포함하지 않습니다. 운영자 Web secret은 서버에, 명시적 private 경로의 자격증명은 사용자가 직접 지정한 비공개 파일에만 둡니다.
+- 브라우저 열기와 앱 탐지는 고정된 실행 프로그램·인수 및 `shell:false`를 사용합니다. OAuth callback 주소·인증 code·token을 로그에 출력하지 않습니다.
 
 Google OAuth 브랜딩과 개인정보처리방침을 공개해야 하며, Google Workspace for Education 관리자가 제3자 앱을 허용해야 할 수 있습니다.
 

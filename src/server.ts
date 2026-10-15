@@ -17,6 +17,7 @@ import { inspectWorkbook } from "./google/sheets-inspection.js";
 import { createPresentation, readPresentation } from "./google/slides.js";
 import { lessonPackagePrompt } from "./prompts/lesson-package.js";
 import { APP_VERSION } from "./version.js";
+import { workspaceReadonlyEnabled, loginCommand } from "./config.js";
 
 const readOnly = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true };
 const localReadOnly = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
@@ -72,10 +73,22 @@ const defaultServices: WorkspaceServices = {
 
 export function createServer(overrides: Partial<WorkspaceServices> = {}) {
   const services = { ...defaultServices, ...overrides };
+  const workspaceReadonly = workspaceReadonlyEnabled();
   const server = new McpServer(
     { name: "edu-workspace-mcp", version: APP_VERSION },
-    { instructions: "Google Workspace for Education MCP입니다. Google API의 원본·집계·파생 데이터를 범용 AI 모델 학습·개선에 사용하거나 학습하는 외부 서비스에 보내면 안 됩니다. 사용자가 지정한 자료만 읽고, MCP 호스트의 데이터 학습 공유가 비활성임을 확인한 환경에서 처리하세요. 검색·조회 도구로 대상을 먼저 확인하세요. 학생 개인정보가 포함된 자료는 필요한 최소 범위만 읽고 응답에 불필요하게 반복하지 마세요. 생성 도구는 요청한 콘텐츠만 만들며 비멱등이므로 실패 또는 시간 초과 후 자동으로 중복 호출하지 마세요. Classroom 게시와 Drive 공유는 대상·마감·첨부·권한을 사용자에게 보여 주고 명시적으로 확인받은 경우에만 확정 도구를 호출하세요. 초등 성취기준을 자료에 넣을 때는 원문을 직접 쓰지 말고 curriculum_search_standards로 코드를 찾아 교사에게 확인받은 뒤 생성 도구의 standardCodes로 넘기세요. 서버가 정리된 원문과 출처를 붙이고, 원문이 깨진 항목은 원문 확인 필요로 표시합니다." }
+    { instructions: workspaceReadonly ? "승인된 Docs·Forms·Sheets·Slides 읽기 범위 5개 전용 MCP입니다. Google API 원본·집계·파생 데이터를 범용 AI 모델 학습·개선에 사용하거나 학습하는 서비스에 보내면 안 됩니다. 주소나 ID로 지정한 자료만 읽으세요. Classroom·Drive 검색·생성·쓰기·공유 도구는 제공하지 않습니다. 권한 부족 시 login --workspace-readonly로만 복구하며 추가 권한을 요청하지 마세요." : "Google Workspace for Education MCP입니다. Google API의 원본·집계·파생 데이터를 범용 AI 모델 학습·개선에 사용하거나 학습하는 외부 서비스에 보내면 안 됩니다. 사용자가 지정한 자료만 읽고, MCP 호스트의 데이터 학습 공유가 비활성임을 확인한 환경에서 처리하세요. 검색·조회 도구로 대상을 먼저 확인하세요. 학생 개인정보가 포함된 자료는 필요한 최소 범위만 읽고 응답에 불필요하게 반복하지 마세요. 생성 도구는 요청한 콘텐츠만 만들며 비멱등이므로 실패 또는 시간 초과 후 자동으로 중복 호출하지 마세요. Classroom 게시와 Drive 공유는 대상·마감·첨부·권한을 사용자에게 보여 주고 명시적으로 확인받은 경우에만 확정 도구를 호출하세요. 초등 성취기준을 자료에 넣을 때는 원문을 직접 쓰지 말고 curriculum_search_standards로 코드를 찾아 교사에게 확인받은 뒤 생성 도구의 standardCodes로 넘기세요. 서버가 정리된 원문과 출처를 붙이고, 원문이 깨진 항목은 원문 확인 필요로 표시합니다." }
   );
+
+  const allowedTools = new Set([
+    "workspace_get_auth_status", "curriculum_get_standards", "curriculum_search_standards",
+    "docs_read_document", "forms_read_form", "forms_list_responses",
+    "sheets_read_values", "sheets_list_sheets", "sheets_inspect_workbook", "slides_read_presentation"
+  ]);
+  const registerTool: typeof server.registerTool = (name, config, callback) => {
+    const tool = server.registerTool(name, config, callback);
+    if (workspaceReadonly && !allowedTools.has(name)) tool.disable();
+    return tool;
+  };
 
   const standardCodesSchema = (max: number) => z.array(z.string().trim().min(3).max(30)).max(max).optional()
     .describe("초등 2022 개정 교육과정 성취기준 코드(예: [6사04-01]). 서버가 정리된 원문과 출처를 붙이므로 원문을 직접 쓰지 마세요.");
@@ -94,20 +107,21 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     const status = await services.getAuthStatus();
     if (!status.authenticated) return errorResult("AUTH_REQUIRED", status.message);
     if (status.missingScopes?.length) {
-      return errorResult("AUTH_SCOPE_REQUIRED", `${status.message} 읽기 확장 모드라면 login --read를 실행하세요.`);
+      return errorResult("AUTH_SCOPE_REQUIRED", `${status.message} ${loginCommand()}으로 같은 모드에서 다시 연결하세요.`);
     }
+    if (workspaceReadonly && status.unexpectedScopes?.length) return errorResult("AUTH_SCOPE_REQUIRED", `${loginCommand()}으로 승인된 읽기 범위 5개만 다시 연결하세요.`);
     return undefined;
   }
 
   const googleFileRefSchema = z.string().trim().min(10).max(500)
     .describe("Google 파일 ID 또는 docs.google.com / drive.google.com 주소");
 
-  server.registerTool("workspace_get_auth_status", {
+  registerTool("workspace_get_auth_status", {
     title: "Google 연결 상태 확인", description: "Google Workspace 연결 상태와 허용 범위를 확인합니다.", annotations: readOnly
   }, async () => jsonResult(await services.getAuthStatus() as unknown as Record<string, unknown>));
 
   // 교육과정 도구는 패키지에 들어 있는 정리본만 읽는다. Google 로그인과 네트워크가 필요 없다.
-  server.registerTool("curriculum_search_standards", {
+  registerTool("curriculum_search_standards", {
     title: "초등 성취기준 찾기",
     description: "초등 2022 개정 교육과정 성취기준 620개를 교과·학년·낱말로 찾습니다. 인터넷과 Google 로그인 없이 동작합니다. text 가 null 이면 원문 자동 추출이 깨진 항목이라 요지(summary)만 있습니다.",
     inputSchema: {
@@ -120,14 +134,14 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     annotations: localReadOnly
   }, async (input) => jsonResult({ ...searchStandards(input), source: curriculumInfo() }));
 
-  server.registerTool("curriculum_get_standards", {
+  registerTool("curriculum_get_standards", {
     title: "초등 성취기준 원문 확인",
     description: "성취기준 코드로 정리된 원문·영역·출처 주소·정리 내역을 가져옵니다. 없는 코드는 비슷한 코드를 제안합니다.",
     inputSchema: { codes: z.array(z.string().trim().min(3).max(30)).min(1).max(30).describe("예: ['[6사04-01]', '6사04-02']") },
     annotations: localReadOnly
   }, async ({ codes }) => jsonResult({ ...getStandards(codes), source: curriculumInfo() }));
 
-  server.registerTool("classroom_list_courses", {
+  registerTool("classroom_list_courses", {
     title: "Classroom 수업 조회", description: "로그인한 교사가 접근할 수 있는 활성 Google Classroom 수업을 조회합니다.",
     inputSchema: { query: z.string().max(200).optional() }, annotations: readOnly
   }, async ({ query }) => {
@@ -136,7 +150,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("CLASSROOM_LIST_FAILED", error); }
   });
 
-  server.registerTool("classroom_list_coursework", {
+  registerTool("classroom_list_coursework", {
     title: "Classroom 과제 목록 읽기", description: "선택한 수업의 과제·자료·마감·배점·게시 상태를 최근 수정순으로 읽습니다.",
     inputSchema: {
       courseId: z.string().trim().min(1).max(200),
@@ -149,7 +163,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("CLASSROOM_COURSEWORK_LIST_FAILED", error); }
   });
 
-  server.registerTool("classroom_list_students", {
+  registerTool("classroom_list_students", {
     title: "Classroom 학생 명단 읽기", description: "선택한 수업의 학생 이름·사용자 ID·이메일을 읽습니다. 읽기 확장 권한이 필요합니다.",
     inputSchema: {
       courseId: z.string().trim().min(1).max(200),
@@ -161,7 +175,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("CLASSROOM_STUDENTS_LIST_FAILED", error); }
   });
 
-  server.registerTool("classroom_list_student_submissions", {
+  registerTool("classroom_list_student_submissions", {
     title: "Classroom 학생 제출물 읽기", description: "과제별 제출 상태·제출 시각·점수·답변·첨부 파일을 읽습니다.",
     inputSchema: {
       courseId: z.string().trim().min(1).max(200),
@@ -175,7 +189,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("CLASSROOM_SUBMISSIONS_LIST_FAILED", error); }
   });
 
-  server.registerTool("drive_search_files", {
+  registerTool("drive_search_files", {
     title: "Drive 파일 검색", description: "이 MCP가 만들었거나 접근 권한을 받은 Drive 파일을 이름·MIME 유형·상위 폴더로 검색합니다.",
     inputSchema: { query: z.string().max(200).optional(), mimeType: z.string().max(200).optional(), parentId: z.string().max(200).optional() }, annotations: readOnly
   }, async ({ query, mimeType, parentId }) => {
@@ -184,7 +198,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("DRIVE_SEARCH_FAILED", error); }
   });
 
-  server.registerTool("drive_get_file_metadata", {
+  registerTool("drive_get_file_metadata", {
     title: "Drive 파일 정보 읽기", description: "파일 이름·유형·위치·수정 시각·소유자·가능한 작업 등 Drive 메타데이터를 읽습니다.",
     inputSchema: { file: googleFileRefSchema }, annotations: readOnly
   }, async ({ file }) => {
@@ -193,7 +207,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("DRIVE_FILE_READ_FAILED", error); }
   });
 
-  server.registerTool("docs_import_hwp", {
+  registerTool("docs_import_hwp", {
     title: "한글 파일을 Google 문서로 만들기",
     description: "Drive의 HWP/HWPX 파일을 kordoc으로 읽어 편집 가능한 Google Docs로 만듭니다. 표와 본문을 변환하며 원본 서식·이미지 배치는 확인이 필요합니다. 먼저 drive_search_files 또는 drive_get_file_metadata로 대상을 확인하세요.",
     inputSchema: {
@@ -207,7 +221,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("HWP_IMPORT_FAILED", error); }
   });
 
-  server.registerTool("docs_export_hwpx", {
+  registerTool("docs_export_hwpx", {
     title: "Google 문서를 한글 파일로 만들기",
     description: "Google Docs를 DOCX로 내보내 kordoc으로 HWPX를 생성하고 Drive에 저장합니다. 원본 문서는 수정하지 않습니다. 표·본문은 변환되지만 Google 고유 요소와 페이지 배치는 확인이 필요합니다.",
     inputSchema: {
@@ -221,7 +235,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("HWPX_EXPORT_FAILED", error); }
   });
 
-  server.registerTool("drive_create_folder", {
+  registerTool("drive_create_folder", {
     title: "Drive 폴더 생성", description: "Google Drive에 새 폴더를 만듭니다.",
     inputSchema: { name: z.string().trim().min(1).max(200), parentId: z.string().max(200).optional() }, annotations: createAction
   }, async ({ name, parentId }) => {
@@ -238,7 +252,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     const characters = blocks.reduce((total, block) => total + (block.heading?.length ?? 0) + block.text.length, 0);
     if (characters > 500_000) context.addIssue({ code: z.ZodIssueCode.custom, message: "문서 전체 텍스트는 500,000자를 넘을 수 없습니다." });
   });
-  server.registerTool("docs_create_document", {
+  registerTool("docs_create_document", {
     title: "Google Docs 문서 생성",
     description: "제목 상자·절 제목·글머리 목록·표·참고 상자가 있는 A4 Google Docs 문서를 만듭니다. 본문(text)에 간단한 서식을 쓸 수 있습니다. standardCodes를 주면 제목 아래에 성취기준 표와 출처를 넣습니다. 교수·학습 과정안은 docs_create_lesson_plan을 쓰세요.",
     inputSchema: {
@@ -264,7 +278,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     minutes: z.number().int().min(0).max(300).optional().describe("분. 같은 단계의 시간은 합쳐 한 칸에 적습니다."),
     notes: z.array(z.string().max(500)).max(10).optional().describe("자료·유의점. 자료는 ▣, 유의점은 ※로 시작하세요.")
   });
-  server.registerTool("docs_create_lesson_plan", {
+  registerTool("docs_create_lesson_plan", {
     title: "교수·학습 과정안 생성",
     description: "학교 서식처럼 제목 상자·기본 정보표(교과·단원·차시·교과서·성취기준·학습 목표·자료)·차시별 흐름·단계별 교수·학습 과정표·평가 계획표·지도상 유의점을 갖춘 A4 과정안을 Google Docs로 만듭니다. 차시가 여럿이면 차시마다 새 쪽에서 시작하고, 표 머리행은 쪽마다 반복됩니다. 성취기준은 standardCodes로만 넘기세요.",
     inputSchema: {
@@ -322,7 +336,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     if (section.kind === "checklist" && !section.items?.length) context.addIssue({ code: z.ZodIssueCode.custom, message: "checklist 에는 items가 필요합니다." });
     if (section.kind === "text" && !section.text?.trim()) context.addIssue({ code: z.ZodIssueCode.custom, message: "text 에는 text가 필요합니다." });
   });
-  server.registerTool("docs_create_worksheet", {
+  registerTool("docs_create_worksheet", {
     title: "학생용 학습지 생성",
     description: "교과서 활동 쪽처럼 학년·반·번호·이름 칸, 학습 목표 상자, 활동 이름표, 번호 붙은 물음, 이름표 달린 줄 있는 답 칸, 빈 표(장단점·평가표), ○ 자기 점검표, 도움말 상자가 있는 A4 학습지를 Google Docs로 만듭니다. 학생용이라 성취기준 원문은 넣지 않습니다.",
     inputSchema: {
@@ -343,7 +357,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("WORKSHEET_CREATE_FAILED", error); }
   });
 
-  server.registerTool("docs_read_document", {
+  registerTool("docs_read_document", {
     title: "Google Docs 문서 읽기", description: "문서 URL 또는 ID로 본문과 모든 문서 탭을 읽습니다. 표는 탭으로 구분한 텍스트로 보존합니다.",
     inputSchema: {
       document: googleFileRefSchema,
@@ -363,7 +377,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     const cells = sheets.reduce((total, sheet) => total + (sheet.rows ?? []).reduce((rowTotal, row) => rowTotal + row.length, 0), 0);
     if (cells > 200_000) context.addIssue({ code: z.ZodIssueCode.custom, message: "통합 문서는 200,000개 셀을 넘을 수 없습니다." });
   });
-  server.registerTool("sheets_create_workbook", {
+  registerTool("sheets_create_workbook", {
     title: "Google Sheets 생성", description: "여러 시트와 초기 행 데이터를 포함한 Google Sheets 파일을 생성합니다. 문자열 수식, 고정 머리글, 넉넉한 행 높이와 내용에 맞춘 열 너비를 지원합니다.",
     inputSchema: {
       title: z.string().trim().min(1).max(200),
@@ -379,7 +393,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
   const spreadsheetRefSchema = googleFileRefSchema
     .describe("스프레드시트 ID 또는 https://docs.google.com/spreadsheets/d/... 주소");
 
-  server.registerTool("sheets_list_sheets", {
+  registerTool("sheets_list_sheets", {
     title: "Google Sheets 탭 목록",
     description: "스프레드시트에 어떤 시트(탭)가 있는지, 각 시트의 행·열 크기와 숨김 여부를 확인합니다. 값을 읽기 전에 먼저 호출해 대상 범위를 정하세요.",
     inputSchema: { spreadsheet: spreadsheetRefSchema },
@@ -390,7 +404,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("SPREADSHEET_LIST_FAILED", error); }
   });
 
-  server.registerTool("sheets_read_values", {
+  registerTool("sheets_read_values", {
     title: "Google Sheets 값 읽기",
     description: "스프레드시트의 값을 읽습니다. range 를 비우면 첫 시트를 읽습니다. 기본은 화면에 보이는 값이라 수식과 IMPORTRANGE 결과도 그대로 읽힙니다. 큰 시트는 maxRows 로 잘라 읽으세요.",
     inputSchema: {
@@ -406,7 +420,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("SPREADSHEET_READ_FAILED", error); }
   });
 
-  server.registerTool("sheets_inspect_workbook", {
+  registerTool("sheets_inspect_workbook", {
     title: "Google Sheets 구조·수식 진단",
     description: "셀 값과 수식 본문을 노출하지 않고 탭 구조, 수식 함수, 시트 간 의존성, 수식 오류, 드롭다운·체크박스, 조건부 서식, 차트와 보호 범위를 진단합니다.",
     inputSchema: {
@@ -436,7 +450,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     if (new Set(numbers).size !== numbers.length) context.addIssue({ code: z.ZodIssueCode.custom, message: "학생 번호는 중복될 수 없습니다." });
   });
 
-  server.registerTool("education_create_assessment_tracker", {
+  registerTool("education_create_assessment_tracker", {
     title: "교육용 과정중심평가 시스템 생성",
     description: "학생명단·평가계획·평가기록·학생별현황·제출현황·관찰기록·대시보드가 연결된 교육용 Google Sheets를 만듭니다. 넉넉한 입력 칸, 용도별 열 너비, 드롭다운, 체크박스, 조건부 서식, 차트와 보호 경고를 포함합니다. standardCodes를 주면 평가계획 탭에 교과·영역·성취기준 원문을 미리 채웁니다.",
     inputSchema: {
@@ -459,7 +473,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("EDUCATION_ASSESSMENT_TRACKER_CREATE_FAILED", error); }
   });
 
-  server.registerTool("education_create_classroom_submission_tracker", {
+  registerTool("education_create_classroom_submission_tracker", {
     title: "Classroom 제출 현황 시트 생성",
     description: "Classroom 학생 명단과 특정 과제의 제출·지각·점수를 읽어 제출현황과 대시보드가 있는 개인정보 보호형 스냅샷 시트를 만듭니다. 읽기 확장 로그인(--read)이 필요합니다.",
     inputSchema: {
@@ -499,7 +513,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     }
   });
 
-  server.registerTool("slides_create_presentation", {
+  registerTool("slides_create_presentation", {
     title: "Google Slides 생성", description: "제목과 본문으로 구성된 Google Slides 프레젠테이션을 생성하고 수업용 기본 테마와 읽기 좋은 여백을 적용합니다.",
     inputSchema: { title: z.string().trim().min(1).max(200), slides: z.array(z.object({ title: z.string().max(500), body: z.string().max(20_000).optional() })).min(1).max(50).superRefine((slides, context) => {
       const characters = slides.reduce((total, slide) => total + slide.title.length + (slide.body?.length ?? 0), 0);
@@ -511,7 +525,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("PRESENTATION_CREATE_FAILED", error); }
   });
 
-  server.registerTool("slides_read_presentation", {
+  registerTool("slides_read_presentation", {
     title: "Google Slides 읽기", description: "프레젠테이션 URL 또는 ID로 슬라이드별 텍스트·표·발표자 노트를 읽습니다.",
     inputSchema: {
       presentation: googleFileRefSchema,
@@ -531,7 +545,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
   })
     .refine((value) => value.type !== "MULTIPLE_CHOICE" || Boolean(value.choices?.length), { message: "객관식 문항에는 choices가 필요합니다." })
     .refine((value) => value.type !== "MULTIPLE_CHOICE" || !value.correctAnswer || value.choices?.includes(value.correctAnswer), { message: "객관식 정답은 choices 중 하나여야 합니다." });
-  server.registerTool("forms_create_quiz", {
+  registerTool("forms_create_quiz", {
     title: "Google Forms 퀴즈 생성", description: "객관식·단답형·서술형 문항과 정답·배점이 포함된 Google Forms 퀴즈를 생성합니다. standardCodes를 주면 퀴즈 설명 끝에 관련 성취기준을 붙입니다(학생에게도 보입니다).",
     inputSchema: { title: z.string().trim().min(1).max(200), description: z.string().max(5_000).optional(), questions: z.array(quizQuestionSchema).min(1).max(100), standardCodes: standardCodesSchema(10), parentFolderId: z.string().max(200).optional() }, annotations: createAction
   }, async ({ title, description, questions, standardCodes, parentFolderId }) => {
@@ -542,7 +556,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("QUIZ_CREATE_FAILED", error); }
   });
 
-  server.registerTool("forms_read_form", {
+  registerTool("forms_read_form", {
     title: "Google Forms 설문 읽기", description: "설문 또는 퀴즈의 제목·설명·문항 유형·선택지·배점·정답을 읽습니다.",
     inputSchema: {
       form: googleFileRefSchema,
@@ -554,7 +568,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("FORM_READ_FAILED", error); }
   });
 
-  server.registerTool("forms_list_responses", {
+  registerTool("forms_list_responses", {
     title: "Google Forms 응답 읽기", description: "설문 응답자의 제출 시각·답변·퀴즈 점수를 읽습니다. 학생 개인정보가 포함될 수 있으므로 필요한 범위만 요청하세요.",
     inputSchema: {
       form: googleFileRefSchema,
@@ -566,7 +580,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     catch (error) { return errorResult("FORM_RESPONSES_LIST_FAILED", error); }
   });
 
-  server.registerTool("classroom_create_assignment_draft", {
+  registerTool("classroom_create_assignment_draft", {
     title: "Classroom 과제 초안 생성", description: "Classroom에 DRAFT 과제를 생성하고 게시 승인 ID를 반환합니다. 학생에게 아직 보이지 않습니다. standardCodes를 주면 과제 설명 끝에 관련 성취기준을 붙입니다.",
     inputSchema: {
       courseId: z.string().min(1).max(200), title: z.string().trim().min(1).max(300), description: z.string().max(30_000).optional(),
@@ -584,7 +598,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     } catch (error) { return errorResult("ASSIGNMENT_DRAFT_FAILED", error); }
   });
 
-  server.registerTool("classroom_publish_assignment", {
+  registerTool("classroom_publish_assignment", {
     title: "Classroom 과제 게시", description: "승인된 과제 초안을 학생에게 게시합니다. 바로 전에 사용자 확인을 받아야 합니다.",
     inputSchema: { courseId: z.string().min(1).max(200), courseWorkId: z.string().min(1).max(200), approvalId: z.string().uuid(), confirmation: z.literal("PUBLISH") }, annotations: externalChange
   }, async ({ courseId, courseWorkId, approvalId }) => {
@@ -596,7 +610,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     } catch (error) { return errorResult("ASSIGNMENT_PUBLISH_FAILED", error); }
   });
 
-  server.registerTool("drive_prepare_share", {
+  registerTool("drive_prepare_share", {
     title: "Drive 공유 승인 준비", description: "공유 내용을 정리하고 15분간 유효한 승인 ID를 만듭니다. 아직 권한은 바뀌지 않습니다.",
     inputSchema: { fileId: z.string().min(1).max(200), type: z.enum(["user", "group", "domain", "anyone"]), role: z.enum(["reader", "commenter", "writer"]), emailAddress: z.string().email().optional(), domain: z.string().max(253).optional() }, annotations: createAction
   }, async (input) => {
@@ -607,7 +621,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     return jsonResult({ approval: createApproval("drive.share", input), message: "공유 대상과 권한을 사용자에게 확인하세요." });
   });
 
-  server.registerTool("drive_share_file", {
+  registerTool("drive_share_file", {
     title: "Drive 파일 공유", description: "승인된 대상에게 Drive 파일 권한을 부여합니다. 바로 전에 사용자 확인을 받아야 합니다.",
     inputSchema: { approvalId: z.string().uuid(), confirmation: z.literal("SHARE") }, annotations: externalChange
   }, async ({ approvalId }) => {
@@ -619,6 +633,7 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     } catch (error) { return errorResult("DRIVE_SHARE_FAILED", error); }
   });
 
+  if (!workspaceReadonly) {
   server.registerPrompt("google_document_helper", {
     title: "한글·Google 문서 변환 도우미",
     description: "Drive의 HWP/HWPX를 Google Docs로 만들거나 Google Docs를 HWPX로 저장하는 흐름을 안내합니다.",
@@ -646,5 +661,6 @@ export function createServer(overrides: Partial<WorkspaceServices> = {}) {
     }
   }, (args) => ({ messages: [{ role: "user", content: { type: "text", text: lessonPackagePrompt(args) } }] }));
 
+  }
   return server;
 }

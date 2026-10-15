@@ -22,3 +22,11 @@ playwright-report/
 !*.example
 cloud/worker-configuration.d.ts
 cloud/wrangler.personal.jsonc
+.release-readiness.local.json
+
+# User-owned pilot credentials and content-free evidence
+.live-pilot/
+
+# Content-free local verification evidence (not part of source or npm)
+.codex-host-candidate-verification.local.json
+.installed-candidate-host-verification.local.json

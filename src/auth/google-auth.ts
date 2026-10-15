@@ -5,8 +5,7 @@ import { chmod, mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/pro
 import path from "node:path";
 import { google } from "googleapis";
 import { CodeChallengeMethod, type Credentials } from "google-auth-library";
-import { credentialsPath, googleScopes, readAccessEnabled, tokenPath } from "../config.js";
-import { BUNDLED_GOOGLE_OAUTH_CLIENT } from "./bundled-oauth-client.js";
+import { credentialsPath, googleScopes, readAccessEnabled, tokenPath, workspaceReadonlyEnabled, loginCommand, assertWorkspaceReadonlyScopes } from "../config.js";
 import { googleContext } from "./context.js";
 
 export type AuthStatus = {
@@ -20,6 +19,7 @@ export type AuthStatus = {
   unexpectedScopes?: string[];
   tokenFileProtected?: boolean;
   readAccessEnabled: boolean;
+  scopeProfile?: "legacy" | "workspace-readonly";
   message: string;
 };
 
@@ -86,6 +86,19 @@ type OAuthClientConfig = {
 };
 
 async function loadClientConfig(): Promise<{ config: OAuthClientConfig; source: AuthStatus["oauthClientSource"] }> {
+  if (workspaceReadonlyEnabled()) {
+    if (!process.env.EDU_WORKSPACE_CREDENTIALS_PATH) {
+      throw new Error("PUBLIC_AUTH_NOT_READY: 공개 client ID + PKCE로 사용자 직접 로그인·갱신을 아직 검증하지 않아 공개 로그인을 시작하지 않았습니다. 일반 사용자가 Cloud 프로젝트나 JSON을 만들 필요는 없습니다.");
+    }
+    // Agent mode never falls back to the old bundled/environment client.
+    let credentials: { installed?: OAuthClientConfig };
+    try { credentials = (await readJson(credentialsPath())) as { installed?: OAuthClientConfig }; }
+    catch { throw new Error("Agent용 Desktop OAuth JSON을 읽지 못했습니다. 전용 경로와 JSON 형식을 사용자 기기에서 확인하세요."); }
+    if (!credentials.installed?.client_id || !Array.isArray(credentials.installed.redirect_uris) || !credentials.installed.redirect_uris.length) {
+      throw new Error("Agent용 Desktop OAuth JSON을 전용 credentials.json에 직접 보관하세요.");
+    }
+    return { config: credentials.installed, source: "credentials_file" };
+  }
   const environmentClientId = process.env.EDU_WORKSPACE_GOOGLE_CLIENT_ID?.trim();
   if (environmentClientId) {
     return {
@@ -106,21 +119,10 @@ async function loadClientConfig(): Promise<{ config: OAuthClientConfig; source: 
     const clientConfig = credentials.installed ?? credentials.web;
     if (clientConfig) return { config: clientConfig, source: "credentials_file" };
   } catch {
-    // Continue to the bundled public client.
+    // No secret fallback is distributed in the public candidate.
   }
 
-  if (BUNDLED_GOOGLE_OAUTH_CLIENT.clientId) {
-    return {
-      source: "bundled",
-      config: {
-        client_id: BUNDLED_GOOGLE_OAUTH_CLIENT.clientId,
-        client_secret: BUNDLED_GOOGLE_OAUTH_CLIENT.clientSecret,
-        redirect_uris: ["http://127.0.0.1"]
-      }
-    };
-  }
-
-  throw new Error("공용 Google OAuth 앱이 아직 구성되지 않았습니다. 개발자는 credentials.json 또는 EDU_WORKSPACE_GOOGLE_CLIENT_ID를 설정하세요.");
+  throw new Error("기존 웹·고급 모드는 사용자 기기의 기존 OAuth 설정이 필요합니다. 공개 패키지에는 client secret을 넣지 않습니다. 기존 버전·토큰을 자동 변경하지 않았습니다.");
 }
 
 function createOAuthClient(config: OAuthClientConfig, redirectUri?: string) {
@@ -151,7 +153,7 @@ export async function getAuthStatus(): Promise<AuthStatus> {
     const unexpectedScopes = grantedScopes.filter((scope) => !expectedScopes.includes(scope));
     const tokenFileProtected = await protectTokenFile(tokenFile);
     return {
-      authenticated: true,
+      authenticated: !workspaceReadonlyEnabled() || (!missingScopes.length && !unexpectedScopes.length),
       oauthClientConfigured: true,
       oauthClientSource,
       credentialsPath: credentialFile,
@@ -161,7 +163,12 @@ export async function getAuthStatus(): Promise<AuthStatus> {
       unexpectedScopes,
       tokenFileProtected,
       readAccessEnabled: readAccessEnabled(),
-      message: missingScopes.length
+      scopeProfile: workspaceReadonlyEnabled() ? "workspace-readonly" : "legacy",
+      message: workspaceReadonlyEnabled()
+        ? (missingScopes.length || unexpectedScopes.length
+          ? `승인된 읽기 범위 5개와 일치하지 않습니다. ${loginCommand()}으로 다시 연결하세요. Classroom·쓰기 권한을 추가하지 마세요.`
+          : "Google 계정이 Workspace 읽기 전용 범위 5개로 연결되어 있습니다.")
+        : missingScopes.length
         ? "Google 토큰에 필요한 권한이 없습니다. disconnect 후 다시 로그인하세요."
         : unexpectedScopes.length
           ? "Google 계정은 연결되어 있지만 이전의 추가 권한이 남아 있습니다. 최소 권한으로 다시 로그인하는 것을 권장합니다."
@@ -178,7 +185,14 @@ export async function getAuthStatus(): Promise<AuthStatus> {
       tokenPath: tokenFile,
       grantedScopes: [],
       readAccessEnabled: readAccessEnabled(),
-      message: oauthClientSource === "missing"
+      scopeProfile: workspaceReadonlyEnabled() ? "workspace-readonly" : "legacy",
+      message: workspaceReadonlyEnabled()
+        ? (oauthClientSource === "missing"
+          ? (process.env.EDU_WORKSPACE_CREDENTIALS_PATH
+            ? `운영자가 지정한 로컬 Desktop OAuth 설정을 ${credentialFile}에서 확인하세요. 일반 사용자에게 JSON 생성을 요청하지 마세요.`
+            : "공개 Agent 인증 경로가 아직 준비되지 않았습니다. 설치는 인증 완료가 아니며, 일반 사용자가 Cloud 프로젝트나 JSON을 만들 필요는 없습니다.")
+          : `Google Agent 계정이 연결되지 않았습니다. ${loginCommand()}을 직접 실행하세요.`)
+        : oauthClientSource === "missing"
         ? "공용 Google OAuth 앱이 아직 구성되지 않았습니다. 개발용 credentials.json 또는 환경 변수가 필요합니다."
         : "Google 계정이 연결되지 않았습니다. edu-workspace-mcp login을 실행하세요."
     };
@@ -253,6 +267,7 @@ export async function login(options: { openBrowser?: boolean } = {}): Promise<Au
     throw new Error("갱신 토큰을 받지 못했습니다. Google 계정에서 기존 앱 권한을 해제한 뒤 다시 로그인하세요.");
   }
 
+  assertWorkspaceReadonlyScopes(tokens.scope);
   await writeTokenAtomically(tokenFile, tokens);
   return getAuthStatus();
 }
@@ -266,7 +281,14 @@ export async function getAuthorizedClient() {
   const tokenFile = tokenPath();
   const { config } = await loadClientConfig();
   const client = createOAuthClient(config);
-  client.setCredentials((await readJson(tokenFile)) as Credentials);
+  let credentials: Credentials;
+  try { credentials = (await readJson(tokenFile)) as Credentials; }
+  catch (error) {
+    if (workspaceReadonlyEnabled()) throw new Error(`Agent 토큰을 읽지 못했습니다. ${loginCommand()}으로 다시 연결하세요.`);
+    throw error;
+  }
+  assertWorkspaceReadonlyScopes(credentials.scope);
+  client.setCredentials(credentials);
   return client;
 }
 
