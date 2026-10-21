@@ -20,6 +20,12 @@
 
 정식 게시 뒤에만 해당 버전의 `setup <app> --workspace-edit`, `login --workspace-edit`, `doctor --workspace-edit`를 사용합니다. 1.1.2에 이 옵션을 전달하지 않습니다. 후보 시험은 운영자가 준비한 로컬 후보로 진행합니다.
 
+## Google 검증과 공개 조건
+
+2026-10-21 실제 Google 콘솔에서 기존 읽기 범위5개는 검증됐지만 `documents`와 `spreadsheets` 편집 범위는 아직 등록·검증되지 않은 것을 확인했습니다. 개인 후보 시험의 계정 동의와 Google의 공개 앱 범위 검증은 별개입니다. 개인·개발 시험은 제한된 후보로 진행하고, 두 편집 범위에 대한 Google 검증 완료와 실제 생성·수정 검사를 모두 확인한 뒤에만 공개 Agent를 게시합니다. 기존 읽기 범위를 삭제하거나 앱 전체를 Testing으로 되돌리지 않습니다.
+
+새 민감 범위의 공개 사용에는 검증이 필요하며, 검증 전에는 미확인 앱 경고와 사용자 제한이 적용될 수 있습니다. [Google 민감 범위 검증 안내](https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scope-verification)를 따릅니다. 사용자 로그인·동의와 Google 심사 제출은 운영자가 직접 확인합니다.
+
 ## 요청과 수정 확인
 
 작업마다16~100자의 고유 requestId가 필요합니다. 같은 ID는 다시 실행하지 않습니다. 생성 중 시간 초과가 났다고 새 ID로 즉시 다시 만들지 말고 먼저 Google에서 결과를 확인합니다. Docs 수정은 먼저 읽은 revisionId를 requiredRevisionId로 전달하여 다른 편집을 덮어쓰지 않습니다. Sheets 값은 기본 RAW로 기록하며 사용자가 수식을 요청한 경우만 USER_ENTERED를 사용합니다. Sheets API는 Docs와 같은 revision 조건부 쓰기를 제공하지 않으므로 정확한 범위를 먼저 확인합니다.

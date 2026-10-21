@@ -52,7 +52,7 @@ test('edit release cannot publish from read-only or simulated evidence',()=>{
  const target={...expected,version:'1.2.0'};const proof={...fixture(),version:'1.2.0'};
  assert.ok(releaseReasons(proof,target,now).length);
  proof.approvedGoogleEditScopes=[...EDIT_SCOPES];
- const editChecks=['writeGoogleAuthorization','documentCreateAndEdit','spreadsheetCreateAndEdit','readTokenWriteDenied','writeDuplicateDenied','writeLimitStopVerified'];
+ const editChecks=['editScopesVerifiedByGoogle','writeGoogleAuthorization','documentCreateAndEdit','spreadsheetCreateAndEdit','readTokenWriteDenied','writeDuplicateDenied','writeLimitStopVerified'];
  for(const key of editChecks)proof.checks[key]=true;
  assert.deepEqual(releaseReasons(proof,target,now),[]);
  for(const key of editChecks){proof.checks[key]=false;assert.ok(releaseReasons(proof,target,now).length);proof.checks[key]=true;}

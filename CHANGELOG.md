@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0 Agent candidate - 2026-10-21 (unpublished)
+
+- 별도 `--workspace-edit` 연결에 Docs·Sheets 생성·수정 도구5개를 추가합니다. 읽기 연결과 인증 저장소를 분리합니다.
+- 문서 revision·고유 요청 ID와 무료 쓰기20회/일 제한을 적용합니다. 파일 삭제·공유 도구는 제공하지 않습니다.
+- MCP SDK 등 운영 의존성의 알려진 취약점을 수정합니다.
+- 실제 Google 편집 동의·생성/수정 검증, 새 민감 범위의 Google 검증과 정식 npm 공개는 아직 전입니다.
+
 ## 1.1.2 Agent - 2026-10-15
 
 - 기본 MCP 설치를 승인된 Workspace 읽기 5개 Agent로 분리하고 기존 웹·고급 모드는 명시적 선택으로 유지합니다.
