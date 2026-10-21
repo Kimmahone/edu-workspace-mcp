@@ -1,6 +1,6 @@
 {
   "name": "edu-workspace-mcp",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "교육자를 위한 Google Docs, Sheets, Slides, Forms, Drive 및 Classroom MCP 서버",
   "license": "MIT",
   "type": "module",
@@ -38,7 +38,8 @@
     "docs/PUBLIC_MCP_INSTALL.md",
     "docs/WORKSPACE_READONLY_AGENT.md",
     "docs/PUBLIC_AUTH_OPTIONS.md",
-    "docs/PRIVACY.md"
+    "docs/PRIVACY.md",
+    "docs/WORKSPACE_EDIT_AGENT.md"
   ],
   "engines": {
     "node": ">=22"
@@ -51,7 +52,7 @@
     "check": "tsc --noEmit -p tsconfig.json",
     "curriculum:build": "node scripts/build-curriculum-data.mjs && node scripts/build-learning-map.mjs",
     "test": "npm run build && node scripts/run-tests.mjs && node --test scripts/release-guard.test.mjs",
-    "test:mcp": "npm run build && tsx src/tests/mcp-smoke.ts",
+    "test:mcp": "npm run build && tsx src/tests/mcp-smoke.ts && tsx src/tests/edit-bridge-smoke.ts",
     "test:e2e": "npm run build && node scripts/e2e-google.mjs",
     "version:check": "node scripts/check-version.mjs",
     "release:check": "npm run version:check && npm run check && npm test && npm run test:mcp && npm audit --omit=dev && npm pack --dry-run",
@@ -81,13 +82,13 @@
     "tag": "agent"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.31.0",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "google-auth-library": "10.9.1",
     "googleapis": "178.0.0",
     "kordoc": "4.15.4",
-    "markdown-it": "^15.0.2",
+    "markdown-it": "15.0.3",
     "pg": "^8.23.0",
-    "sanitize-html": "^2.17.7",
+    "sanitize-html": "2.18.0",
     "smol-toml": "1.9.1",
     "zod": "3.25.76",
     "zod-to-json-schema": "^3.25.2"

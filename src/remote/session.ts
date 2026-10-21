@@ -6,6 +6,8 @@ import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 export const DEFAULT_REMOTE_URL='https://edu-workspace-mcp-agent.kimjj0709.workers.dev/mcp';
 export const REMOTE_SCOPE='workspace.readonly offline_access';
+export const editEnabled=()=>process.env.EDU_WORKSPACE_SCOPE_PROFILE==='workspace-edit';
+export const remoteScope=()=>editEnabled()?'workspace.readonly workspace.edit offline_access':REMOTE_SCOPE;
 export type RemoteSession={serverUrl:string;clientId:string;redirectUri:string;accessToken:string;refreshToken:string;expiresAt:number};
 export function remoteUrl() {
  const u=new URL(process.env.EDU_WORKSPACE_REMOTE_URL??DEFAULT_REMOTE_URL);
@@ -15,7 +17,7 @@ export function remoteUrl() {
 export function sessionPath() {
  const profile=process.env.EDU_WORKSPACE_REMOTE_PROFILE??'default';
  if(!['default','codex','claude','claude-desktop','cursor'].includes(profile)) throw new Error('지원하지 않는 원격 Agent profile입니다.');
- const directory=process.env.EDU_WORKSPACE_REMOTE_DIRECTORY??path.join(os.homedir(),'.edu-workspace-mcp-agent','remote');
+ const directory=process.env.EDU_WORKSPACE_REMOTE_DIRECTORY??path.join(os.homedir(),'.edu-workspace-mcp-agent',editEnabled()?'remote-edit':'remote');
  if(!path.isAbsolute(directory))throw new Error('원격 Agent 저장 폴더는 절대 경로여야 합니다.');
  return path.join(directory,profile+'.json');
 }
@@ -52,12 +54,12 @@ async function jsonResponse(response: Response) {
 }
 export function validateRemoteTokens(data: Record<string,unknown>) {
  const scope=new Set(typeof data.scope==='string'?data.scope.split(/\s+/):[]);
- if(!scope.has('workspace.readonly') || [...scope].some(s=>!['workspace.readonly','offline_access'].includes(s)) || (typeof data.token_type!=='string' || data.token_type.toLowerCase()!=='bearer') || typeof data.access_token!=='string' || data.access_token.length>4096 || typeof data.refresh_token!=='string' || data.refresh_token.length>4096 || typeof data.expires_in!=='number' || data.expires_in<=0 || data.expires_in>300) throw new Error('원격 MCP 토큰의 권한·수명을 검증하지 못했습니다.');
+ if(!scope.has('workspace.readonly') || editEnabled()!==scope.has('workspace.edit') || [...scope].some(s=>!remoteScope().split(' ').includes(s)) || (typeof data.token_type!=='string' || data.token_type.toLowerCase()!=='bearer') || typeof data.access_token!=='string' || data.access_token.length>4096 || typeof data.refresh_token!=='string' || data.refresh_token.length>4096 || typeof data.expires_in!=='number' || data.expires_in<=0 || data.expires_in>300) throw new Error('원격 MCP 토큰의 권한·수명을 검증하지 못했습니다.');
  return {accessToken:data.access_token,refreshToken:data.refresh_token,expiresAt:Date.now()+data.expires_in*1000};
 }
 export async function remoteSession(file=sessionPath(),server=remoteUrl().href,send:typeof fetch=fetch,options:{forceRefresh?:boolean}={}) {
  return withSessionLock(file,async()=>{
-  const saved=await readSession(file,server);if(!saved) throw new Error('사용자 Google 연결이 필요합니다. edu-workspace-mcp login을 직접 실행하세요.');
+  const saved=await readSession(file,server);if(!saved) throw new Error(`사용자 Google 연결이 필요합니다. edu-workspace-mcp login${editEnabled()?' --workspace-edit':''}을 직접 실행하세요.`);
   if(!options.forceRefresh && saved.expiresAt>Date.now()+60000) return saved;
   const origin=new URL(server).origin;
   const result=await jsonResponse(await send(origin+'/oauth/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'refresh_token',refresh_token:saved.refreshToken,client_id:saved.clientId,resource:server}),redirect:'error',signal:AbortSignal.timeout(20000)}));
@@ -66,7 +68,7 @@ export async function remoteSession(file=sessionPath(),server=remoteUrl().href,s
 }
 export async function remoteStatus() {
  const saved=await readSession(sessionPath(),remoteUrl().href);
- return {authenticated:Boolean(saved),profile:'workspace-readonly',mode:'remote',tokenPath:sessionPath(),message:saved?'원격 Agent 연결 정보가 있습니다. 실제 서버·Google 읽기는 별도 확인이 필요합니다.':'login을 사용자 직접 실행하세요.'};
+ return {authenticated:Boolean(saved),profile:editEnabled()?'workspace-edit':'workspace-readonly',mode:'remote',tokenPath:sessionPath(),message:saved?'원격 Agent 연결 정보가 있습니다. 실제 서버·Google 읽기는 별도 확인이 필요합니다.':'login을 사용자 직접 실행하세요.'};
 }
 export async function loginRemote(options:{openBrowser?:boolean}={}) {
  const target=remoteUrl();const origin=target.origin;const file=sessionPath();
@@ -93,9 +95,9 @@ export async function loginRemote(options:{openBrowser?:boolean}={}) {
  const timer=setTimeout(()=>rejectCode(new Error('로그인 대기 시간이 끝났습니다. 다시 실행하세요.')),600000);
  try {
   const redirectUri=`http://127.0.0.1:${port}/oauth2callback`;
-  const registered=await jsonResponse(await fetch(origin+'/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({client_name:'Edu Workspace MCP Agent',redirect_uris:[redirectUri],grant_types:['authorization_code','refresh_token'],response_types:['code'],token_endpoint_auth_method:'none',scope:REMOTE_SCOPE}),redirect:'error',signal:AbortSignal.timeout(15000)}));
+  const registered=await jsonResponse(await fetch(origin+'/register',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({client_name:'Edu Workspace MCP Agent',redirect_uris:[redirectUri],grant_types:['authorization_code','refresh_token'],response_types:['code'],token_endpoint_auth_method:'none',scope:remoteScope()}),redirect:'error',signal:AbortSignal.timeout(15000)}));
   if(typeof registered.client_id!=='string' || registered.client_secret) throw new Error('공개 MCP 앱 등록을 확인하지 못했습니다.');
-  const url=new URL(origin+'/authorize');url.search=new URLSearchParams({client_id:registered.client_id,response_type:'code',redirect_uri:redirectUri,resource:target.href,scope:REMOTE_SCOPE,state,code_challenge:challenge,code_challenge_method:'S256'}).toString();authorizeUrl=url.href;
+  const url=new URL(origin+'/authorize');url.search=new URLSearchParams({client_id:registered.client_id,response_type:'code',redirect_uri:redirectUri,resource:target.href,scope:remoteScope(),state,code_challenge:challenge,code_challenge_method:'S256'}).toString();authorizeUrl=url.href;
   const start=`http://127.0.0.1:${port}/`;
   console.log('Google 계정 선택·동의는 사용자가 직접 진행하세요. 브라우저가 열리지 않으면 이 주소를 여세요: '+start);
   if(options.openBrowser!==false) {const args=process.platform==='darwin'?['open',[start]]:process.platform==='win32'?['cmd',['/d','/c','start','',start]]:['xdg-open',[start]];spawn(args[0] as string,args[1] as string[],{stdio:'ignore',shell:false}).on('error',()=>{});}

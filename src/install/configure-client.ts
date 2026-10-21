@@ -8,7 +8,7 @@ import { parse, stringify } from "smol-toml";
 import { PACKAGE_SPEC } from "../version.js";
 
 export type InstallClient = "codex" | "claude" | "claude-desktop" | "cursor";
-export type InstallOptions = { readAccess?: boolean; workspaceReadonly?: boolean; homeDirectory?: string; platform?: NodeJS.Platform; appData?: string };
+export type InstallOptions = { readAccess?: boolean; workspaceReadonly?: boolean; workspaceEdit?: boolean; homeDirectory?: string; platform?: NodeJS.Platform; appData?: string };
 const record = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value);
 const readonlyMode = (options: InstallOptions) => options.workspaceReadonly ?? !options.readAccess;
 const serverName = (options: InstallOptions) => readonlyMode(options) ? "edu-workspace-agent" : "edu-workspace";
@@ -27,12 +27,15 @@ export function registration(options: InstallOptions = {}, previous: Record<stri
     throw new Error("같은 서버 이름에 다른 사용자 설정이 있어 덮어쓰지 않았습니다.");
   }
   const env = record(previous.env) ? { ...previous.env } : {};
-  if (readonlyMode(options)) env.EDU_WORKSPACE_SCOPE_PROFILE = "workspace-readonly";
+  if(options.workspaceEdit) {
+    for(const key of ["EDU_WORKSPACE_CREDENTIALS_PATH","EDU_WORKSPACE_TOKEN_PATH","EDU_WORKSPACE_GOOGLE_CLIENT_ID","EDU_WORKSPACE_GOOGLE_CLIENT_SECRET","EDU_WORKSPACE_READ_ACCESS"]) delete env[key];
+  }
+  if (readonlyMode(options)) env.EDU_WORKSPACE_SCOPE_PROFILE = options.workspaceEdit ? "workspace-edit" : "workspace-readonly";
   else { delete env.EDU_WORKSPACE_SCOPE_PROFILE; if (options.readAccess) env.EDU_WORKSPACE_READ_ACCESS = "1"; }
   const platform = options.platform ?? process.platform;
   return { ...previous, command: platform === "win32" ? "cmd" : "npx", args: [
     ...(platform === "win32" ? ["/d", "/s", "/c", "npx"] : []), "-y", PACKAGE_SPEC,
-    "serve", readonlyMode(options) ? "--workspace-readonly" : "--legacy"
+    "serve", readonlyMode(options) ? (options.workspaceEdit ? "--workspace-edit" : "--workspace-readonly") : "--legacy"
   ], ...(Object.keys(env).length ? { env } : {}) };
 }
 
