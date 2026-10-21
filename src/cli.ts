@@ -18,6 +18,7 @@ Node.js 22 이상이 필요합니다.
 
 기본 Agent는 Docs·Forms·Sheets·Slides 읽기 5개만 사용합니다.
 --workspace-readonly: 같은 기본 모드를 명시합니다.
+--workspace-edit: 별도 Google 동의 후 Docs·Sheets 생성·수정을 추가합니다.
 --legacy: 기존 생성·Classroom 모드를 명시적으로 선택합니다.
 --read: --legacy에서만 기존 읽기 확장을 선택합니다.
 --no-browser: login의 브라우저 자동 열기를 끕니다.
@@ -32,10 +33,10 @@ async function main() {
   if (options.command === "version") { console.log(APP_VERSION); return; }
   if (Number(process.versions.node.split(".")[0]) < 22) throw new Error("Node.js 22 이상을 설치한 뒤 다시 실행하세요: https://nodejs.org/en/download");
   if (options.legacy) delete process.env.EDU_WORKSPACE_SCOPE_PROFILE;
-  else process.env.EDU_WORKSPACE_SCOPE_PROFILE = "workspace-readonly";
+  else process.env.EDU_WORKSPACE_SCOPE_PROFILE = options.workspaceEdit ? "workspace-edit" : "workspace-readonly";
   if (options.readAccess) process.env.EDU_WORKSPACE_READ_ACCESS = "1";
 
-  const remoteAgent = !options.legacy && !process.env.EDU_WORKSPACE_CREDENTIALS_PATH;
+  const remoteAgent = !options.legacy && (options.workspaceEdit || !process.env.EDU_WORKSPACE_CREDENTIALS_PATH);
   if (options.command === "serve") {
     if (remoteAgent) await (await import("./remote/bridge.js")).serveRemote();
     else await import("./index.js");
@@ -59,8 +60,8 @@ async function main() {
     }
     const targets = options.client === "all" ? await detectClients() : [options.client];
     if (!targets.length) throw new Error("설치된 앱을 찾지 못했습니다. 사용할 앱을 설치하고 setup <app>으로 다시 진행하세요.");
-    for (const client of targets) console.log(await installClient(client, { readAccess: options.readAccess, workspaceReadonly: !options.legacy }));
-    console.log(`다음 사용자 단계: npx -y ${PACKAGE_SPEC} ${options.legacy ? "login --legacy" : "login"}${options.readAccess ? " --read" : ""}`);
+    for (const client of targets) console.log(await installClient(client, { readAccess: options.readAccess, workspaceReadonly: !options.legacy, workspaceEdit: options.workspaceEdit }));
+    console.log(`다음 사용자 단계: npx -y ${PACKAGE_SPEC} ${options.legacy ? "login --legacy" : (options.workspaceEdit ? "login --workspace-edit" : "login")}${options.readAccess ? " --read" : ""}`);
     console.log("등록은 Google 인증 완료가 아닙니다. 로그인·동의는 사용자가 브라우저에서 직접 진행하세요.");
     return;
   }

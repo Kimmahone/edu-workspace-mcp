@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { releaseReasons, READ_SCOPES, publicReleaseEvidence } from './release-conditions.mjs';
+import { releaseReasons, READ_SCOPES, EDIT_SCOPES, publicReleaseEvidence } from './release-conditions.mjs';
 const now = Date.parse('2026-10-14T02:00:00Z');
 const expected = { version: '1.1.2', serverUrl: 'https://auth.example.invalid/mcp', publicPolicySourceHash: 'fixture-policy-hash' };
 const fixture = () => ({
@@ -46,4 +46,16 @@ test('public evidence excludes private details and remains bound to the exact re
 test('export cannot turn partial, expired or unapproved evidence into a release asset',()=>{
  for(const patch of [{evidenceKind:'live-partial'},{publicationApproved:false},{costReviewExpiresAt:new Date(now).toISOString()}])assert.throws(()=>publicReleaseEvidence({...fixture(),...patch},expected,'a'.repeat(40),now));
  assert.throws(()=>publicReleaseEvidence(fixture(),expected,'invalid',now));
+});
+
+test('edit release cannot publish from read-only or simulated evidence',()=>{
+ const target={...expected,version:'1.2.0'};const proof={...fixture(),version:'1.2.0'};
+ assert.ok(releaseReasons(proof,target,now).length);
+ proof.approvedGoogleEditScopes=[...EDIT_SCOPES];
+ const editChecks=['writeGoogleAuthorization','documentCreateAndEdit','spreadsheetCreateAndEdit','readTokenWriteDenied','writeDuplicateDenied','writeLimitStopVerified'];
+ for(const key of editChecks)proof.checks[key]=true;
+ assert.deepEqual(releaseReasons(proof,target,now),[]);
+ for(const key of editChecks){proof.checks[key]=false;assert.ok(releaseReasons(proof,target,now).length);proof.checks[key]=true;}
+ const published=publicReleaseEvidence(proof,target,'c'.repeat(40),now);
+ assert.deepEqual(releaseReasons(published,{...target,sourceCommit:'c'.repeat(40)},now),[]);
 });

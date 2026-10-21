@@ -45,3 +45,7 @@ npx -y edu-workspace-mcp@1.1.2 disconnect
 ## 기존 고급 경로
 
 기존 웹과 명시적인 `--legacy` 경로는 유지합니다. 별도의 private credentials 환경변수를 직접 지정한 고급 경로는 기존 비공개 OAuth 설정을 사용합니다. 일반 사용자 설치에서 이 경로를 자동 선택하거나 운영자 JSON을 배포하지 않습니다. 1.1.1 이하에는 `--workspace-readonly`를 전달하지 않습니다. 새 버전은 `agent` 태그와 정확한 버전 번호로 제공해 기존 `latest` 사용자를 자동 전환하지 않습니다.
+
+## 생성·편집 확장 후보
+
+사용자의 요청으로1.2.0에 Docs·Sheets 생성·수정을 추가하고 있습니다. 아직 정식 npm 게시·실제 Google 쓰기 검증 전입니다. [편집 후보와 권한 안내](WORKSPACE_EDIT_AGENT.md)를 확인하세요. 기존1.1.2에는 편집 옵션을 전달하지 않습니다.
