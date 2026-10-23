@@ -1,15 +1,16 @@
-> 2026-10-23: Docs·Sheets 추가 편집 권한은 Google 승인을 받았으며, 생성·편집 기능은 **1.2.0 공개 출시 검사 중**입니다. 현재 공개 읽기1.1.2와 구분합니다. [편집 후보와 권한 안내](docs/WORKSPACE_EDIT_AGENT.md)
-
 # 🎓 edu-workspace-mcp
 
-> **Workspace 읽기 전용 Agent 1.1.2**: 패키지 설치와 사용자 브라우저 동의로 Google Docs·Forms·Sheets·Slides 읽기 권한 5개를 연결합니다. Google Cloud 프로젝트나 OAuth JSON을 따로 준비하지 않습니다. 실제 두 계정의 로그인·문서 읽기·Google/MCP 갱신·계정 분리·연결 해제, 무료 한도 차단과 만료 인증 정리를 검증했습니다. 기존 `latest` 1.1.1은 유지하며 새 Agent는 별도 `agent` 태그와 정확한 버전 번호로 설치합니다. [공개 설치 절차](docs/PUBLIC_MCP_INSTALL.md)의 npm 게시 여부를 먼저 확인하세요. 고정24시간 시험 종료 없이 무료 한도 안에서 운영하며 공식 요금 조건을 자동 확인합니다. 조건 변경·48시간 확인 실패·사용량 초과 시 요청을 중단하고 유료 전환·별도 모델 API 호출은 하지 않습니다. **1.1.1 이하에 `--workspace-readonly`를 전달하지 마세요.**
+> **Workspace Agent 1.2.0 공개**: Google이 승인한 Docs·Sheets 생성·편집을 지원합니다. 기본 연결은 Docs·Forms·Sheets·Slides 읽기 전용이며, 문서·시트 생성을 요청한 사용자는 `--workspace-edit`를 선택하고 직접 Google 편집 권한에 동의합니다. Node.js22+와 패키지 설치만 준비하며 Google Cloud 프로젝트나 OAuth JSON은 필요하지 않습니다. [공개 설치 안내](docs/PUBLIC_MCP_INSTALL.md) · [편집 연결 안내](docs/WORKSPACE_EDIT_AGENT.md)
+
+실제 생성·수정·재조회, 두 계정 격리, 읽기 토큰 쓰기 거부, 중복/한도 차단, 철회와 무료 운영 검사를 통과했습니다. `agent` 태그는1.2.0이며 기존 `latest`1.1.1·읽기1.1.2와 기존 연결을 보존합니다. 읽기 연결에 편집 권한이 자동으로 추가되지 않습니다.
 
 AI에 요청할 문장:
 
-> 이 GitHub의 MCP를 현재 사용하는 앱에 설치해 주세요. OS·Node.js 22+와 게시된 버전을 확인하고, 승인된 읽기 권한 5개의 Agent만 등록해 주세요. Google 로그인과 동의는 제가 직접 하겠습니다.
+> https://github.com/Kimmahone/edu-workspace-mcp 의 공개 Agent1.2.0을 현재 사용하는 앱에 문서·시트 생성·편집용으로 설치해 주세요. Node.js22+와 정확한 npm 공개 버전을 확인하고 기존 MCP 설정을 보존해 주세요. Google 로그인과 편집 권한 동의는 제가 직접 하겠습니다.
 
-루트 [AGENTS.md](AGENTS.md)에 AI 설치 순서가 있습니다. 등록과 Google 인증은 별도 단계이며 GitHub 주소만으로 계정 연결이 완료되지 않습니다.
+루트 [AGENTS.md](AGENTS.md)에 AI 설치 순서가 있습니다. Google 계정 연결은 본인이 직접 진행합니다. Agent는 파일 삭제·공유·Drive 검색·Classroom과 별도 모델 API를 제공하지 않습니다. 기존 Workers Free와 공식 요금8개 자동 확인을 유지하며, 전체40회/분·600회/일·연결별100회/일·쓰기20회/일 한도를 넘거나 검토 조건이 바뀌면 중단하고 유료로 전환하지 않습니다. 연결한 AI 앱의 이용료는 별도입니다. **1.1.2 이하에는 `--workspace-edit`를 전달하지 마세요.**
 
+아래의 기존 로컬·웹 고급 기능은 별도 legacy 경로의 설명입니다. 일반 Agent 설치에는 [공개 설치 안내](docs/PUBLIC_MCP_INSTALL.md)를 사용합니다.
 
 자연어로 Google Docs, Sheets, Slides, Forms, Drive와 Classroom을 사용하는 교육 특화 Model Context Protocol(MCP) 서버입니다. Apps Script 없이 Google 공식 API를 직접 호출합니다.
 
