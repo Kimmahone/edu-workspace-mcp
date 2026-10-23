@@ -1,4 +1,4 @@
-> 2026-10-21: Docs·Sheets 생성·편집 기능은 **1.2.0 후보 검증 중**입니다. 현재 공개 읽기1.1.2와 구분합니다. [편집 후보와 권한 안내](docs/WORKSPACE_EDIT_AGENT.md)
+> 2026-10-23: Docs·Sheets 추가 편집 권한은 Google 승인을 받았으며, 생성·편집 기능은 **1.2.0 공개 출시 검사 중**입니다. 현재 공개 읽기1.1.2와 구분합니다. [편집 후보와 권한 안내](docs/WORKSPACE_EDIT_AGENT.md)
 
 # 🎓 edu-workspace-mcp
 
