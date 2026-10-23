@@ -1,6 +1,6 @@
 # Google Docs·Sheets 생성·편집 Agent
 
-2026-10-23 기준 1.2.0 설치 후보입니다. Google이 Docs·Sheets 추가 편집 권한을 승인했고, 소유자 실제 문서·시트 생성·수정·재조회도 통과했습니다. 남은 계정 분리·쓰기 한도·Free 성능·설치 검사를 마친 뒤 정식 npm에 게시합니다. 공개 설치가 가능한 버전으로 표시하지 않습니다. 기존 공개 읽기 버전1.1.2는 유지합니다.
+2026-10-23 npm **Agent1.2.0**을 `agent` 태그로 공개했습니다. Google 추가 편집 권한 승인과 실제 생성·수정·재조회, 두 계정 격리·읽기 토큰 쓰기 거부·쓰기 한도·철회·Free 운영·설치 검사를 통과했습니다. 기존 읽기1.1.2와 npm `latest`1.1.1은 보존합니다. [정확한 설치 명령](PUBLIC_MCP_INSTALL.md)에서 공개 버전을 확인합니다.
 
 ## 가능한 작업
 
@@ -18,13 +18,11 @@
 
 편집 권한은 Google에서 사용자가 직접 동의해야 합니다. 기존 읽기 로그인으로 쓰기가 자동 허용되지 않습니다. 읽기 자격증명은 `~/.edu-workspace-mcp-agent/remote/`, 편집 자격증명은 `~/.edu-workspace-mcp-agent/remote-edit/`에 별도로 보관합니다. 인증 파일을 AI에 보내거나 저장소에 넣지 마세요.
 
-정식 게시 뒤에만 해당 버전의 `setup <app> --workspace-edit`, `login --workspace-edit`, `doctor --workspace-edit`를 사용합니다. 1.1.2에 이 옵션을 전달하지 않습니다. 후보 시험은 운영자가 준비한 로컬 후보로 진행합니다.
+공개1.2.0의 `setup <app> --workspace-edit`로 등록한 뒤 본인이 `login --workspace-edit`와 `doctor --workspace-edit`를 실행합니다. 1.1.2 이하에는 이 옵션을 전달하지 않습니다.
 
 ## Google 검증과 공개 조건
 
-2026-10-23 Google 검토팀이 `documents`와 `spreadsheets` 추가 편집 범위를 승인했고 실제 Google 인증 센터의 데이터 액세스 인증 완료를 확인했습니다. 기존 읽기 범위5개의 과거 승인과 구분합니다. 개인 후보 시험의 계정 동의와 Google의 공개 앱 범위 검증은 별개입니다. 개인·개발 시험은 제한된 후보로 진행하고, 두 편집 범위에 대한 Google 검증 완료와 실제 생성·수정 검사를 모두 확인한 뒤에만 공개 Agent를 게시합니다. 기존 읽기 범위를 삭제하거나 앱 전체를 Testing으로 되돌리지 않습니다.
-
-새 민감 범위의 공개 사용에는 검증이 필요하며, 검증 전에는 미확인 앱 경고와 사용자 제한이 적용될 수 있습니다. [Google 민감 범위 검증 안내](https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scope-verification)를 따릅니다. 사용자 로그인·동의와 Google 심사 제출은 운영자가 직접 확인합니다.
+2026-10-23 Google 검토팀이 `documents`와 `spreadsheets` 추가 편집 범위를 승인했고 인증 센터의 데이터 액세스 인증 완료를 확인했습니다. 실제 공개 출시 검사와 npm 게시도 확인했습니다. 개인 계정의 권한 동의는 각 사용자가 직접 진행하며 앱의 Google 검증과는 구분합니다. 기존 읽기 범위를 삭제하거나 앱 전체를 Testing으로 되돌리지 않습니다. [Google 민감 범위 검증 안내](https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scope-verification)를 따릅니다.
 
 ## 요청과 수정 확인
 

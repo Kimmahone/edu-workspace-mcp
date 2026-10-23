@@ -1,3 +1,5 @@
+> 2026-10-23: 현재 공개 `agent` 태그는1.2.0이며 기본 읽기를 유지하고 편집은 별도 동의로 선택합니다. 이 문서의 기존1.1.2 읽기 연결도 계속 유효합니다. 새 설치는 [공개 설치 안내](PUBLIC_MCP_INSTALL.md)를 따릅니다.
+
 # Workspace 읽기 전용 원격 Agent
 
 새 기본 경로는 운영자의 Web OAuth/MCP 서버를 사용하는 읽기 전용 Agent입니다. 사용자는 Cloud 프로젝트, OAuth JSON 또는 client secret을 준비하지 않습니다. 기존 `edu-workspace` 등록과 Google 토큰은 유지하며 `edu-workspace-agent`를 별도로 등록합니다.
