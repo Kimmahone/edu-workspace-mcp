@@ -6,7 +6,7 @@ import {learningContext} from '../curriculum/learning-map.js';
 import type { WebConfig } from "./config.js";
 
 export async function generateDraft(input: DraftRequest, config: WebConfig, send: typeof fetch = fetch) {
-  assertAiDataPolicy(input.provider, config);
+  assertAiDataPolicy(input.provider, config, input);
   const standards = resolveStandardCodes(input.standardCodes);
   const instruction = [
     writingBrief(input),
@@ -32,14 +32,17 @@ export async function generateDraft(input: DraftRequest, config: WebConfig, send
     if (body.status !== "completed") throw new Error("AI가 초안을 끝까지 만들지 못했습니다. 요청 분량을 줄여 주세요.");
     text = body.output_text ?? body.steps?.filter(s => s.type === "model_output").flatMap(s => s.content ?? []).filter(c => c.type === "text").map(c => c.text ?? "").join(""); usage = body.usage;
   } else {
-    if (!config.openaiKey) throw new Error("GPT 고급 기능이 아직 연결되지 않았습니다.");
-    const r = await send("https://api.openai.com/v1/responses", {
-      method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${config.openaiKey}` }, signal,
-      body: JSON.stringify({ model: config.openaiModel, instructions: instruction, input: prompt, store: false, max_output_tokens: 12_000, text: { format: { type: "json_schema", name: "education_draft", strict: true, schema: draftJsonSchema } } })
+    const key=input.provider === "upstage" ? config.upstageKey : config.openaiKey;
+    const model=input.provider === "upstage" ? config.upstageModel : config.openaiModel;
+    const endpoint=input.provider === "upstage" ? "https://api.upstage.ai/v1/responses" : "https://api.openai.com/v1/responses";
+    if (!key) throw new Error("선택한 AI 기능이 아직 연결되지 않았습니다.");
+    const r = await send(endpoint, {
+      method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${key}` }, signal,
+      body: JSON.stringify({ model, instructions: instruction, input: prompt, store: false, max_output_tokens: 12_000, text: { format: { type: "json_schema", name: "education_draft", strict: true, schema: draftJsonSchema } } })
     });
-    if (!r.ok) throw new Error(r.status === 429 ? "GPT 사용량 한도에 도달했습니다." : `GPT 요청 실패 (${r.status}). API 키와 모델 설정을 확인해 주세요.`);
+    if (!r.ok) throw new Error(r.status === 429 ? "선택한 AI 사용량 한도에 도달했습니다." : `선택한 AI 요청 실패 (${r.status}). API 키와 모델 설정을 확인해 주세요.`);
     const body = await r.json() as { status?: string; output?: Array<{ content?: Array<{ type: string; text?: string }> }>; usage?: unknown };
-    if (body.status !== "completed") throw new Error("GPT가 초안을 완료하지 못했습니다.");
+    if (body.status !== "completed") throw new Error("AI가 초안을 완료하지 못했습니다.");
     text = body.output?.flatMap(x => x.content ?? []).filter(x => x.type === "output_text").map(x => x.text ?? "").join(""); usage = body.usage;
   }
   if (!text) throw new Error("AI 응답이 비어 있습니다. 입력을 구체적으로 적어 주세요.");

@@ -1,3 +1,4 @@
+import {exportFormat} from "./export-formats.js";
 import { google } from "googleapis";
 import { createDocumentFromHtml } from "../google/docs.js";
 import { extractGoogleFileId } from "../google/references.js";
@@ -25,4 +26,11 @@ export async function readGoogleDoc(reference: string) {
   const response = await drive.files.export({ fileId, mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }, { responseType: "arraybuffer", maxContentLength: MAX_FILE });
   const result = await documentJob({ action: "parse", input: Buffer.from(response.data as ArrayBuffer) });
   return { ...result, title: meta.data.name };
+}
+
+export async function exportOffice(fileId:string,kind:string){
+ if(!/^[\w-]{1,200}$/.test(fileId))throw new Error('파일 ID를 확인해 주세요.');
+ const format=exportFormat(kind),auth=await getAuthorizedClient();
+ const r=await google.drive({version:'v3',auth}).files.export({fileId,mimeType:format.mime},{responseType:'arraybuffer',maxContentLength:MAX_FILE});
+ return {file:Buffer.from(r.data as ArrayBuffer).toString('base64'),extension:format.extension};
 }
