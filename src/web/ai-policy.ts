@@ -1,9 +1,8 @@
-/** Fail closed before any user input reaches a provider. No automatic paid-tier switch. */
-export function assertAiDataPolicy(provider: string, config: { geminiNoTrainingConfirmed?: boolean; openaiNoTrainingConfirmed?: boolean }) {
-  if (provider === "gemini" && !config.geminiNoTrainingConfirmed) {
-    throw new Error("무료 Gemini에는 Google 자료를 보낼 수 없습니다. 학습에 사용하지 않는 Paid Service 설정을 운영자가 확인한 뒤 이용할 수 있습니다. 예시 편집 또는 GPT를 이용해 주세요.");
-  }
-  if (provider === "openai" && !config.openaiNoTrainingConfirmed) {
-    throw new Error("OpenAI API 데이터 학습 공유 비활성 설정을 운영자가 확인한 뒤 이용할 수 있습니다. 예시 편집은 계속 사용할 수 있습니다.");
-  }
+/** Provider policy is checked again on the server before sending user input. */
+export function assertAiDataPolicy(provider: string, config: { geminiNoTrainingConfirmed?: boolean; geminiFreeTierConfirmed?: boolean; openaiNoTrainingConfirmed?: boolean }, input?: {freeTierConsent?:boolean; previous?:unknown}) {
+ if(provider === 'gemini' && !config.geminiNoTrainingConfirmed) {
+  if(!config.geminiFreeTierConfirmed) throw new Error('무료 Gemini 사용 설정이 필요합니다.');
+  if(input?.freeTierConsent !== true || input?.previous !== undefined) throw new Error('무료 Gemini는 일반 주제로 새 초안을 만들 때만 사용할 수 있습니다. 기존 문서·개인정보를 입력하지 말고 데이터 이용 안내에 동의해 주세요.');
+ }
+ if(provider === 'openai' && !config.openaiNoTrainingConfirmed) throw new Error('OpenAI API 데이터 학습 공유 비활성 설정을 운영자가 확인한 뒤 이용할 수 있습니다.');
 }

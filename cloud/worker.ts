@@ -1,7 +1,7 @@
 import {assertAiDataPolicy} from '../src/web/ai-policy';
 import {State,nonce} from './state';
 import {googleRequest} from './google';
-type Secrets={APP_SECRET?:string;GOOGLE_WEB_CLIENT_ID?:string;GOOGLE_WEB_CLIENT_SECRET?:string;GEMINI_API_KEY?:string;OPENAI_API_KEY?:string};
+type Secrets={APP_SECRET?:string;GOOGLE_WEB_CLIENT_ID?:string;GOOGLE_WEB_CLIENT_SECRET?:string;GEMINI_API_KEY?:string;UPSTAGE_API_KEY?:string;UPSTAGE_MODEL?:string;OPENAI_API_KEY?:string};
 type Env=Cloudflare.Env & Secrets & {GEMINI_NO_TRAINING_CONFIRMED?:string;OPENAI_NO_TRAINING_CONFIRMED?:string;PUBLIC_APP?:string};
 type Session={csrf:string;user:{id:string;email:string};access:string;refresh?:string;expires:number};
 const TTL=8*3600000;
@@ -22,7 +22,7 @@ async function handle(request:Request,env:Env):Promise<Response>{
  const configured=!!(env.DB&&env.APP_SECRET&&env.APP_SECRET.length>=32&&(publicApp||env.OWNER_EMAIL)&&env.GOOGLE_WEB_CLIENT_ID&&env.GOOGLE_WEB_CLIENT_SECRET);
  const store=configured?new State(env.DB,env.APP_SECRET!):null;
  const sid=cookies(request,'__Host-workspace'),session=sid&&store?await store.get<Session>('session:'+sid):undefined;
- if(route==='/api/status'&&request.method==='GET')return json({runtime:'cloudflare',mode:'hosted',access:publicApp?'public':'personal',connected:!!session,user:session?.user,csrf:session?.csrf??'',ai:{gemini:!publicApp&&!!env.GEMINI_API_KEY&&env.GEMINI_NO_TRAINING_CONFIRMED==='true',openai:!publicApp&&!!env.OPENAI_API_KEY&&env.OPENAI_NO_TRAINING_CONFIRMED==='true'},models:{gemini:env.GEMINI_MODEL,openai:env.OPENAI_MODEL},formsThemeConnected:!publicApp&&!!env.FORMS_TEMPLATE_ID,formsTemplateId:session&&!publicApp?env.FORMS_TEMPLATE_ID:undefined,dailyLimit:publicApp?0:20,setupRequired:!configured,documentRuntime:'browser'});
+ if(route==='/api/status'&&request.method==='GET')return json({runtime:'cloudflare',mode:'hosted',access:publicApp?'public':'personal',connected:!!session,user:session?.user,csrf:session?.csrf??'',ai:{gemini:!publicApp&&!!env.GEMINI_API_KEY&&(env.GEMINI_NO_TRAINING_CONFIRMED==='true'||env.GEMINI_FREE_TIER_CONFIRMED==='true'),upstage:!publicApp&&!!env.UPSTAGE_API_KEY,openai:!publicApp&&!!env.OPENAI_API_KEY&&env.OPENAI_NO_TRAINING_CONFIRMED==='true'},geminiFreeOnly:env.GEMINI_NO_TRAINING_CONFIRMED!=='true',models:{upstage:env.UPSTAGE_MODEL||'solar-mini4',gemini:env.GEMINI_MODEL,openai:env.OPENAI_MODEL},formsThemeConnected:!publicApp&&!!env.FORMS_TEMPLATE_ID,formsTemplateId:session&&!publicApp?env.FORMS_TEMPLATE_ID:undefined,dailyLimit:publicApp?0:20,setupRequired:!configured,documentRuntime:'browser'});
  if(!configured||!store)fail(503,publicApp?'Google 연결을 준비하고 있습니다. 예시 편집·한글 문서실은 바로 사용할 수 있습니다.':'개인용 로그인 설정이 아직 필요합니다. 시작 가이드의 Cloudflare 설정을 완료해 주세요. 예시·한글 문서실은 로그인 없이 사용할 수 있습니다.');
  const state=store!;
  if(route==='/auth/google'&&request.method==='GET'){
@@ -64,17 +64,24 @@ async function handle(request:Request,env:Env):Promise<Response>{
  }
  if(route==='/api/cloud/ai'){
   if(publicApp)fail(403,'공개 웹앱은 예시 편집·문서 변환·Google 저장을 제공합니다. AI 생성은 아직 제공하지 않습니다.');
-  const provider=request.headers.get('x-ai-provider');if(!['gemini','openai'].includes(provider??''))fail(400,'AI를 선택해 주세요.');
-  try{assertAiDataPolicy(provider!,{geminiNoTrainingConfirmed:env.GEMINI_NO_TRAINING_CONFIRMED==='true',openaiNoTrainingConfirmed:env.OPENAI_NO_TRAINING_CONFIRMED==='true'});}catch(e){fail(403,e instanceof Error?e.message:'AI 데이터 처리 설정을 확인해 주세요.');}
-  const key=provider==='gemini'?env.GEMINI_API_KEY:env.OPENAI_API_KEY;if(!key)fail(422,'AI 키가 연결되지 않았습니다.');
-  const d=await input(request);if(d.aiProcessingConsent!==true)fail(400,'선택한 AI 제공자에게 입력을 보내는 데 동의해 주세요.');const lock='ai:'+owner;if(!await state.claim(lock,120000))fail(429,'다른 AI 요청을 처리 중입니다.');
+  const provider=request.headers.get('x-ai-provider');if(!['gemini','openai','upstage'].includes(provider??''))fail(400,'AI를 선택해 주세요.');
+  const d=await input(request);
+  let prior:unknown;
+  if(provider==='gemini'&&env.GEMINI_NO_TRAINING_CONFIRMED!=='true'){
+   let parsed:any;try{parsed=JSON.parse(d.input);}catch{fail(400,'새 초안 요청 형식을 확인해 주세요.');}
+   if(!parsed||typeof parsed.request!=='string'||parsed.request.length>10000||Object.keys(parsed).some(k=>!['template','audience','grade','subject','learningMap','request','standards','previousDraft'].includes(k)))fail(400,'일반 주제의 새 초안만 요청할 수 있습니다.');
+   prior=parsed.previousDraft;
+  }
+  try{assertAiDataPolicy(provider!,{geminiFreeTierConfirmed:env.GEMINI_FREE_TIER_CONFIRMED==='true',geminiNoTrainingConfirmed:env.GEMINI_NO_TRAINING_CONFIRMED==='true',openaiNoTrainingConfirmed:env.OPENAI_NO_TRAINING_CONFIRMED==='true'},{freeTierConsent:d.freeTierConsent,previous:prior});}catch(e){fail(403,e instanceof Error?e.message:'AI 데이터 처리 설정을 확인해 주세요.');}
+  const key=provider==='gemini'?env.GEMINI_API_KEY:provider==='upstage'?env.UPSTAGE_API_KEY:env.OPENAI_API_KEY;if(!key)fail(422,'AI 키가 연결되지 않았습니다.');
+  if(d.aiProcessingConsent!==true)fail(400,'선택한 AI 제공자에게 입력을 보내는 데 동의해 주세요.');const lock='ai:'+owner;if(!await state.claim(lock,120000))fail(429,'다른 AI 요청을 처리 중입니다.');
   try{
    await state.quota('ai:'+owner,20);
    const isGemini=provider==='gemini';
    // Construct a new payload: never accept tools, background jobs, arbitrary URLs or client model overrides.
-   const payload=isGemini?{model:env.GEMINI_MODEL,system_instruction:d.system_instruction,input:d.input,store:false,response_format:d.response_format,generation_config:{max_output_tokens:12000}}:{model:env.OPENAI_MODEL,instructions:d.instructions,input:d.input,store:false,max_output_tokens:12000,text:d.text};
+   const payload=isGemini?{model:env.GEMINI_MODEL,system_instruction:d.system_instruction,input:d.input,store:false,response_format:d.response_format,generation_config:{max_output_tokens:12000}}:{model:provider==='upstage'?(env.UPSTAGE_MODEL||'solar-mini4'):env.OPENAI_MODEL,instructions:d.instructions,input:d.input,store:false,max_output_tokens:12000,text:d.text};
    if(typeof payload.input!=='string'||payload.input.length>150000)fail(400,'AI 입력이 너무 크거나 올바르지 않습니다.');
-   const r=await fetch(isGemini?'https://generativelanguage.googleapis.com/v1beta/interactions':'https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json',...(isGemini?{'x-goog-api-key':key!}:{Authorization:'Bearer '+key})},body:JSON.stringify(payload),signal:AbortSignal.timeout(90000),redirect:'manual'});
+   const r=await fetch(isGemini?'https://generativelanguage.googleapis.com/v1beta/interactions':provider==='upstage'?'https://api.upstage.ai/v1/responses':'https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json',...(isGemini?{'x-goog-api-key':key!}:{Authorization:'Bearer '+key})},body:JSON.stringify(payload),signal:AbortSignal.timeout(90000),redirect:'manual'});
    if(!r.ok){await r.body?.cancel();return json({error:'AI 제공자 한도 또는 연결을 확인해 주세요. 다른 AI로 자동 전환하지 않습니다.'},r.status);}
    return new Response(r.body,{headers:{'Content-Type':'application/json'}});
   }finally{await state.remove(lock);}
@@ -84,7 +91,7 @@ async function handle(request:Request,env:Env):Promise<Response>{
   await state.quota('google:'+owner,500);const access=await token(env,state,sid!,session!);
   const upstream=googleRequest(d.operation,d.parameters,access),r=await fetch(upstream,{signal:AbortSignal.timeout(60000)});
   if(!r.ok){await r.body?.cancel();return json({error:`Google 요청을 완료하지 못했습니다 (${r.status}). 권한과 Drive의 생성 결과를 확인해 주세요.`},r.status);}
-  if(d.operation==='drive.files.export')return new Response(r.body,{headers:{'Content-Type':'application/octet-stream','X-Document-Export':'docx'}});
+  if(d.operation==='drive.files.export')return new Response(r.body,{headers:{'Content-Type':'application/octet-stream','X-Document-Export':'binary'}});
   return new Response(r.body,{headers:{'Content-Type':'application/json'}});
  }
  return fail(404,'요청한 기능을 찾을 수 없습니다.');

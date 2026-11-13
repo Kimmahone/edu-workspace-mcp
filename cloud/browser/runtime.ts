@@ -3,7 +3,7 @@ import {designs,designedMarkdown} from '../../src/web/design.js';
 import {designPreview} from '../../src/web/design-preview.js';
 import {renderMarkdown} from '../../src/web/render.js';
 import {generateDraft} from '../../src/web/ai.js';
-import {saveOutput,readGoogleDoc} from '../../src/web/workspace.js';
+import {saveOutput,readGoogleDoc,exportOffice} from '../../src/web/workspace.js';
 import {searchStandards,resolveStandardCodes,curriculumInfo,CURRICULUM_SUBJECTS,CURRICULUM_SOURCE_NOTE} from '../../src/curriculum/standards.js';
 import {learningContext,learningMapInfo} from '../../src/curriculum/learning-map.js';
 import {elementaryExamples} from '../../src/web/elementary-examples.js';
@@ -35,8 +35,9 @@ export async function api(path:string,data?:any,raw=false):Promise<any>{
  if(route==='/api/documents/patch'){const r=await documentJob({action:'patch',input:Buffer.from(data.original,'base64'),markdown:data.markdown,kind:data.kind});return {...r,file:Buffer.from(r.file).toString('base64')};}
  if(route==='/api/documents/compare')return documentJob({action:'compare',input:Buffer.from(data.first,'base64'),other:Buffer.from(data.second,'base64')});
  if(!status?.connected)throw new Error('연결 및 이용 안내에서 본인 Google 계정으로 로그인해 주세요.');
+ if(route==='/api/export-office')return exportOffice(data.fileId,data.kind);
  if(route==='/api/documents/google')return readGoogleDoc(data.url);
- if(route==='/api/generate')return generateDraft(requestSchema.parse(data),{geminiKey:'server-managed',openaiKey:'server-managed',geminiNoTrainingConfirmed:status.ai.gemini,openaiNoTrainingConfirmed:status.ai.openai,geminiModel:status.models.gemini,openaiModel:status.models.openai} as any,async(url,options)=>fetch('/api/cloud/ai',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':status.csrf,'X-AI-Provider':data.provider},body:JSON.stringify({...JSON.parse(String(options?.body)),aiProcessingConsent:data.aiProcessingConsent}),signal:options?.signal}));
+ if(route==='/api/generate')return generateDraft(requestSchema.parse(data),{upstageKey:'server-managed',upstageModel:status.models.upstage,geminiFreeTierConfirmed:status.ai.gemini&&status.geminiFreeOnly,geminiKey:'server-managed',openaiKey:'server-managed',geminiNoTrainingConfirmed:status.ai.gemini&&!status.geminiFreeOnly,openaiNoTrainingConfirmed:status.ai.openai,geminiModel:status.models.gemini,openaiModel:status.models.openai} as any,async(url,options)=>fetch('/api/cloud/ai',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':status.csrf,'X-AI-Provider':data.provider},body:JSON.stringify({...JSON.parse(String(options?.body)),freeTierConsent:data.freeTierConsent,aiProcessingConsent:data.aiProcessingConsent}),signal:options?.signal}));
  if(route==='/api/save/prepare'){
   const draft=documentDraftSchema.parse(data.draft);validateDraft(draft,data.template);resolveStandardCodes(data.standardCodes??[]);
   if(!data.kinds?.length||data.kinds.length>5||new Set(data.kinds).size!==data.kinds.length)throw new Error('저장 형식을 확인해 주세요.');

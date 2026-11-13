@@ -22,6 +22,8 @@ export function webConfig(env: NodeJS.ProcessEnv = process.env) {
     hosted, port, origin, secret, databaseUrl: env.DATABASE_URL,
     googleClientId: env.GOOGLE_WEB_CLIENT_ID, googleClientSecret: env.GOOGLE_WEB_CLIENT_SECRET,
     geminiKey: env.GEMINI_API_KEY, geminiModel: env.GEMINI_MODEL || "gemini-flash-latest",
+    upstageKey: env.UPSTAGE_API_KEY, upstageModel: env.UPSTAGE_MODEL || "solar-mini4",
+    geminiFreeTierConfirmed: env.GEMINI_FREE_TIER_CONFIRMED === "true",
     openaiKey: env.OPENAI_API_KEY, openaiModel: env.OPENAI_MODEL ?? "gpt-6-luna",
     geminiNoTrainingConfirmed: env.GEMINI_NO_TRAINING_CONFIRMED === "true",
     openaiNoTrainingConfirmed: env.OPENAI_NO_TRAINING_CONFIRMED === "true",

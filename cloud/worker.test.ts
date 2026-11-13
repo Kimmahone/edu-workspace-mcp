@@ -9,14 +9,14 @@ import {googleRequest} from './google.js';
 test('Workers: private auth, CSRF, encrypted D1, atomic claims, quotas and restricted API proxy',async()=>{
  const bundle=await build({entryPoints:['cloud/worker.ts'],bundle:true,write:false,format:'esm',platform:'browser'});
  const secret='test-secret-'.repeat(4),owner='owner@example.test',sid=nonce(),csrf=nonce();let calls:any[]=[],loginEmail=owner;
- const mf=new Miniflare(convertV4MiniflareOptions({workers:[{name:'test',modules:true,script:bundle.outputFiles[0].text,compatibilityDate:'2026-09-27',d1Databases:{DB:'test'},bindings:{APP_SECRET:secret,OWNER_EMAIL:owner,GOOGLE_WEB_CLIENT_ID:'fake-client',GOOGLE_WEB_CLIENT_SECRET:'fake-secret',OPENAI_API_KEY:'fake-openai',OPENAI_NO_TRAINING_CONFIRMED:'true',GEMINI_API_KEY:'fake-gemini',GEMINI_FREE_TIER_CONFIRMED:'true',GEMINI_MODEL:'gemini-flash-latest',OPENAI_MODEL:'gpt-6-luna',FORMS_TEMPLATE_ID:''},outboundService:async(r:any)=>{if(r.url==='https://oauth2.googleapis.com/token')return new MFResponse(JSON.stringify({access_token:'test-google-access',refresh_token:'test-refresh',expires_in:3600}),{headers:{'Content-Type':'application/json'}});
+ const mf=new Miniflare(convertV4MiniflareOptions({workers:[{name:'test',modules:true,script:bundle.outputFiles[0].text,compatibilityDate:'2026-09-27',d1Databases:{DB:'test'},bindings:{APP_SECRET:secret,OWNER_EMAIL:owner,GOOGLE_WEB_CLIENT_ID:'fake-client',GOOGLE_WEB_CLIENT_SECRET:'fake-secret',UPSTAGE_API_KEY:'fake-upstage',OPENAI_API_KEY:'fake-openai',OPENAI_NO_TRAINING_CONFIRMED:'true',GEMINI_API_KEY:'fake-gemini',GEMINI_FREE_TIER_CONFIRMED:'true',GEMINI_MODEL:'gemini-flash-latest',OPENAI_MODEL:'gpt-6-luna',FORMS_TEMPLATE_ID:''},outboundService:async(r:any)=>{if(r.url==='https://oauth2.googleapis.com/token')return new MFResponse(JSON.stringify({access_token:'test-google-access',refresh_token:'test-refresh',expires_in:3600}),{headers:{'Content-Type':'application/json'}});
  if(r.url==='https://openidconnect.googleapis.com/v1/userinfo')return new MFResponse(JSON.stringify({sub:'owner',email:loginEmail,email_verified:true}),{headers:{'Content-Type':'application/json'}});
  calls.push({url:r.url,body:r.method==='POST'?await r.json():undefined});return new MFResponse(JSON.stringify({status:'completed',output:[]}),{headers:{'Content-Type':'application/json'}});}}]}));
  try{
   const db=await mf.getD1Database('DB');await db.exec((await readFile('cloud/migrations/0001_state.sql','utf8')).replaceAll('\n',' '));
   const store=new State(db as any,secret);await store.put('session:'+sid,{csrf,user:{id:'owner',email:owner},access:'fake-access',expires:Date.now()+3600000},3600000);
   const req=(path:string,data:any,options:{auth?:boolean;csrf?:string;origin?:string}={})=>mf.dispatchFetch('https://app.example'+path,{method:'POST',headers:{'content-type':'application/json',origin:options.origin??'https://app.example',cookie:options.auth===false?'':`__Host-workspace=${sid}`,'x-csrf-token':options.csrf??csrf},body:JSON.stringify(data)});
-  const status=await (await mf.dispatchFetch('https://app.example/api/status')).json() as any;assert.equal(status.connected,false);assert.equal(status.ai.gemini,false);assert.ok(!JSON.stringify(status).includes('fake-openai'));
+  const status=await (await mf.dispatchFetch('https://app.example/api/status')).json() as any;assert.equal(status.connected,false);assert.equal(status.ai.gemini,true);assert.ok(!JSON.stringify(status).includes('fake-openai'));
   assert.equal((await req('/api/cloud/google',{},{auth:false})).status,401);
   assert.equal((await req('/api/cloud/google',{},{csrf:'wrong'})).status,403);
   assert.equal((await req('/api/cloud/google',{},{origin:'https://evil.example'})).status,403);
@@ -27,9 +27,14 @@ test('Workers: private auth, CSRF, encrypted D1, atomic claims, quotas and restr
   const claims=await Promise.all([1,2,3].map(()=>store.claim('exclusive',60000)));assert.equal(claims.filter(Boolean).length,1);
   const quotas=await Promise.allSettled(Array.from({length:21},()=>store.quota('counter',20)));assert.equal(quotas.filter(x=>x.status==='fulfilled').length,20);
   assert.equal((await req('/api/cloud/google',{operation:'drive.files.delete',parameters:{fileId:'abc'}})).status,422);assert.equal(calls.length,0);
-  const denied=await mf.dispatchFetch('https://app.example/api/cloud/ai',{method:'POST',headers:{origin:'https://app.example',cookie:`__Host-workspace=${sid}`,'x-csrf-token':csrf,'content-type':'application/json','x-ai-provider':'gemini'},body:'{}'});assert.equal(denied.status,403);assert.equal(calls.length,0);
+  const denied=await mf.dispatchFetch('https://app.example/api/cloud/ai',{method:'POST',headers:{origin:'https://app.example',cookie:`__Host-workspace=${sid}`,'x-csrf-token':csrf,'content-type':'application/json','x-ai-provider':'gemini'},body:JSON.stringify({input:JSON.stringify({request:'일반 주제'})})});assert.equal(denied.status,403);assert.equal(calls.length,0);
   const withoutConsent=await mf.dispatchFetch('https://app.example/api/cloud/ai',{method:'POST',headers:{origin:'https://app.example',cookie:`__Host-workspace=${sid}`,'x-csrf-token':csrf,'content-type':'application/json','x-ai-provider':'openai'},body:JSON.stringify({input:'synthetic Google-derived text'})});assert.equal(withoutConsent.status,400);assert.equal(calls.length,0);
   const ai=await mf.dispatchFetch('https://app.example/api/cloud/ai',{method:'POST',headers:{origin:'https://app.example',cookie:`__Host-workspace=${sid}`,'x-csrf-token':csrf,'content-type':'application/json','x-ai-provider':'openai'},body:JSON.stringify({aiProcessingConsent:true,model:'expensive-model',input:'test',instructions:'test',tools:[{type:'web_search'}],max_output_tokens:999999,store:true})});assert.equal(ai.status,200);await ai.text();assert.equal(calls.length,1);assert.equal(calls[0].body.model,'gpt-6-luna');assert.equal(calls[0].body.max_output_tokens,12000);assert.equal(calls[0].body.store,false);assert.equal(calls[0].body.tools,undefined);
+  const providerRequest=(provider:string,data:any)=>mf.dispatchFetch('https://app.example/api/cloud/ai',{method:'POST',headers:{origin:'https://app.example',cookie:`__Host-workspace=${sid}`,'x-csrf-token':csrf,'content-type':'application/json','x-ai-provider':provider},body:JSON.stringify(data)});
+  const freeInput={aiProcessingConsent:true,freeTierConsent:true,input:JSON.stringify({request:'가상 독서 모임 계획',template:'report'}),system_instruction:'synthetic'};
+  assert.equal((await providerRequest('gemini',{...freeInput,input:JSON.stringify({request:'일반 주제',previousDraft:{title:'Google document'}})})).status,403);
+  const free=await providerRequest('gemini',freeInput);assert.equal(free.status,200);await free.text();assert.equal(calls.at(-1).url,'https://generativelanguage.googleapis.com/v1beta/interactions');
+  const solar=await providerRequest('upstage',{aiProcessingConsent:true,input:'synthetic',model:'other',tools:[{}],store:true});assert.equal(solar.status,200);await solar.text();assert.equal(calls.at(-1).url,'https://api.upstage.ai/v1/responses');assert.equal(calls.at(-1).body.model,'solar-mini4');assert.equal(calls.at(-1).body.store,false);assert.equal(calls.at(-1).body.tools,undefined);
   const start=await mf.dispatchFetch('https://app.example/auth/google',{redirect:'manual'});assert.equal(start.status,302);
   const authUrl=new URL(start.headers.get('location')!);assert.equal(authUrl.searchParams.get('code_challenge_method'),'S256');assert.ok(authUrl.searchParams.get('scope')?.includes('drive.file'));
   const oauthCookie=start.headers.get('set-cookie')!.split(';')[0];const callback='https://app.example/auth/callback?state='+authUrl.searchParams.get('state')+'&code=fake-code';
@@ -62,7 +67,7 @@ test('Public Workers: verified accounts, isolated records/tokens, CSRF and no sh
   await store.put('session:'+sidB,{csrf:csrfB,user:{id:'bob',email:'bob@example.test'},access:'bob-access',expires:Date.now()+3600000},3600000);
   const req=(sid:string,csrf:string,route:string,data:any,extra={})=>mf.dispatchFetch('https://public.example'+route,{method:'POST',headers:{'content-type':'application/json',origin:'https://public.example',cookie:`__Host-workspace=${sid}`,'x-csrf-token':csrf,...extra},body:JSON.stringify(data)});
   const status=await (await mf.dispatchFetch('https://public.example/api/status')).json() as any;
-  assert.equal(status.access,'public');assert.equal(status.setupRequired,false);assert.deepEqual(status.ai,{gemini:false,openai:false});assert.equal(status.formsThemeConnected,false);assert.equal(status.dailyLimit,0);
+  assert.equal(status.access,'public');assert.equal(status.setupRequired,false);assert.deepEqual(status.ai,{gemini:false,openai:false,upstage:false});assert.equal(status.formsThemeConnected,false);assert.equal(status.dailyLimit,0);
   assert.equal((await req(sidB,csrfA,'/api/cloud/state',{action:'get',key:'history'})).status,403);
   assert.equal((await req(sidA,csrfA,'/api/cloud/state',{action:'put',key:'history',value:['alice-document']})).status,200);
   assert.deepEqual(await (await req(sidA,csrfA,'/api/cloud/state',{action:'get',key:'history'})).json(),{value:['alice-document']});
@@ -101,4 +106,11 @@ test('GitHub deployment starts safely without dashboard variables and respects c
    assert.equal((await mf.dispatchFetch('https://app.example/auth/google',{redirect:'manual'})).status,503);
   }finally{await mf.dispose();}
  }
+});
+
+test('Office exports permit only actual PPTX/XLSX/DOCX MIME types',()=>{
+ for(const mime of ['application/vnd.openxmlformats-officedocument.presentationml.presentation','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']){
+  const r=googleRequest('drive.files.export',{fileId:'fixture-file',mimeType:mime},'fixture');assert.equal(new URL(r.url).searchParams.get('mimeType'),mime);
+ }
+ assert.throws(()=>googleRequest('drive.files.export',{fileId:'fixture-file',mimeType:'text/html'},'fixture'));
 });

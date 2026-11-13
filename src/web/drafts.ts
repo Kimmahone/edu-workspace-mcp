@@ -2,7 +2,6 @@ import {polishSample} from "./quality-samples.js";
 import {elementarySample} from "./elementary-examples.js";
 import { designSchema } from "./design-schema.js";
 import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
 
 export const templateIds = ["lesson-package", "lesson-plan", "worksheet", "quiz", "slides", "notice", "minutes", "event-plan", "tracker", "report", "study-notes", "travel-plan"] as const;
 export const templates = [
@@ -37,15 +36,15 @@ function portableSchema(value: unknown): any {
   if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).filter(([key]) => !["$schema", "minLength", "maxLength", "minimum", "maximum", "minItems", "maxItems"].includes(key)).map(([key, v]) => [key, portableSchema(v)]));
   return value;
 }
-export const draftJsonSchema = portableSchema(zodToJsonSchema(draftSchema, { target: "openAi", $refStrategy: "none" }));
+export const draftJsonSchema = portableSchema(z.toJSONSchema(draftSchema, { target: "draft-7" }));
 export const requestSchema = z.object({
   template: z.enum(templateIds), prompt: z.string().trim().min(3).max(10_000),
   grade: z.number().int().min(1).max(6).default(5), subject: z.string().trim().min(1).max(20).default("과학"),
   standardCodes: z.array(z.string().max(30)).max(10).default([]),
   design: designSchema,
   audience: z.string().trim().max(100).default("누구나"),
-  provider: z.enum(["gemini", "openai"]).default("openai"),
-  noPersonalData: z.literal(true), aiProcessingConsent: z.literal(true), previous: draftSchema.optional()
+  provider: z.enum(["gemini", "openai", "upstage"]).default("upstage"),
+  freeTierConsent: z.boolean().optional(), noPersonalData: z.literal(true), aiProcessingConsent: z.literal(true), previous: draftSchema.optional()
 });
 export type DraftRequest = z.infer<typeof requestSchema>;
 export function validateDraft(draft: Draft, template: string): Draft {

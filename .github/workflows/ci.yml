@@ -67,6 +67,7 @@ jobs:
             sleep 1
           done
           npm run test:cloud:browser
+          node scripts/test-office-ui.mjs
       - name: Public web build and deployment package
         run: |
           npm run cloud:public:build

@@ -53,9 +53,9 @@ test("draft validation prevents invalid quiz answers and ragged sheet rows", () 
   assert.throws(() => validateDraft(quiz, "quiz"));
   const sheet = sampleDraft("tracker"); sheet.rows[0].pop(); assert.throws(() => validateDraft(sheet, "tracker"));
 });
-test("both AI adapters validate structured output and never return provider secrets", async () => {
-  const draft = sampleDraft("notice"), config = webConfig({ GEMINI_API_KEY: "gemini-secret", OPENAI_API_KEY: "openai-secret", GEMINI_NO_TRAINING_CONFIRMED: "true", OPENAI_NO_TRAINING_CONFIRMED: "true" });
-  for (const provider of ["gemini", "openai"] as const) {
+test("all AI adapters validate structured output and never return provider secrets", async () => {
+  const draft = sampleDraft("notice"), config = webConfig({ GEMINI_API_KEY: "gemini-secret", OPENAI_API_KEY: "openai-secret", UPSTAGE_API_KEY: "upstage-secret", GEMINI_NO_TRAINING_CONFIRMED: "true", OPENAI_NO_TRAINING_CONFIRMED: "true" });
+  for (const provider of ["gemini", "openai", "upstage"] as const) {
     const input = requestSchema.parse({ template: "notice", prompt: "안내문 만들기", provider, noPersonalData: true, aiProcessingConsent: true });
     let sent: any;
     const fake: typeof fetch = async (_url, init) => {
@@ -64,7 +64,7 @@ test("both AI adapters validate structured output and never return provider secr
     };
     const result = await generateDraft(input, config, fake); assert.equal(result.draft.title, draft.title);
     assert.equal(sent.store, false);
-    assert.equal(sent.model, provider === "openai" ? "gpt-6-luna" : "gemini-flash-latest");
+    assert.equal(sent.model, provider === "openai" ? "gpt-6-luna" : provider === "upstage" ? "solar-mini4" : "gemini-flash-latest");
     assert.ok(!JSON.stringify(result).includes("secret"));
     await assert.rejects(generateDraft(input, config, async () => new Response("", { status: 429 })), /한도/);
   }

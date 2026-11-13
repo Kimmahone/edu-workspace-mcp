@@ -1,10 +1,11 @@
+import {exportFormats} from "../src/web/export-formats.js";
 /** Deliberately small allowlist: no arbitrary URL, permissions, deletion or sharing proxy. */
 export function googleRequest(operation:string,p:any,token:string){
  const ident=(name:string)=>{if(typeof p[name]!=='string'||!/^[\w-]{1,200}$/.test(p[name]))throw new Error('Google 파일·수업 ID를 확인해 주세요.');return encodeURIComponent(p[name]);};
  let base='',pathname='',method='GET',body:any=p.requestBody;
  switch(operation){
  case 'drive.files.get':base='https://www.googleapis.com';pathname='/drive/v3/files/'+ident('fileId');break;
- case 'drive.files.export':base='https://www.googleapis.com';pathname='/drive/v3/files/'+ident('fileId')+'/export';if(p.mimeType!=='application/vnd.openxmlformats-officedocument.wordprocessingml.document')throw new Error('DOCX 내보내기만 지원합니다.');break;
+ case 'drive.files.export':base='https://www.googleapis.com';pathname='/drive/v3/files/'+ident('fileId')+'/export';if(!['application/vnd.openxmlformats-officedocument.wordprocessingml.document',exportFormats.slides.mime,exportFormats.sheet.mime].includes(p.mimeType))throw new Error('DOCX·PPTX·XLSX 내보내기만 지원합니다.');break;
  case 'drive.files.copy':base='https://www.googleapis.com';pathname='/drive/v3/files/'+ident('fileId')+'/copy';method='POST';break;
  case 'drive.files.create':base='https://www.googleapis.com';pathname=p.media?'/upload/drive/v3/files':'/drive/v3/files';method='POST';break;
  case 'docs.documents.get':base='https://docs.googleapis.com';pathname='/v1/documents/'+ident('documentId');break;

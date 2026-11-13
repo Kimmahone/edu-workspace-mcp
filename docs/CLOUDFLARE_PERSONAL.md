@@ -60,11 +60,12 @@ Worker → **Settings → Variables and Secrets**에 추가하고 Deploy합니�
 | `APP_SECRET` | Secret | 암호학적으로 생성한 32바이트 이상의 무작위 값 |
 | `GOOGLE_WEB_CLIENT_ID` | Secret | 아래 3절의 Google 웹 OAuth 클라이언트 ID |
 | `GOOGLE_WEB_CLIENT_SECRET` | Secret | 해당 클라이언트 시크릿 |
-| `GEMINI_API_KEY` | Secret | 아래 4절의 확인된 Paid Service 키(현재 비활성) |
-| `GEMINI_FREE_TIER_CONFIRMED` | Text | 과거 무료 설정이며 AI 활성화에 사용하지 않음 |
+| `GEMINI_API_KEY` | Secret | 아래 4절의 Gemini 키 |
+| `GEMINI_FREE_TIER_CONFIRMED` | Text | Free Tier 확인 후 `true` — 새 초안 전용 |
+| `UPSTAGE_API_KEY` | Secret | 업스테이지 Solar API 키 |
 | `OPENAI_API_KEY` | Secret | GPT를 사용할 때만 입력 |
 | `OPENAI_NO_TRAINING_CONFIRMED` | Text | API 조직의 학습 공유 비활성 확인 후 `true` |
-| `GEMINI_NO_TRAINING_CONFIRMED` | Text | 현재 `false`. 학습 없는 Paid Service 확인 후에만 `true` |
+| `GEMINI_NO_TRAINING_CONFIRMED` | Text | 무료에서는 `false`. 학습 없는 Paid Service 확인 후에만 `true` |
 
 `APP_SECRET`은 로그인·저장 기록 암호화용입니다. 한 번 만든 값을 유지합니다. Node.js가 설치된 본인 컴퓨터에서 아래 명령으로 생성해 Secret 입력란에 직접 붙여 넣을 수 있습니다. 출력값을 GitHub나 대화에 올리지 마세요.
 
@@ -99,11 +100,36 @@ Google 문서를 내 계정에 저장하려면 이 설정은 한 번 필요합�
 
 Cloudflare Worker의 **Settings → Variables and Secrets**에 입력합니다. 웹앱 브라우저 소스·GitHub·일반 Variables에 키를 넣지 마세요. 키는 반드시 Secret으로 지정합니다. 로컬 `.env`에 있는 키는 자동으로 클라우드에 복사되지 않습니다.
 
-### Gemini — 무료 경로는 차단
+### Gemini — 무료로 새 초안 만들기
 
-Google Workspace 원본·집계·파생 데이터를 학습에 쓰는 무료 Gemini로 보내지 않습니다. 기존 `GEMINI_FREE_TIER_CONFIRMED=true`만으로는 활성화되지 않습니다. 입력을 학습에 사용하지 않는 Paid Service 정책 적용을 운영자가 확인한 경우에만 `GEMINI_NO_TRAINING_CONFIRMED=true`를 설정할 수 있습니다. 이 값은 결제 상태를 바꾸지 않으며 앱이 자동으로 유료 전환하지 않습니다. 현재 개인용 배포는 Gemini 비활성입니다.
+`GEMINI_API_KEY`를 Secret으로 등록하고, 결제 미연결 Free Tier 프로젝트임을 확인한 뒤 Text 변수 `GEMINI_FREE_TIER_CONFIRMED`를 `true`로 설정합니다. `GEMINI_NO_TRAINING_CONFIRMED`는 무료 계정에서 `true`로 설정하지 않습니다.
+
+무료 Gemini는 일반 주제로 새 초안을 생성하는 데 사용합니다. 입력·출력이 Google의 서비스·모델 개선에 사용될 수 있다는 화면 안내에 동의해야 합니다. 기존 Google 문서·업로드 자료를 자동으로 보내지 않으며 이전 초안 다듬기는 차단합니다. 입력란에 개인정보·기밀·기존 Google 문서 내용을 붙여 넣지 마세요. 앱은 사용자가 직접 입력한 문장의 출처를 자동 판별하지 못합니다.
+
+유료 서비스는 입력·출력을 모델 개선에 사용하지 않는 조건이 다릅니다. API를 쓰기 위해 무조건 유료로 올려야 하는 것은 아닙니다. 이 앱은 자동 유료 전환·다른 제공자로 자동 대체하지 않습니다. 무료 한도 초과·모델 미지원 시 중단합니다.
 
 [Gemini 데이터 이용 조건](https://ai.google.dev/gemini-api/terms)
+
+### 업스테이지 Solar 연결
+
+1. Cloudflare → Workers & Pages → **workspace-lab-personal → Settings → Variables and Secrets**로 이동합니다.
+2. **Production** 환경에서 Add를 누릅니다.
+3. 이름에 **`UPSTAGE_API_KEY`** (모두 대문자), 값에 본인이 발급받은 업스테이지 키를 넣고 **Secret / 비밀**을 선택합니다.
+4. 저장 및 Deploy 후 앱을 새로고침합니다. 빌드 변수에 넣지 않습니다.
+5. ‘초안 작성 도우미’에서 **업스테이지 Solar**를 선택합니다. 기본 모델은 `solar-mini4`이며 선택 Text 변수 `UPSTAGE_MODEL`로 변경할 수 있습니다.
+
+키 설정 표시는 실제 호출 성공을 뜻하지 않습니다. 무료 크레딧의 잔액·유효기간·결제 설정은 업스테이지 Console에서 확인하세요. API 요금은 업스테이지 계정으로 발생하며 Cloudflare 무료 요금제와 별개입니다. OpenAI 키는 필요하지 않습니다.
+
+[업스테이지 API](https://console.upstage.ai/api/responses) · [결제 안내](https://console.upstage.ai/docs/getting-started)
+
+### 결과 종류에 맞는 저장과 다운로드
+
+- 슬라이드: Google Slides 저장 또는 **PowerPoint (.pptx) 다운로드**.
+- 시트: Google Sheets 저장 또는 **Excel (.xlsx) 다운로드**.
+- 문서·학습지: Google Docs 저장·HWPX·Markdown.
+- 퀴즈: Google Forms 저장.
+
+PPTX·XLSX 다운로드는 Google 로그인이 필요합니다. 디자인이 적용된 Google 원본을 새로 만든 뒤 Office 형식으로 내보내며, 저장 전 확인창을 표시합니다. 원본은 내 Drive에 남고 파일을 공개하지 않습니다. 동일 내용의 다운로드 재시도는 같은 원본을 사용합니다. Google 내보내기 용량 제한이나 복잡한 서식 변환 차이가 있을 수 있습니다.
 
 ### GPT — 선택할 때만 유료
 
@@ -119,7 +145,7 @@ Google Workspace 원본·집계·파생 데이터를 학습에 쓰는 무료 Gem
 1. 예시 갤러리에서 양식을 선택하고 ‘이 예시로 시작’을 누릅니다.
 2. 제목·내용·디자인을 바꿔 미리 봅니다. 여기까지 AI 비용이 없습니다.
 3. ‘한글 내려받기’는 브라우저의 Kordoc으로 HWPX를 만듭니다. 서버나 AI에 문서 원본을 보내지 않습니다.
-4. 새 AI 초안이 필요할 때만 설정이 확인된 GPT 또는 Gemini Paid Service를 선택하고 전송에 동의합니다. 해당 요청·초안은 선택한 AI 제공자에게 전송됩니다.
+4. 새 AI 초안이 필요할 때 연결한 업스테이지 또는 Gemini를 선택하고 전송에 동의합니다. 무료 Gemini에는 일반 주제만 입력합니다. 해당 요청·초안은 선택한 AI 제공자에게 전송됩니다.
 5. Google 저장은 미리 검토한 후 실행합니다. Google Docs·Sheets·Slides·Forms에 실제 편집 가능한 파일을 만듭니다.
 6. 다른 컴퓨터에서는 같은 URL로 접속해 본인 Google 계정으로 로그인합니다. 작성 중인 초안은 자동 동기화되지 않으므로 ‘편집본 보관’ JSON 파일을 옮겨 이어서 작업합니다.
 
@@ -143,4 +169,8 @@ npm run cloud:dev
 npm run test:cloud:browser
 ```
 
-자동 테스트는 실제 Kordoc 브라우저 변환, Workers 인증·CSRF·D1 원자적 처리·무료 Gemini 차단·고정 GPT 모델을 검증합니다. 실제 AI 요청과 Google 저장은 모의 응답으로 검증하므로 실제 웹 OAuth 설정 후 본인 계정에서 연결을 확인해야 합니다.
+자동 테스트는 실제 Kordoc 브라우저 변환, Workers 인증·CSRF·D1 원자적 처리·무료 Gemini 동의·이전 초안 차단·고정 업스테이지 모델을 검증합니다. PPTX·XLSX 다운로드 흐름, 실제 AI 요청과 Google 저장은 모의 응답으로 검증하므로 실제 웹 OAuth 설정 후 본인 계정에서 연결을 확인해야 합니다.
+
+### 브라우저 문서 엔진 버전
+
+Kordoc은 Zod 보안 수정판을 포함하는 `4.24.8`로 고정했습니다. 최신 `4.24.74`의 XML WebAssembly 엔진에는 추가 CSP 변경이 필요하므로 기존 브라우저 보안 정책을 유지하는 호환 버전을 사용합니다. ZIP 용량 제한용 스트림은 브라우저 스트림 구현으로 연결합니다. HWP·HWPX·DOCX 읽기, HWP/HWPX 수정 및 HWPX 생성을 브라우저 예제로 검증했습니다.
