@@ -7,6 +7,9 @@ const require=createRequire(import.meta.url),root=process.cwd();
 const publicBuild=process.argv.includes('--public');
 const aliases={stream:'stream-browserify',zlib:'browserify-zlib',path:'path-browserify',buffer:'buffer/',process:'process/browser'};
 const plugin={name:'browser-boundaries',setup(b){
+ // Kordoc bounds ZIP inflation through nodeStream; retain streaming via browser polyfills.
+ b.onResolve({filter:/^jszip$/},()=>({path:require.resolve('jszip/lib/index.js')}));
+ b.onResolve({filter:/^readable-stream$/},()=>({path:require.resolve('stream-browserify')}));
  b.onResolve({filter:/^(node:)?crypto$/},()=>({path:path.join(root,'cloud/browser/crypto.js')}));
  b.onResolve({filter:/^googleapis$/},()=>({path:path.join(root,'cloud/browser/google.ts')}));
  b.onResolve({filter:/auth\/google-auth\.js$/},()=>({path:path.join(root,'cloud/browser/transport.ts')}));
@@ -14,7 +17,7 @@ const plugin={name:'browser-boundaries',setup(b){
  b.onResolve({filter:/^(node:)?(stream|zlib|path|buffer|process)$/},a=>({path:require.resolve(aliases[a.path.replace(/^node:/,'')])}));
  b.onResolve({filter:/^(node:)?(fs(\/promises)?|os|child_process|url)$/},()=>({path:path.join(root,'cloud/browser/unsupported.js')}));
  b.onResolve({filter:/^(node:)?module$/},()=>({path:path.join(root,'cloud/browser/module.js')}));
- b.onResolve({filter:/(image-ocr-|parser-M77PHHCS|^sharp$|^puppeteer-core$)/},()=>({path:path.join(root,'cloud/browser/unsupported.js')}));
+ b.onResolve({filter:/(image-ocr-|parser-54R7ENH6|^sharp$|^puppeteer-core$)/},()=>({path:path.join(root,'cloud/browser/unsupported.js')}));
  b.onLoad({filter:/src\/curriculum\/(standards|learning-map)\.ts$/},async a=>{
   let s=await readFile(a.path,'utf8');
   const name=a.path.endsWith('standards.ts')?'elementary-2022':'learning-map';

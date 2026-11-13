@@ -170,3 +170,7 @@ npm run test:cloud:browser
 ```
 
 자동 테스트는 실제 Kordoc 브라우저 변환, Workers 인증·CSRF·D1 원자적 처리·무료 Gemini 동의·이전 초안 차단·고정 업스테이지 모델을 검증합니다. PPTX·XLSX 다운로드 흐름, 실제 AI 요청과 Google 저장은 모의 응답으로 검증하므로 실제 웹 OAuth 설정 후 본인 계정에서 연결을 확인해야 합니다.
+
+### 브라우저 문서 엔진 버전
+
+Kordoc은 Zod 보안 수정판을 포함하는 `4.24.8`로 고정했습니다. 최신 `4.24.74`의 XML WebAssembly 엔진에는 추가 CSP 변경이 필요하므로 기존 브라우저 보안 정책을 유지하는 호환 버전을 사용합니다. ZIP 용량 제한용 스트림은 브라우저 스트림 구현으로 연결합니다. HWP·HWPX·DOCX 읽기, HWP/HWPX 수정 및 HWPX 생성을 브라우저 예제로 검증했습니다.
