@@ -48,7 +48,7 @@ await writeFile('.cloud-build/public/privacy.html',shell(publicBuild?`<h1>Worksp
 
 const entryPoints=['cloud/browser/document-worker.ts'];
 try{await readFile('cloud/browser/runtime.ts');entryPoints.push('cloud/browser/runtime.ts');}catch{}
-const bundle=await build({metafile:true,entryPoints,outdir:'.cloud-build/public/cloud',bundle:true,format:'esm',platform:'browser',target:'es2022',minify:true,plugins:[plugin],inject:['cloud/browser/globals.js'],define:{global:'globalThis'},logLevel:'info'});
+const bundle=await build({metafile:true,entryPoints,outdir:'.cloud-build/public/cloud',bundle:true,format:'esm',platform:'browser',target:'es2022',minify:true,plugins:[plugin],inject:['cloud/browser/globals.js'],define:{global:'globalThis',__KORDOC_VERSION__:JSON.stringify(JSON.parse(await readFile('node_modules/kordoc/package.json','utf8')).version)},logLevel:'info'});
 await cp('THIRD_PARTY_NOTICES.md','.cloud-build/public/THIRD_PARTY_NOTICES.md');
 const packageDirs=new Set(Object.keys(bundle.metafile.inputs).filter(p=>p.startsWith('node_modules/')).map(p=>{const start=p.lastIndexOf('node_modules/')+13,parts=p.slice(start).split('/');return p.slice(0,start)+parts.slice(0,parts[0].startsWith('@')?2:1).join('/');}));
 let licenses='Workspace Lab browser dependencies — licenses and notices\n';
