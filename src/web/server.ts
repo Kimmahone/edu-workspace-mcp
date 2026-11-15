@@ -39,7 +39,7 @@ const conversionSchema = z.object({ design: designSchema.optional(), markdown: z
 const base64 = z.string().max(Math.ceil(MAX_FILE / 3) * 4).regex(/^[A-Za-z0-9+/]*={0,2}$/);
 const standardCodesSchema = z.array(z.string().max(30)).max(10).default([]);
 const saveSchema = z.object({ draft: documentDraftSchema, template: z.enum([...templateIds, "conversion"]), kinds: z.array(z.enum(outputKinds)).min(1).max(5), standardCodes: standardCodesSchema, design: designSchema });
-const publicFiles: Record<string, { file: string; type: string }> = { "/": { file: "index.html", type: "text/html" }, "/setup": { file: "setup.html", type: "text/html" }, "/studio.js": { file: "studio.js", type: "text/javascript" }, "/app.js": { file: "app.js", type: "text/javascript" }, "/style.css": { file: "style.css", type: "text/css" } };
+const publicFiles: Record<string, { file: string; type: string }> = { "/ui-policy.js": { file: "ui-policy.js", type: "text/javascript" }, "/": { file: "index.html", type: "text/html" }, "/setup": { file: "setup.html", type: "text/html" }, "/studio.js": { file: "studio.js", type: "text/javascript" }, "/app.js": { file: "app.js", type: "text/javascript" }, "/style.css": { file: "style.css", type: "text/css" } };
 
 export async function createWebServer(config: WebConfig, suppliedStore?: Store, dependencies: { save?: typeof saveOutput; generate?: typeof generateDraft; localAuth?: typeof getAuthStatus } = {}) {
   const store = suppliedStore ?? (config.hosted ? new PostgresStore(config.databaseUrl!, config.secret) : new MemoryStore());

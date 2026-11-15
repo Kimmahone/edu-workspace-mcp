@@ -84,7 +84,7 @@ Node.js 22 이상에서 `npm ci`, `npx wrangler login`, `npm run cloud:setup`을
 Google 문서를 내 계정에 저장하려면 이 설정은 한 번 필요합니다. 이는 서버 요금 결제가 아닌 **Google 계정 접근 동의 설정**입니다.
 
 1. [Google Cloud 콘솔](https://console.cloud.google.com/)에서 프로젝트를 선택합니다. Cloud Run이나 결제 계정 연결은 필요하지 않습니다.
-2. **API 및 서비스 → 라이브러리**에서 Google Drive API, Google Docs API, Google Sheets API, Google Slides API, Google Forms API를 사용 설정합니다. Classroom을 쓰면 Google Classroom API도 켭니다.
+2. **API 및 서비스 → 라이브러리**에서 Google Drive API, Google Docs API, Google Sheets API, Google Slides API, Google Forms API를 사용 설정합니다. Classroom 자료 첨부·과제 게시 작업은 Google Classroom에서 직접 진행합니다. 이 웹앱을 위해 Classroom API나 권한을 추가할 필요는 없습니다.
 3. **Google Auth Platform → Branding / Audience**에서 앱 이름과 이메일을 설정합니다. 외부·테스트 상태라면 본인 Google 이메일을 테스트 사용자로 추가합니다. 학교 계정은 관리자의 접근 허용이 필요할 수 있습니다.
 4. **Clients → Create client → Web application**을 선택합니다. 기존 MCP의 Desktop client는 그대로 둡니다.
 5. Authorized JavaScript origins에 앱의 HTTPS 주소를 넣습니다. 예: `https://workspace-lab-personal.내주소.workers.dev`.
@@ -94,7 +94,7 @@ Google 문서를 내 계정에 저장하려면 이 설정은 한 번 필요합�
    - `GOOGLE_WEB_CLIENT_SECRET`: 웹 클라이언트 시크릿
 8. 앱의 **연결 및 이용 안내 → Google 계정으로 시작**을 누릅니다. `OWNER_EMAIL`과 일치하는 검증된 Google 이메일만 통과합니다. 다른 사람은 AI 호출이나 내 Google 계정 저장 기능을 사용할 수 없습니다.
 
-테스트 상태의 OAuth는 재동의가 필요할 수 있습니다. 연결이 만료되면 다시 로그인합니다. Classroom은 별도의 ‘Classroom 권한 연결’을 누릅니다.
+테스트 상태의 OAuth는 재동의가 필요할 수 있습니다. 연결이 만료되면 다시 로그인합니다. Classroom에 자료를 올리는 순서는 앱의 ‘Classroom에 자료 공유’에서 확인합니다.
 
 ## 4. API 키 연결
 
@@ -116,7 +116,7 @@ Cloudflare Worker의 **Settings → Variables and Secrets**에 입력합니다. 
 2. **Production** 환경에서 Add를 누릅니다.
 3. 이름에 **`UPSTAGE_API_KEY`** (모두 대문자), 값에 본인이 발급받은 업스테이지 키를 넣고 **Secret / 비밀**을 선택합니다.
 4. 저장 및 Deploy 후 앱을 새로고침합니다. 빌드 변수에 넣지 않습니다.
-5. ‘초안 작성 도우미’에서 **업스테이지 Solar**를 선택합니다. 기본 모델은 `solar-mini4`이며 선택 Text 변수 `UPSTAGE_MODEL`로 변경할 수 있습니다.
+5. ‘초안 작성 도우미’에서 **업스테이지 Solar**를 선택합니다. 이 개인용 배포는 Text 변수 `UPSTAGE_MODEL`을 `solar-pro4`로 설정해 Solar Pro 4를 사용합니다. 변수 미설정 시 소스의 기본값은 `solar-mini4`이므로, 새로 설정할 때는 모델 변수도 확인하세요.
 
 키 설정 표시는 실제 호출 성공을 뜻하지 않습니다. 무료 크레딧의 잔액·유효기간·결제 설정은 업스테이지 Console에서 확인하세요. API 요금은 업스테이지 계정으로 발생하며 Cloudflare 무료 요금제와 별개입니다. OpenAI 키는 필요하지 않습니다.
 
@@ -147,7 +147,7 @@ PPTX·XLSX 다운로드는 Google 로그인이 필요합니다. 디자인이 적
 3. ‘한글 내려받기’는 브라우저의 Kordoc으로 HWPX를 만듭니다. 서버나 AI에 문서 원본을 보내지 않습니다.
 4. 새 AI 초안이 필요할 때 연결한 업스테이지 또는 Gemini를 선택하고 전송에 동의합니다. 무료 Gemini에는 일반 주제만 입력합니다. 해당 요청·초안은 선택한 AI 제공자에게 전송됩니다.
 5. Google 저장은 미리 검토한 후 실행합니다. Google Docs·Sheets·Slides·Forms에 실제 편집 가능한 파일을 만듭니다.
-6. 다른 컴퓨터에서는 같은 URL로 접속해 본인 Google 계정으로 로그인합니다. 작성 중인 초안은 자동 동기화되지 않으므로 ‘편집본 보관’ JSON 파일을 옮겨 이어서 작업합니다.
+6. 다른 컴퓨터에서는 같은 URL로 접속해 본인 Google 계정으로 로그인합니다. 작성 중인 초안은 자동 동기화되지 않으므로 ‘편집본 JSON 다운로드’ JSON 파일을 옮겨 이어서 작업합니다.
 
 ## 6. 알아둘 차이
 

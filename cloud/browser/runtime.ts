@@ -10,10 +10,11 @@ import {elementaryExamples} from '../../src/web/elementary-examples.js';
 import {listCourses,createAssignmentDraft,publishAssignment} from '../../src/google/classroom.js';
 import {documentJob} from './documents.js';
 import {transport,setCsrf} from './transport.js';
+declare const __KORDOC_VERSION__: string;
 let status:any;
 const id=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('');
 const store={get:async(key:string)=> (await transport('/api/cloud/state',{action:'get',key})).value,put:async(key:string,value:any,ttl=15*60000)=>transport('/api/cloud/state',{action:'put',key,value,ttl}),take:async(key:string)=>(await transport('/api/cloud/state',{action:'take',key})).value,claim:async(key:string)=>(await transport('/api/cloud/state',{action:'claim',key})).value,remove:async(key:string)=>transport('/api/cloud/state',{action:'remove',key})};
-const metadata=()=>({templates:templates.map(t=>({...t,...(elementaryExamples[t.id]?{prompt:elementaryExamples[t.id].prompt,education:elementaryExamples[t.id]}:{})})),designs,elementaryExamples,curriculum:{...curriculumInfo(),learningMap:learningMapInfo(),subjects:CURRICULUM_SUBJECTS},kordoc:'4.15.4'});
+const metadata=()=>({templates:templates.map(t=>({...t,...(elementaryExamples[t.id]?{prompt:elementaryExamples[t.id].prompt,education:elementaryExamples[t.id]}:{})})),designs,elementaryExamples,curriculum:{...curriculumInfo(),learningMap:learningMapInfo(),subjects:CURRICULUM_SUBJECTS},kordoc:__KORDOC_VERSION__});
 function checked(data:any){if(!templateIds.includes(data.template))throw new Error('지원하지 않는 양식입니다.');return validateDraft(draftSchema.parse(data.draft),data.template);}
 export async function api(path:string,data?:any,raw=false):Promise<any>{
  const url=new URL(path,location.origin),route=url.pathname;

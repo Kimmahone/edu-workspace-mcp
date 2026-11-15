@@ -10,3 +10,6 @@
 .artifact-thumbnail{width:100%;height:100%;object-fit:cover;object-position:top;display:block;transition:transform .3s}.example-card:hover .artifact-thumbnail{transform:scale(1.03)}.example-art{padding:0!important;overflow:hidden}.design-picker{background:#edf2fa;padding:14px;border-radius:12px}.design-picker small{font-size:11px;color:#607388;margin-top:7px}.designed-preview{height:820px;background:#edf1f6}.example-preview .designed-preview{height:900px}.example-sidebar .design-picker{margin-bottom:25px}@media(max-width:730px){.designed-preview,.example-preview .designed-preview{height:680px}}@media(prefers-reduced-motion:reduce){.artifact-thumbnail{transition:none!important}.example-card:hover .artifact-thumbnail{transform:none}}
 /* Readable curriculum context beside the authoring form. */
 .learning-map{margin:14px 0;padding:12px;background:#f1f6ff;border-radius:14px;font-size:13px;line-height:1.65;max-height:420px;overflow:auto}.learning-map summary{font-weight:700;cursor:pointer}.learning-map article{border-top:1px solid #d5e1f3;padding-top:12px;margin-top:12px}.learning-map p{margin:8px 0}.learning-map strong{color:#174ea6}
+
+/* Hidden capability/consent controls must stay hidden even in flex layouts. */
+[hidden]{display:none!important}

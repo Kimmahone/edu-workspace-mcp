@@ -3,11 +3,11 @@ import { readFile } from 'node:fs/promises';
 test('teacher can edit a sample, preview, download HWPX, read it back, and use mobile navigation', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e=>errors.push(e.message));
   await page.goto('/'); await expect(page.getByRole('heading', { name: /생각은 자유롭게/  })).toBeVisible();
-  await page.goto('/#create/notice'); await page.getByRole('button', { name: '예시로 먼저 시작하기' }).click(); await page.getByRole('button',{name:'내용 편집',exact:true}).click();
+  await page.goto('/#create/notice'); await page.getByRole('button', { name: '기본 예시 불러오기' }).click(); await page.getByRole('button',{name:'내용 편집',exact:true}).click();
   await page.getByLabel('자료 제목', { exact:true }).fill('독서 행사 안내');
   await page.getByRole('button', { name:'미리보기', exact:true }).click();
   await expect(page.frameLocator('iframe').getByRole('heading', { name:'독서 행사 안내' })).toBeVisible();
-  const downloaded = page.waitForEvent('download'); await page.getByRole('button',{name:'HWPX 다운로드',exact:true}).click();
+  const downloaded = page.waitForEvent('download'); await page.getByRole('button',{name:'한글 (.hwpx) 다운로드',exact:true}).click();
   const download = await downloaded; expect(download.suggestedFilename()).toBe('독서 행사 안내.hwpx');
   const bytes = await readFile((await download.path())!); expect(bytes.length).toBeGreaterThan(1000);
   await page.getByRole('link', { name:/한글 문서실/ }).first().click();
@@ -24,22 +24,22 @@ test('teacher can edit a sample, preview, download HWPX, read it back, and use m
   await page.screenshot({path:'outputs/web-mobile.png',fullPage:true,animations:'disabled'}); expect(errors).toEqual([]);
 });
 test('design choice changes preview and editing backup',async({page})=>{
-  await page.goto('/#create/report');await page.getByRole('button',{name:'예시로 먼저 시작하기'}).click();
+  await page.goto('/#create/report');await page.getByRole('button',{name:'기본 예시 불러오기'}).click();
   await page.locator('#design-choice').selectOption('warm');
   await expect(page.frameLocator('iframe').getByText('웜 에디토리얼',{exact:true})).toBeVisible();
-  const pending=page.waitForEvent('download');await page.getByRole('button',{name:'편집본 보관'}).click();
+  const pending=page.waitForEvent('download');await page.getByRole('button',{name:'편집본 JSON 다운로드'}).click();
   const download=await pending;const saved=JSON.parse(await readFile((await download.path())!,'utf8'));expect(saved.design).toBe('warm');
   await page.screenshot({path:'outputs/design-app-report.png',fullPage:true,animations:'disabled'});
 });
 test('GPT improvement is reviewed before replacing the draft; backup restores edits', async ({page}) => {
   await page.route('**/api/status', async route => { const response = await route.fetch(); const data = await response.json(); data.ai.openai = true; await route.fulfill({response,json:data}); });
   await page.route('**/api/generate', async route => { const data = await (await page.request.get('/api/sample?template=notice')).json(); data.draft.title = '개선된 가정통신문'; await route.fulfill({json:{draft:data.draft,provider:'openai',standards:[]}}); });
-  await page.goto('/#create/notice'); await page.getByRole('button',{name:'예시로 먼저 시작하기'}).click(); await page.getByRole('button',{name:'내용 편집',exact:true}).click();
-  await page.locator('#privacy').check(); await page.getByRole('button',{name:'✦ GPT로 초안 다듬기'}).click();
+  await page.goto('/#create/notice'); await page.getByRole('button',{name:'기본 예시 불러오기'}).click(); await page.getByRole('button',{name:'내용 편집',exact:true}).click();
+  await page.locator('#provider').selectOption('openai'); await page.locator('#privacy').check(); await page.locator('#ai-consent').check(); await page.getByRole('button',{name:'✦ 선택한 AI로 초안 다듬기'}).click();
   await expect(page.getByRole('heading',{name:'기존 초안과 비교해 보세요'})).toBeVisible();
   await expect(page.frameLocator('#compare-new iframe').getByRole('heading',{name:'개선된 가정통신문'})).toBeVisible();
   await page.getByRole('button',{name:'개선안 적용'}).click(); await expect(page.getByLabel('자료 제목',{exact:true})).toHaveValue('개선된 가정통신문');
-  const pending = page.waitForEvent('download'); await page.getByRole('button',{name:'편집본 보관'}).click(); const file = await pending;
+  const pending = page.waitForEvent('download'); await page.getByRole('button',{name:'편집본 JSON 다운로드'}).click(); const file = await pending;
   await page.getByRole('link',{name:/연결 및 이용 안내/}).click(); await page.locator('#restore-file').setInputFiles((await file.path())!);
   await page.getByRole('button',{name:'편집본 불러오기'}).click(); await expect(page.getByLabel('자료 제목',{exact:true})).toHaveValue('개선된 가정통신문');
 });
@@ -91,11 +91,11 @@ test('design assets load, reduced motion works, gallery filters and mobile layou
 test('elementary examples load their grade and standards and curriculum filters reach the server',async({page,request})=>{
  await page.goto('/#create/worksheet');
  await expect(page.locator('#grade')).toHaveValue('3');await expect(page.locator('#subject')).toHaveValue('수학');
- await page.getByRole('button',{name:'예시로 먼저 시작하기'}).click();
+ await page.getByRole('button',{name:'기본 예시 불러오기'}).click();
  await expect(page.frameLocator('iframe').getByRole('heading',{name:'똑같이 나누면 분수가 보여요',exact:true})).toBeVisible();
  await expect(page.locator('#standards-results input:checked')).toHaveValue('[4수01-09]');
  await expect(page.locator('#learning-context')).toContainText('평가 발문');
- const pending=page.waitForEvent('download');await page.getByRole('button',{name:'편집본 보관'}).click();
+ const pending=page.waitForEvent('download');await page.getByRole('button',{name:'편집본 JSON 다운로드'}).click();
  const file=await pending;const backup=JSON.parse(await readFile((await file.path())!,'utf8'));expect(backup.standardCodes).toEqual(['[4수01-09]']);
  await page.locator('#standard-query').fill('분수');await page.getByRole('button',{name:'검색',exact:true}).click();
  const response=await request.get('/api/standards?grade=3&subject='+encodeURIComponent('수학')+'&q='+encodeURIComponent('분수'));const body=await response.json();expect(body.result.total).toBeGreaterThan(0);
