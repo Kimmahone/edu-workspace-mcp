@@ -1,4 +1,4 @@
-import {chromium} from '@playwright/test';
+import {chromium,expect} from '@playwright/test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const browser=await chromium.launch({headless:true});
@@ -41,9 +41,10 @@ try{
  await page.locator('#confirm-dialog button[value=cancel]').click();
  assert.equal(await page.locator('[data-path=title]').inputValue(),'이동 후 유지되는 학습지');
  await page.locator('[data-nav=classroom]').click();
+ await expect(page.getByRole('heading',{name:'완성한 자료를 Classroom에서 공유하세요'})).toBeVisible();
  assert.equal(await page.locator('#assignment-create').count(),0);
  assert.equal(await page.locator('a[href*="classroom=1"]').count(),0);
  await page.locator('[data-nav=settings]').click();
- assert.ok((await page.locator('#main').innerText()).includes('v'+JSON.parse(await readFile('node_modules/kordoc/package.json','utf8')).version));
+ await expect(page.locator('#main')).toContainText('v'+JSON.parse(await readFile('node_modules/kordoc/package.json','utf8')).version);
  assert.deepEqual(errors,[]);console.log('PASS: Slides/PPTX, Sheets/XLSX, worksheet/HWPX, provider choices, confirmation and retry without duplicate creation. Google export responses mocked.');
 }finally{await browser.close();}
