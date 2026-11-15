@@ -23,10 +23,11 @@ export function dashboardPlan(d:Draft,id:DesignId='navy'){
  requests.push({repeatCell:{range:range(0,0,3,0,4),cell:{userEnteredFormat:{backgroundColor:rgb(p.ink),textFormat:{foregroundColor:rgb('#FFFFFF'),fontSize:12}}},fields:'userEnteredFormat.backgroundColor,userEnteredFormat.textFormat'}},{repeatCell:{range:range(0,1,2,0,4),cell:{userEnteredFormat:{textFormat:{bold:true,fontSize:24}}},fields:'userEnteredFormat.textFormat.bold,userEnteredFormat.textFormat.fontSize'}},{repeatCell:{range:range(0,4,6,0,4),cell:{userEnteredFormat:{backgroundColor:rgb(p.pale),horizontalAlignment:'CENTER'}},fields:'userEnteredFormat.backgroundColor,userEnteredFormat.horizontalAlignment'}},{repeatCell:{range:range(0,5,6,0,4),cell:{userEnteredFormat:{textFormat:{bold:true,fontSize:30,foregroundColor:rgb(p.accent)}}},fields:'userEnteredFormat.textFormat'}},{updateDimensionProperties:{range:{sheetId:0,dimension:'COLUMNS',startIndex:0,endIndex:4},properties:{pixelSize:185},fields:'pixelSize'}},{updateDimensionProperties:{range:{sheetId:0,dimension:'ROWS',startIndex:0,endIndex:14},properties:{pixelSize:42},fields:'pixelSize'}},{updateDimensionProperties:{range:{sheetId:0,dimension:'ROWS',startIndex:5,endIndex:6},properties:{pixelSize:72},fields:'pixelSize'}});
  // Merged title/summary rows need explicit height in both Sheets and exported Excel.
  const height=(text:string,columns:number,lineHeight:number,min:number)=>Math.max(min,text.split('\n').reduce((n,line)=>n+Math.max(1,Math.ceil([...line].length/columns)),0)*lineHeight+24);
- for(const [sheetId,width,titleSize,summarySize] of [[0,40,32,18],[1,Math.max(14,Math.floor((280+160*(n-1))/18)),30,18]]){
+ for(const [sheetId,width,titleSize,summarySize] of [[0,740,24,12],[1,280+160*(n-1),22,11]]){
   for(const [row,value,size,min] of [[0,d.title,titleSize,62],[1,d.summary,summarySize,52]] as const){
-   const actualRow=sheetId===0?row+1:row;
-   requests.push({updateDimensionProperties:{range:{sheetId,dimension:'ROWS',startIndex:actualRow,endIndex:actualRow+1},properties:{pixelSize:height(value,width,size,min)},fields:'pixelSize'}});
+   const actualRow=sheetId===0?row+1:row,pixels=size*96/72;
+   const columns=Math.max(1,Math.floor((width-40)/pixels));
+   requests.push({updateDimensionProperties:{range:{sheetId,dimension:'ROWS',startIndex:actualRow,endIndex:actualRow+1},properties:{pixelSize:height(value,columns,Math.ceil(pixels*1.3),min)},fields:'pixelSize'}});
   }
  }
  if(statusCol>=0){
